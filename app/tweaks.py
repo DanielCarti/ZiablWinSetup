@@ -16,6 +16,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
+from app.utils import get_clean_env
+
 NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
 
 
@@ -52,10 +54,17 @@ class TweakEntry:
 
 
 def _restart_explorer():
-    """Перезапуск explorer.exe для немедленного применения твиков проводника."""
+    """Перезапуск explorer.exe с чистым окружением (без переменных PyInstaller _MEI)."""
     try:
         subprocess.run(["taskkill", "/F", "/IM", "explorer.exe"], capture_output=True, creationflags=NO_WINDOW)
-        subprocess.Popen(["explorer.exe"], creationflags=NO_WINDOW)
+        import time
+        time.sleep(0.5)
+        # Запуск через WMI Win32_Process Create гарантирует чистую интерактивную сессию пользователя без наследования _MEI
+        subprocess.run(
+            ["powershell", "-NoProfile", "-NonInteractive", "-Command", "Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{CommandLine='explorer.exe'}"],
+            capture_output=True,
+            creationflags=NO_WINDOW,
+        )
     except Exception:
         pass
 

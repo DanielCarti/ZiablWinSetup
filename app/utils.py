@@ -51,6 +51,22 @@ def is_admin() -> bool:
         return False
 
 
+def get_clean_env() -> dict[str, str]:
+    """
+    Возвращает копию os.environ, очищенную от внутренних переменных PyInstaller (_MEI, _PYI).
+    Предотвращает загрязнение дочерних и системных процессов (например, explorer.exe).
+    """
+    env = os.environ.copy()
+    keys_to_remove = [k for k in env if k.startswith("_PYI") or k.startswith("_MEI")]
+    for k in keys_to_remove:
+        env.pop(k, None)
+    if "PATH" in env:
+        paths = env["PATH"].split(os.pathsep)
+        clean_paths = [p for p in paths if "_MEI" not in p]
+        env["PATH"] = os.pathsep.join(clean_paths)
+    return env
+
+
 def request_admin_restart():
     """Перезапускает скрипт с запросом прав администратора (UAC)."""
     if is_admin():
