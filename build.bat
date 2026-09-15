@@ -21,17 +21,7 @@ pip install pyinstaller
 :: Собираем exe
 echo.
 echo [2/3] Сборка ZiablWinSetup.exe (это займёт 1-2 минуты)...
-python -m PyInstaller ^
-    --noconfirm ^
-    --clean ^
-    --onefile ^
-    --windowed ^
-    --name ZiablWinSetup ^
-    --icon assets\icon.ico ^
-    --add-data "app;app" ^
-    --add-data "assets;assets" ^
-    --collect-all customtkinter ^
-    main.py
+python -m PyInstaller --clean ZiablWinSetup.spec
 
 if errorlevel 1 (
     echo.

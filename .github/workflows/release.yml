@@ -1,0 +1,90 @@
+name: 🚀 Release ZiablWinSetup
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name for release (e.g. v1.0.0)'
+        required: false
+        default: 'v1.0.0'
+      release_title:
+        description: 'Release title'
+        required: false
+        default: 'ZiablWinSetup v1.0.0'
+      draft:
+        description: 'Create draft release'
+        type: boolean
+        default: false
+      prerelease:
+        description: 'Mark as pre-release'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: 🔨 Build & Publish Release
+    runs-on: windows-latest
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: 📦 Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: ⚙️ Build Executable with PyInstaller
+        run: |
+          pyinstaller --clean ZiablWinSetup.spec
+
+      - name: 🔐 Generate SHA256 Checksum
+        shell: pwsh
+        run: |
+          $hash = (Get-FileHash -Path "dist/ZiablWinSetup.exe" -Algorithm SHA256).Hash
+          "$hash  ZiablWinSetup.exe" | Out-File -FilePath "dist/SHA256SUMS.txt" -Encoding ascii
+          Write-Host "SHA256: $hash"
+
+      - name: 🏷️ Determine Tag and Title
+        id: meta
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF_TYPE -eq 'tag') {
+            $tag = $env:GITHUB_REF_NAME
+            $title = "ZiablWinSetup $tag"
+          } else {
+            $tag = "${{ inputs.tag_name }}"
+            if (-not $tag) { $tag = "v1.0.0" }
+            $title = "${{ inputs.release_title }}"
+            if (-not $title) { $title = "ZiablWinSetup $tag" }
+          }
+          "tag=$tag" >> $env:GITHUB_OUTPUT
+          "title=$title" >> $env:GITHUB_OUTPUT
+
+      - name: 🚀 Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          name: ${{ steps.meta.outputs.title }}
+          draft: ${{ inputs.draft || false }}
+          prerelease: ${{ inputs.prerelease || false }}
+          generate_release_notes: true
+          files: |
+            dist/ZiablWinSetup.exe
+            dist/SHA256SUMS.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
