@@ -3,6 +3,12 @@
 <div align="center">
   <img src="assets/icon.png" width="128" height="128" alt="ZiablWinSetup Logo" />
   <p><strong>Современная утилита для массовой установки софта, драйверов и тонкой настройки Windows 10/11</strong></p>
+
+  <p>
+    <a href="https://github.com/DanielCarti/ZiablWinSetup/releases/latest"><img src="https://img.shields.io/github/v/release/DanielCarti/ZiablWinSetup?style=for-the-badge&color=2563eb&label=Release" alt="Latest Release" /></a>
+    <a href="https://github.com/DanielCarti/ZiablWinSetup/releases/latest"><img src="https://img.shields.io/github/downloads/DanielCarti/ZiablWinSetup/total?style=for-the-badge&color=10b981&label=Downloads" alt="Downloads" /></a>
+    <img src="https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011%20(x64)-0078d4?style=for-the-badge&logo=windows" alt="Platform" />
+  </p>
 </div>
 
 ---
@@ -68,12 +74,13 @@
 
 ## 🚀 Как запустить
 
-### Вариант 1. Автономный EXE (без установки Python)
-Готовый исполняемый файл находится в папке:
-```
-dist\ZiablWinSetup.exe
-```
-Просто скопируйте его на флешку и запускайте на любом ПК под управлением **Windows 10 / 11 (x64)**.
+### Вариант 1. Скачать готовый EXE (Рекомендуется)
+Скачайте актуальную сборку из официальных релизов:
+👉 **[Скачать ZiablWinSetup.exe](https://github.com/DanielCarti/ZiablWinSetup/releases/latest)**
+
+Просто сохраните файл на рабочий стол или флешку и запускайте на любом ПК под управлением **Windows 10 / 11 (x64)** (установка Python не требуется).
+
+*(Локальная сборка также доступна в папке `dist\ZiablWinSetup.exe`)*
 
 ### Вариант 2. Запуск из исходного кода
 ```bash
