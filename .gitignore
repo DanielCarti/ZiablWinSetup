@@ -1,0 +1,21 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# PyInstaller build artifacts (keep dist/ for ready-to-run binary if needed)
+build/
+*.manifest
+*.spec.bak
+
+# Environments & IDE
+.venv/
+venv/
+.vscode/
+.idea/
+
+# Scratch & temporary logs
+scratch/
+*.log
+qa_check.txt
+render_check.txt

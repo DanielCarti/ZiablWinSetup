@@ -1,0 +1,2836 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZiablWinSetup</title>
+  <script src="init_data.js"></script>
+  <style>
+    :root {
+      --bg-app: #181818;
+      --bg-header: #1f1f1f;
+      --bg-sidebar: #1d1d1d;
+      --bg-card: #252525;
+      --bg-card-hover: #2d2d2d;
+      --border-subtle: #333333;
+      --border-light: #444444;
+      --accent: #0078d4;
+      --accent-hover: #1084d8;
+      --btn-success: #107c41;
+      --btn-success-hover: #138c4a;
+      --btn-warning: #d97706;
+      --btn-warning-hover: #f59e0b;
+      --btn-danger: #c42b1c;
+      --btn-danger-hover: #d13438;
+      --text-main: #f5f5f5;
+      --text-muted: #a8a8a8;
+      --text-dim: #737373;
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      font-family: 'Segoe UI Variable Text', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-app);
+      color: var(--text-main);
+      overflow: hidden;
+      height: 100vh;
+      min-width: 900px;
+      min-height: 600px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-subtle);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--border-light);
+    }
+
+    /* Header */
+    header {
+      height: 60px;
+      background: var(--bg-header);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      flex-shrink: 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon-img {
+      width: 36px;
+      height: 36px;
+      border-radius: 9px;
+      object-fit: cover;
+      box-shadow: 0 2px 10px rgba(0, 120, 212, 0.4);
+      flex-shrink: 0;
+    }
+
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--accent), #00bcf2);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 16px;
+      color: white;
+      box-shadow: 0 2px 8px rgba(0, 120, 212, 0.4);
+    }
+
+    .brand-text h1 {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      line-height: 1.2;
+    }
+
+    .brand-text p {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .search-box {
+      position: relative;
+      width: 260px;
+    }
+
+    .search-box input {
+      width: 100%;
+      height: 34px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-main);
+      padding: 0 12px 0 32px;
+      font-size: 12px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .search-box input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent);
+    }
+
+    .search-box svg {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 14px;
+      height: 14px;
+      fill: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .btn-lang {
+      height: 34px;
+      padding: 0 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-main);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .btn-lang:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-light);
+    }
+
+    /* Main Container */
+    .main-container {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+      position: relative;
+    }
+
+    /* Sidebar */
+    aside {
+      width: 250px;
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      overflow-y: auto;
+      padding: 12px 10px;
+    }
+
+    .sidebar-section-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-dim);
+      padding: 8px 10px 4px 10px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 36px;
+      padding: 0 12px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--text-main);
+      transition: background 0.12s;
+      margin-bottom: 2px;
+    }
+
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .nav-item.active {
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+    }
+
+    .nav-item .badge {
+      font-size: 11px;
+      opacity: 0.8;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 2px 7px;
+      border-radius: 10px;
+    }
+
+    .nav-item.active .badge {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    .sidebar-divider {
+      height: 1px;
+      background: var(--border-subtle);
+      margin: 10px 4px;
+    }
+
+    .quick-btn {
+      height: 32px;
+      padding: 0 12px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: transparent;
+      border: none;
+      color: var(--text-main);
+      text-align: left;
+      width: 100%;
+      transition: background 0.12s;
+    }
+
+    .quick-btn:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .settings-box {
+      padding: 6px 10px;
+      font-size: 11px;
+    }
+
+    .settings-box .label {
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .settings-box .path-display {
+      color: var(--text-main);
+      word-break: break-all;
+      background: var(--bg-card);
+      padding: 6px 8px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+      margin-bottom: 8px;
+      font-family: Consolas, monospace;
+      font-size: 10px;
+    }
+
+    .btn-browse {
+      height: 28px;
+      padding: 0 10px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-main);
+      font-size: 11px;
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+
+    .btn-browse:hover {
+      background: var(--bg-card-hover);
+    }
+
+    /* Splitter */
+    .splitter {
+      width: 4px;
+      cursor: col-resize;
+      background: transparent;
+      transition: background 0.2s;
+      z-index: 10;
+    }
+
+    .splitter:hover, .splitter.dragging {
+      background: var(--accent);
+    }
+
+    /* Content Area */
+    main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: relative;
+    }
+
+    /* App Card */
+    .app-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 10px 16px;
+      gap: 16px;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .app-card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-light);
+    }
+
+    .card-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .card-icon-wrap {
+      width: 40px;
+      height: 40px;
+      min-width: 40px;
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    }
+
+    .app-icon {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+    }
+
+    .checkbox-wrap {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .checkbox-wrap input {
+      display: none;
+    }
+
+    .custom-checkbox {
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--border-light);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+      background: transparent;
+    }
+
+    .checkbox-wrap input:checked + .custom-checkbox {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .custom-checkbox svg {
+      width: 12px;
+      height: 12px;
+      fill: white;
+      display: none;
+    }
+
+    .checkbox-wrap input:checked + .custom-checkbox svg {
+      display: block;
+    }
+
+    .card-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Category section dividers in All view */
+    .category-section-divider {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 6px 6px 6px;
+      margin-top: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .category-section-divider:first-child {
+      margin-top: 0;
+      padding-top: 0;
+    }
+    .category-section-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: 0.3px;
+    }
+    .category-section-badge {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.06);
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    .card-note {
+      color: #eab308;
+      font-size: 11px;
+      margin-left: 6px;
+    }
+
+    .card-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .mode-select {
+      height: 32px;
+      background: #1a1a1a;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-main);
+      font-size: 12px;
+      padding: 0 10px;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .mode-select:focus {
+      border-color: var(--accent);
+    }
+
+    .btn-action {
+      height: 34px;
+      min-width: 135px;
+      padding: 0 14px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.15s, opacity 0.15s, transform 0.05s;
+    }
+
+    .btn-action:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+    .btn-primary:hover {
+      background: var(--accent-hover);
+    }
+
+    .btn-success {
+      background: var(--btn-success);
+      color: white;
+    }
+    .btn-success:hover {
+      background: var(--btn-success-hover);
+    }
+
+    .btn-warning {
+      background: var(--btn-warning);
+      color: white;
+    }
+    .btn-warning:hover {
+      background: var(--btn-warning-hover);
+    }
+
+    .btn-upgrade {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+      color: #0f172a !important;
+      font-weight: 700 !important;
+      border: 1px solid rgba(251, 191, 36, 0.7) !important;
+      box-shadow: 0 2px 10px rgba(245, 158, 11, 0.35);
+      border-radius: var(--radius-sm);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .btn-upgrade:hover {
+      background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%) !important;
+      box-shadow: 0 4px 18px rgba(245, 158, 11, 0.55);
+      transform: translateY(-1px);
+      color: #000 !important;
+    }
+    .btn-upgrade:active {
+      transform: translateY(0) scale(0.98);
+    }
+
+    .btn-danger {
+      background: var(--btn-danger);
+      color: white;
+    }
+    .btn-danger:hover {
+      background: var(--btn-danger-hover);
+    }
+
+    .btn-disabled {
+      background: #333333;
+      color: #777777;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    .btn-outline {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-light);
+      color: var(--text-main);
+      min-width: auto;
+      padding: 0 10px;
+    }
+    .btn-outline:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .btn-danger-outline {
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #ef4444;
+      min-width: auto;
+      padding: 0 10px;
+    }
+    .btn-danger-outline:hover {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: #ef4444;
+    }
+
+    /* Updates banner */
+    .updates-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 24px;
+      background: linear-gradient(90deg, rgba(234, 179, 8, 0.15) 0%, rgba(245, 158, 11, 0.08) 100%);
+      border-bottom: 1px solid rgba(234, 179, 8, 0.3);
+      animation: fadeInModal 0.2s ease-out;
+      flex-shrink: 0;
+    }
+    .updates-banner-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #fbbf24;
+    }
+    .updates-banner-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .banner-btn {
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .banner-btn-primary {
+      background: #eab308;
+      color: #0f172a;
+    }
+    .banner-btn-primary:hover {
+      background: #facc15;
+      transform: translateY(-1px);
+    }
+    .banner-btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(234, 179, 8, 0.4);
+      color: #fde047;
+    }
+    .banner-btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+      transform: translateY(-1px);
+    }
+
+    .badge-installed {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(34, 197, 94, 0.12);
+      color: #4ade80;
+      border: 1px solid rgba(74, 222, 128, 0.3);
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 1px 7px;
+      line-height: 16px;
+      margin-left: 6px;
+    }
+
+    /* Modal dialog */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      animation: fadeInModal 0.15s ease-out;
+    }
+
+    @keyframes fadeInModal {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes scaleUpModal {
+      from { transform: scale(0.92); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .modal-card {
+      width: 440px;
+      max-width: 90vw;
+      background: #242424;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.6);
+      animation: scaleUpModal 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .modal-header-area {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .modal-icon-wrap {
+      width: 42px;
+      height: 42px;
+      min-width: 42px;
+      border-radius: 50%;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .modal-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-main);
+      line-height: 1.3;
+      margin-bottom: 4px;
+    }
+
+    .modal-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+
+    .modal-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    .modal-btn {
+      height: 34px;
+      padding: 0 18px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+    }
+
+    .modal-btn-cancel {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border-light);
+      color: var(--text-main);
+    }
+    .modal-btn-cancel:hover {
+      background: rgba(255, 255, 255, 0.14);
+    }
+
+    .modal-btn-danger {
+      background: #dc2626;
+      color: white;
+      font-weight: 600;
+    }
+    .modal-btn-danger:hover {
+      background: #ef4444;
+    }
+
+    .progress-bar-wrap {
+      width: 135px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background: #333333;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      width: 0%;
+      transition: width 0.2s;
+    }
+
+    .progress-text {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-align: right;
+    }
+
+    /* Status text */
+    .status-text {
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* Footer */
+    footer {
+      background: var(--bg-header);
+      border-top: 1px solid var(--border-subtle);
+      padding: 10px 20px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .footer-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .selected-info {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-main);
+    }
+
+    .footer-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .footer-btn {
+      height: 40px;
+      padding: 0 22px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.15s;
+    }
+
+    .footer-btn:active {
+      transform: scale(0.98);
+    }
+
+    .footer-progress-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .overall-bar {
+      flex: 1;
+      height: 6px;
+      background: #2a2a2a;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .overall-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #00bcf2);
+      width: 0%;
+      transition: width 0.25s;
+    }
+
+    .overall-status {
+      font-size: 11px;
+      color: var(--text-muted);
+      min-width: 180px;
+      text-align: right;
+    }
+
+    /* Log drawer toggle */
+    .log-toggle {
+      font-size: 11px;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .log-toggle:hover {
+      color: var(--text-main);
+    }
+
+    #logBox {
+      height: 80px;
+      background: #111111;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      font-family: Consolas, monospace;
+      font-size: 11px;
+      color: #cccccc;
+      overflow-y: auto;
+      display: none;
+      margin-top: 4px;
+    }
+    #logBox.open {
+      display: block;
+    }
+
+    /* Tabs Navigation */
+    .tabs-nav {
+      display: flex;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: var(--radius-sm);
+      padding: 3px;
+      gap: 4px;
+      margin-right: 8px;
+    }
+
+    .tab-btn {
+      height: 28px;
+      padding: 0 14px;
+      border-radius: var(--radius-sm);
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .tab-btn.active {
+      background: var(--bg-card);
+      color: var(--text-main);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      font-weight: 600;
+    }
+
+    /* Update button - Modern Fluent */
+    .btn-check-updates {
+      height: 34px;
+      padding: 0 14px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius-sm);
+      color: var(--text-main);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+    }
+
+    .btn-check-updates:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(245, 158, 11, 0.5);
+      color: #fef08a;
+      box-shadow: 0 2px 12px rgba(245, 158, 11, 0.2);
+    }
+
+    .btn-check-updates:active {
+      transform: scale(0.98);
+    }
+
+    .update-badge {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #0f172a;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 1px 7px;
+      border-radius: 10px;
+      line-height: 14px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    }
+
+    .badge-update {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 1px 8px;
+      line-height: 16px;
+      margin-left: 6px;
+    }
+
+    /* Toast Notification */
+    .toast-container {
+      position: fixed;
+      bottom: 74px;
+      left: 50%;
+      transform: translateX(-50%) translateY(30px) scale(0.95);
+      background: rgba(17, 24, 39, 0.96);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(234, 179, 8, 0.5);
+      box-shadow: 0 12px 30px -4px rgba(0, 0, 0, 0.6), 0 0 20px rgba(234, 179, 8, 0.25);
+      color: #fff;
+      padding: 10px 22px;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      z-index: 99999;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .toast-container.show {
+      transform: translateX(-50%) translateY(0) scale(1);
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .toast-container.toast-error {
+      border-color: rgba(239, 68, 68, 0.6);
+      box-shadow: 0 12px 30px -4px rgba(0, 0, 0, 0.6), 0 0 20px rgba(239, 68, 68, 0.25);
+    }
+    .toast-container.toast-success {
+      border-color: rgba(34, 197, 94, 0.6);
+      box-shadow: 0 12px 30px -4px rgba(0, 0, 0, 0.6), 0 0 20px rgba(34, 197, 94, 0.25);
+    }
+    .toast-container.toast-info {
+      border-color: rgba(56, 189, 248, 0.6);
+      box-shadow: 0 12px 30px -4px rgba(0, 0, 0, 0.6), 0 0 20px rgba(56, 189, 248, 0.25);
+    }
+    .toast-icon {
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+    }
+    .toast-message {
+      white-space: nowrap;
+      color: #f8fafc;
+    }
+
+    /* Keyframes */
+    @keyframes spinAnim {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .spin-animation {
+      animation: spinAnim 1s linear infinite;
+    }
+
+    @keyframes btnShake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
+    }
+    .btn-shake {
+      animation: btnShake 0.4s ease-in-out;
+      border-color: #ef4444 !important;
+    }
+
+    /* Tweaks Grid & Cards */
+    .tweaks-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+      gap: 16px;
+      padding-bottom: 30px;
+    }
+
+    .tweak-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 14px;
+      transition: all 0.2s;
+    }
+
+    .tweak-card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-light);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    .tweak-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .tweak-icon-wrap {
+      width: 44px;
+      height: 44px;
+      min-width: 44px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .tweak-info {
+      flex: 1;
+    }
+
+    .tweak-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tweak-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+
+    .tweak-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      padding-top: 10px;
+    }
+
+    .tweak-status {
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tweak-status.applied {
+      color: #4ade80;
+      font-weight: 600;
+    }
+
+    .tweak-status.not-applied {
+      color: var(--text-dim);
+    }
+
+    .tweak-status.unavailable {
+      color: #eab308;
+      font-weight: 500;
+      font-size: 11px;
+    }
+
+    .tweak-card-unavailable {
+      opacity: 0.72;
+    }
+
+    /* Modern vector SVG icons for categories and quick actions */
+    .cat-item-content {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      min-width: 0;
+    }
+    .cat-svg, .qa-svg, .tab-svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      stroke: currentColor;
+      stroke-width: 1.9;
+      opacity: 0.85;
+      transition: all 0.15s ease;
+    }
+    .nav-item:hover .cat-svg, .nav-item.active .cat-svg {
+      opacity: 1;
+      stroke: var(--accent);
+      transform: scale(1.05);
+    }
+    .quick-btn:hover .qa-svg {
+      opacity: 1;
+      transform: scale(1.05);
+    }
+
+    /* Auto-update exclusion badge on cards */
+    .app-shield-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 10.5px;
+      font-weight: 500;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-dim);
+      transition: all 0.15s ease;
+      margin-left: 6px;
+    }
+    .app-shield-badge:hover {
+      border-color: var(--border-light);
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .app-shield-badge.active {
+      background: rgba(234, 179, 8, 0.14);
+      border-color: rgba(234, 179, 8, 0.4);
+      color: #fbbf24;
+    }
+
+    /* Tweak Action Buttons & Result Badges */
+    .btn-clean-action {
+      background: linear-gradient(135deg, #0ea5e9, #0284c7);
+      color: #ffffff;
+      border: none;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+    .btn-clean-action:hover:not(:disabled) {
+      filter: brightness(1.15);
+      transform: translateY(-1px);
+    }
+    .btn-clean-action:disabled {
+      opacity: 0.65;
+      cursor: wait;
+    }
+    .tweak-status.result-badge {
+      color: #4ade80 !important;
+      background: rgba(34, 197, 94, 0.15) !important;
+      border: 1px solid rgba(34, 197, 94, 0.35) !important;
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-weight: 500;
+      font-size: 11px;
+    }
+
+    /* Exclusions Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      backdrop-filter: blur(4px);
+    }
+    .exclusions-modal-card {
+      background: #202020;
+      border: 1px solid #383838;
+      border-radius: 12px;
+      width: 540px;
+      max-width: 90vw;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+      overflow: hidden;
+    }
+    .exclusions-modal-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #333;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .exclusions-modal-header h3 {
+      font-size: 16px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .exclusions-list {
+      padding: 12px 20px;
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .exclusion-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background: #262626;
+      border-radius: 6px;
+      border: 1px solid #333;
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+    .exclusion-item:hover {
+      background: #2e2e2e;
+    }
+    .exclusion-item-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .exclusion-item-icon {
+      width: 24px;
+      height: 24px;
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <img src="icons/app_brand.png" alt="ZiablWinSetup" class="brand-icon-img">
+      <div class="brand-text">
+        <h1 id="appTitle">ZiablWinSetup</h1>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <div class="tabs-nav">
+        <button class="tab-btn active" id="tabBtnApps" onclick="switchMainTab('apps')">
+          <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          <span class="tab-label">Приложения</span>
+        </button>
+        <button class="tab-btn" id="tabBtnTweaks" onclick="switchMainTab('tweaks')">
+          <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          <span class="tab-label">Твики и фичи</span>
+        </button>
+      </div>
+
+      <button class="btn-check-updates" id="btnCheckUpdates" onclick="triggerCheckUpdates()" title="Проверить обновления установленных программ">
+        <svg class="tab-svg" id="updateIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+        <span id="updateBtnText">Проверить обновления</span>
+        <span class="update-badge" id="updateBadge" style="display:none;">0</span>
+      </button>
+
+      <button class="btn-check-updates" id="btnRescanInstalled" onclick="triggerRescanInstalled()" title="Пересканировать установленные программы в Windows">
+        <svg class="tab-svg" id="rescanIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+        <span id="rescanBtnText">Проверить установленное</span>
+      </button>
+
+      <div class="search-box">
+        <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+        <input type="text" id="searchInput" placeholder="Поиск приложения..." oninput="onSearch()">
+      </div>
+      <button class="btn-lang" onclick="toggleLanguage()" title="Switch Language / Сменить язык">
+        <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        <span id="langBtnText">RU / EN</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <div class="main-container">
+    <!-- View 1: Apps view -->
+    <div id="viewApps" style="display: flex; flex: 1; min-height: 0; width: 100%;">
+      <!-- Sidebar -->
+      <aside id="sidebar">
+      <div class="sidebar-section-title" id="secCategories">Категории</div>
+      <div id="categoryNav"></div>
+
+      <div class="sidebar-divider"></div>
+
+      <div class="sidebar-section-title" id="secQuickActions">Быстрые действия</div>
+      <button class="quick-btn" id="qaRecommended" onclick="selectRecommended()">
+        <svg class="qa-svg" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <span class="qa-label">Рекомендуемые</span>
+      </button>
+      <button class="quick-btn" id="qaSelectAll" onclick="selectAll()">
+        <svg class="qa-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        <span class="qa-label">Выбрать все</span>
+      </button>
+      <button class="quick-btn" id="qaDeselectAll" onclick="deselectAll()">
+        <svg class="qa-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg>
+        <span class="qa-label">Снять все</span>
+      </button>
+      <button class="quick-btn" id="qaAllSilent" onclick="setAllMode('silent')">
+        <svg class="qa-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+        <span class="qa-label">Все → Тихая</span>
+      </button>
+      <button class="quick-btn" id="qaAllInteractive" onclick="setAllMode('interactive')">
+        <svg class="qa-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+        <span class="qa-label">Все → Интерактивная</span>
+      </button>
+
+      <div class="sidebar-divider"></div>
+
+      <div class="sidebar-section-title" id="secSettings">Настройки</div>
+      <div class="settings-box">
+        <div class="label" id="lblExtractPath">Путь распаковки ZIP:</div>
+        <div class="path-display" id="extractPathDisplay">...</div>
+        <div style="display: flex; gap: 4px; margin-top: 6px;">
+          <button class="btn-browse" id="btnBrowse" onclick="browseFolder()" style="flex: 1; padding: 0 4px; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="Выбрать папку вручную">Обзор...</button>
+          <button class="btn-browse" onclick="setPathDesktop()" style="flex: 1; padding: 0 4px; font-size: 11px; white-space: nowrap;" title="Распаковывать на Рабочий стол">🖥️ Desktop</button>
+          <button class="btn-browse" onclick="setPathExeDir()" style="flex: 1; padding: 0 4px; font-size: 11px; white-space: nowrap;" title="Распаковывать в папку рядом с программой">📁 Рядом</button>
+        </div>
+        <button class="quick-btn" onclick="openExclusionsModal()" style="margin-top: 10px; border: 1px solid var(--border-subtle); padding: 7px 10px;">
+          <svg class="qa-svg" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span class="qa-label" id="lblExclusionsBtn">Исключения автообновления</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Draggable Splitter -->
+    <div class="splitter" id="splitter"></div>
+
+    <!-- App Content Column -->
+    <div style="flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden;">
+      <!-- Updates Banner -->
+      <div id="updatesBanner" class="updates-banner" style="display: none;">
+        <div class="updates-banner-info" onclick="selectCategory('updates_available')" style="cursor: pointer;" title="Показать только приложения, требующие обновления">
+          <span class="updates-banner-icon">✨</span>
+          <span id="updatesBannerText" style="text-decoration: underline; text-underline-offset: 3px;">Доступно обновлений: 0</span>
+        </div>
+        <div class="updates-banner-actions">
+          <button class="banner-btn banner-btn-primary" id="btnBannerUpgradeAll" onclick="handleUpgradeAll()">⬆️ Обновить все</button>
+          <button class="banner-btn banner-btn-secondary" id="btnBannerUpgradeSelected" onclick="handleUpgradeSelected()">⬆️ Обновить выделенные</button>
+        </div>
+      </div>
+
+      <!-- App Cards -->
+      <main id="appCardsContainer" style="flex: 1; overflow-y: auto;"></main>
+    </div>
+    </div><!-- /viewApps -->
+
+    <!-- View 2: Tweaks & Features view -->
+    <div id="viewTweaks" style="display: none; flex: 1; min-height: 0; width: 100%; flex-direction: column; overflow-y: auto; padding: 24px 32px; background: var(--bg-app);">
+      <div style="margin-bottom: 20px;">
+        <h2 style="font-size: 20px; font-weight: 600; margin-bottom: 4px;" id="tweaksTitle">⚡ Твики и фичи</h2>
+        <p style="font-size: 13px; color: var(--text-muted);" id="tweaksSubtitle">Полезные системные настройки Windows и оптимизации программ в один клик.</p>
+      </div>
+      <div class="tweaks-grid" id="tweaksGrid"></div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer id="mainFooter">
+    <div class="footer-top">
+      <div class="selected-info" id="selectedCountDisplay">Выбрано: 0</div>
+      <div class="footer-actions">
+        <button class="footer-btn btn-primary" id="btnDownloadSelected" onclick="handleDownloadSelected()">📥 Скачать выбранное</button>
+        <button class="footer-btn btn-success" id="btnInstallAll" onclick="handleInstallAll()" disabled>⚙️ Установить все скачанные</button>
+      </div>
+    </div>
+
+    <div class="footer-progress-row">
+      <div class="log-toggle" onclick="toggleLog()">
+        <span id="logArrow">▶</span> <span id="logLabel">Журнал событий</span>
+      </div>
+      <div class="overall-bar">
+        <div class="overall-fill" id="overallProgressFill"></div>
+      </div>
+      <div class="overall-status" id="overallStatusText">Готов к работе</div>
+    </div>
+
+    <div id="logBox"></div>
+  </footer>
+
+  <!-- Centered Confirmation Modal -->
+  <div id="confirmModal" class="modal-overlay" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header-area">
+        <div class="modal-icon-wrap">🗑️</div>
+        <div>
+          <div class="modal-title" id="modalTitle">Удаление приложения</div>
+          <div class="modal-desc" id="modalDesc">Вы действительно хотите запустить деинсталляцию?</div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn modal-btn-cancel" id="modalCancelBtn">Отмена</button>
+        <button class="modal-btn modal-btn-danger" id="modalConfirmBtn">Удалить</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // State
+    let appData = {
+      lang: 'ru',
+      strings: {},
+      apps: [],
+      categories: [],
+      system_info: {}
+    };
+
+    let activeCategory = 'all';
+    let searchQuery = '';
+    let selectedApps = new Set();
+    let appModes = {}; // app_id -> 'interactive' | 'silent'
+    let appStatuses = {}; // app_id -> { status, progress, detail }
+    let isDownloading = false;
+    let downloadedCount = 0;
+
+    // Splitter resize logic
+    const splitter = document.getElementById('splitter');
+    const sidebar = document.getElementById('sidebar');
+    let isDragging = false;
+
+    splitter.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      splitter.classList.add('dragging');
+      document.body.style.cursor = 'col-resize';
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      const newWidth = Math.max(180, Math.min(450, e.clientX));
+      sidebar.style.width = newWidth + 'px';
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (isDragging) {
+        isDragging = false;
+        splitter.classList.remove('dragging');
+        document.body.style.cursor = 'default';
+      }
+    });
+
+    // Toggle log box
+    function toggleLog() {
+      const box = document.getElementById('logBox');
+      const arrow = document.getElementById('logArrow');
+      const isOpen = box.classList.toggle('open');
+      arrow.textContent = isOpen ? '▼' : '▶';
+    }
+
+    function addLog(msg) {
+      const box = document.getElementById('logBox');
+      const time = new Date().toLocaleTimeString();
+      const div = document.createElement('div');
+      div.textContent = `[${time}] ${msg}`;
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function initAppDefaults() {
+      if (!appData || !appData.apps) return;
+      appData.apps.forEach(app => {
+        if (!appModes[app.id]) appModes[app.id] = 'interactive';
+        if (!appStatuses[app.id]) appStatuses[app.id] = { status: 'idle', progress: 0, detail: '' };
+      });
+      applyTranslations();
+      renderCategories();
+      renderCards();
+      updateFooter();
+      if (appData.system_info && appData.system_info.extract_path) {
+        document.getElementById('extractPathDisplay').textContent = appData.system_info.extract_path;
+      }
+    }
+
+    // Мгновенная отрисовка всех карточек и иконок без задержек (0 мс)
+    const initialDataSource = window.INIT_DATA || window.PRELOAD_DATA;
+    if (initialDataSource && initialDataSource.apps && initialDataSource.apps.length > 0) {
+      appData = initialDataSource;
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initAppDefaults);
+      } else {
+        initAppDefaults();
+      }
+    }
+
+    // Подключение к Python API
+    window.addEventListener('pywebviewready', async () => {
+      try {
+        const data = await window.pywebview.api.get_init_data();
+        if (data) {
+          if (data.apps && data.apps.length > 0) appData.apps = data.apps;
+          if (data.categories && data.categories.length > 0) appData.categories = data.categories;
+          if (data.lang) appData.lang = data.lang;
+          if (data.strings) appData.strings = data.strings;
+          if (data.strings_all) appData.strings_all = data.strings_all;
+          if (data.system_info) appData.system_info = data.system_info;
+          if (data.installed_apps) appData.installed_apps = data.installed_apps;
+          if (data.tweaks) appData.tweaks = data.tweaks;
+        }
+        initAppDefaults();
+        if (currentMainTab === 'tweaks') renderTweaks();
+        const instCount = Object.keys(appData.installed_apps || {}).length;
+        addLog(`Система готова. Всего программ: ${appData.apps.length}, обнаружено установленных в Windows: ${instCount}`);
+      } catch (e) {
+        console.error('Bridge init error:', e);
+      }
+    });
+
+    function applyTranslations() {
+      const s = appData.strings || {};
+      const titleElem = document.getElementById('appTitle');
+      if (titleElem) titleElem.textContent = s.app_title || 'ZiablWinSetup';
+
+      const subElem = document.getElementById('appSubtitle');
+      if (subElem) {
+        let subtitle = s.app_subtitle || '';
+        if (appData.system_info && appData.system_info.winget_available) {
+          subtitle += ` • ${s.winget_found || 'winget'} ${appData.system_info.winget_version}`;
+        } else if (appData.system_info) {
+          subtitle += ` • ${s.winget_not_found || 'winget не найден'}`;
+        }
+        subElem.textContent = subtitle;
+      }
+
+      const searchInput = document.getElementById('searchInput');
+      if (searchInput) searchInput.placeholder = s.search_placeholder || 'Поиск приложения...';
+      const secCat = document.getElementById('secCategories');
+      if (secCat) secCat.textContent = s.categories || 'Категории';
+      const secQA = document.getElementById('secQuickActions');
+      if (secQA) secQA.textContent = s.quick_actions || 'Быстрые действия';
+
+      const updateQaLabel = (btnId, text) => {
+        const btn = document.getElementById(btnId);
+        if (btn) {
+          const lbl = btn.querySelector('.qa-label');
+          if (lbl) lbl.textContent = text.replace(/^[^\wЀ-ӿ]+\s*/, '').trim();
+          else btn.textContent = text;
+        }
+      };
+      updateQaLabel('qaRecommended', s.select_recommended || 'Рекомендуемые');
+      updateQaLabel('qaSelectAll', s.select_all || 'Выбрать все');
+      updateQaLabel('qaDeselectAll', s.deselect_all || 'Снять все');
+      updateQaLabel('qaAllSilent', s.all_silent || 'Все → Тихая');
+      updateQaLabel('qaAllInteractive', s.all_interactive || 'Все → Интерактивная');
+
+      const exclBtnLbl = document.getElementById('lblExclusionsBtn');
+      if (exclBtnLbl) exclBtnLbl.textContent = s.settings_exclusions || 'Исключения автообновления';
+      const secSet = document.getElementById('secSettings');
+      if (secSet) secSet.textContent = s.settings || 'Настройки';
+      const lblExt = document.getElementById('lblExtractPath');
+      if (lblExt) lblExt.textContent = s.extract_path_label || 'Путь распаковки ZIP:';
+      const btnBr = document.getElementById('btnBrowse');
+      if (btnBr) btnBr.textContent = s.browse || 'Обзор...';
+      const btnDown = document.getElementById('btnDownloadSelected');
+      if (btnDown) btnDown.textContent = isDownloading ? (s.btn_cancel || 'Отменить') : (s.btn_download_selected || 'Скачать выбранное');
+      const btnInstAll = document.getElementById('btnInstallAll');
+      if (btnInstAll) btnInstAll.textContent = s.btn_install_all || 'Установить все скачанные';
+      const logLbl = document.getElementById('logLabel');
+      if (logLbl) logLbl.textContent = appData.lang === 'ru' ? 'Журнал событий' : 'Event Log';
+
+      // Tabs & Tweaks translation
+      const tabApps = document.getElementById('tabBtnApps');
+      if (tabApps) {
+        const lbl = tabApps.querySelector('.tab-label');
+        if (lbl) lbl.textContent = (s.tab_apps || 'Приложения').replace(/^[^\w\u0400-\u04FF]+\s*/, '').trim();
+        else tabApps.textContent = s.tab_apps || 'Приложения';
+      }
+      const tabTweaks = document.getElementById('tabBtnTweaks');
+      if (tabTweaks) {
+        const lbl = tabTweaks.querySelector('.tab-label');
+        if (lbl) lbl.textContent = (s.tab_tweaks || 'Твики и фичи').replace(/^[^\w\u0400-\u04FF]+\s*/, '').trim();
+        else tabTweaks.textContent = s.tab_tweaks || 'Твики и фичи';
+      }
+      const updateBtn = document.getElementById('updateBtnText');
+      if (updateBtn) updateBtn.textContent = (s.btn_check_updates || 'Проверить обновления').replace(/^[^\w\u0400-\u04FF]+\s*/, '').trim();
+      const rescanBtn = document.getElementById('rescanBtnText');
+      if (rescanBtn) rescanBtn.textContent = (s.btn_rescan_installed || 'Проверить установленное').replace(/^[^\w\u0400-\u04FF]+\s*/, '').trim();
+      const twTitle = document.getElementById('tweaksTitle');
+      if (twTitle) twTitle.textContent = (s.tab_tweaks || 'Твики и фичи').replace(/^[^\w\u0400-\u04FF]+\s*/, '').trim();
+
+      const btnBUpAll = document.getElementById('btnBannerUpgradeAll');
+      if (btnBUpAll) btnBUpAll.textContent = s.btn_upgrade_all || '⬆️ Обновить все';
+      const btnBUpSel = document.getElementById('btnBannerUpgradeSelected');
+      if (btnBUpSel) btnBUpSel.textContent = s.btn_upgrade_selected || '⬆️ Обновить выбранные';
+    }
+
+    async function toggleLanguage() {
+      try {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.toggle_language) {
+          const res = await window.pywebview.api.toggle_language();
+          if (res) {
+            appData.lang = res.lang || (appData.lang === 'ru' ? 'en' : 'ru');
+            if (res.strings) appData.strings = res.strings;
+            if (res.tweaks) appData.tweaks = res.tweaks;
+          }
+        } else {
+          appData.lang = appData.lang === 'ru' ? 'en' : 'ru';
+          if (appData.strings_all && appData.strings_all[appData.lang]) {
+            appData.strings = appData.strings_all[appData.lang];
+          }
+        }
+        const langText = document.getElementById('langBtnText');
+        if (langText) langText.textContent = appData.lang === 'ru' ? 'RU / EN' : 'EN / RU';
+        applyTranslations();
+        renderCategories();
+        renderCards();
+        if (typeof renderTweaks === 'function') renderTweaks();
+        updateFooter();
+      } catch (err) {
+        console.error('toggleLanguage error:', err);
+      }
+    }
+
+    async function browseFolder() {
+      try {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.browse_extract_path) {
+          const path = await window.pywebview.api.browse_extract_path();
+          if (path) {
+            document.getElementById('extractPathDisplay').textContent = path;
+            if (!appData.system_info) appData.system_info = {};
+            appData.system_info.extract_path = path;
+          }
+        }
+      } catch (e) {
+        console.error('Browse folder error:', e);
+      }
+    }
+
+    async function setPathDesktop() {
+      try {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.set_extract_path_to_desktop) {
+          const path = await window.pywebview.api.set_extract_path_to_desktop();
+          if (path) {
+            document.getElementById('extractPathDisplay').textContent = path;
+            if (!appData.system_info) appData.system_info = {};
+            appData.system_info.extract_path = path;
+            addLog(`📁 Путь распаковки ZIP установлен на Рабочий стол: ${path}`);
+          }
+        }
+      } catch (e) {
+        console.error('Set desktop path error:', e);
+      }
+    }
+
+    async function setPathExeDir() {
+      try {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.set_extract_path_to_exe_dir) {
+          const path = await window.pywebview.api.set_extract_path_to_exe_dir();
+          if (path) {
+            document.getElementById('extractPathDisplay').textContent = path;
+            if (!appData.system_info) appData.system_info = {};
+            appData.system_info.extract_path = path;
+            addLog(`📁 Путь распаковки ZIP установлен рядом с программой: ${path}`);
+          }
+        }
+      } catch (e) {
+        console.error('Set exe dir path error:', e);
+      }
+    }
+
+
+    function getCategoryIconSvg(catId) {
+      switch (catId) {
+        case 'all':
+          return `<svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>`;
+        case 'browsers':
+          return `<svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`;
+        case 'media':
+          return `<svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>`;
+        case 'utilities':
+          return `<svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>`;
+        case 'communication':
+          return `<svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
+        case 'development':
+          return `<svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>`;
+        case 'gpu_drivers':
+          return `<svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>`;
+        case 'vpn_network':
+          return `<svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`;
+        case 'gaming':
+          return `<svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="6"/><path d="M6 12h4m-2-2v4"/><circle cx="15" cy="11" r="1"/><circle cx="17" cy="13" r="1"/></svg>`;
+        case 'office':
+          return `<svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`;
+        case 'installed':
+          return `<svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`;
+        case 'updates_available':
+          return `<svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>`;
+        default:
+          return `<svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>`;
+      }
+    }
+
+    // Render Categories
+    function renderCategories() {
+      const container = document.getElementById('categoryNav');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const cats = [...appData.categories];
+      const instCount = Object.keys(appData.installed_apps || {}).length;
+      if (instCount > 0) {
+        cats.splice(1, 0, {
+          id: 'installed',
+          name_ru: 'Установленные',
+          name_en: 'Installed',
+          count: instCount,
+        });
+      }
+
+      const updCount = Object.keys(availableUpdates || {}).length;
+      if (updCount > 0) {
+        const insertIdx = instCount > 0 ? 2 : 1;
+        const s = appData.strings || {};
+        cats.splice(insertIdx, 0, {
+          id: 'updates_available',
+          name_ru: s.cat_updates_available || 'Требуют обновления',
+          name_en: 'Updates Available',
+          count: updCount,
+        });
+      }
+
+      cats.forEach(cat => {
+        const div = document.createElement('div');
+        div.className = 'nav-item' + (cat.id === activeCategory ? ' active' : '');
+        div.onclick = () => selectCategory(cat.id);
+
+        let name = appData.lang === 'ru' ? (cat.name_ru || cat.name || cat.id) : (cat.name_en || cat.name || cat.id);
+        // Clean out any leftover emoji characters
+        name = name.replace(/^[^\wЀ-ӿ]+\s*/, '').trim();
+
+        if (cat.id === 'installed') {
+          div.innerHTML = `
+            <div class="cat-item-content">
+              ${getCategoryIconSvg(cat.id)}
+              <span>${name}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <span class="badge">${cat.count !== undefined ? cat.count : ''}</span>
+              <button class="cat-rescan-btn" onclick="event.stopPropagation(); triggerRescanInstalled();" title="Пересканировать установленные программы" style="background: none; border: none; cursor: pointer; color: var(--text-dim); padding: 2px 4px; border-radius: 4px; display: flex; align-items: center;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+              </button>
+            </div>
+          `;
+        } else if (cat.id === 'updates_available') {
+          div.innerHTML = `
+            <div class="cat-item-content">
+              ${getCategoryIconSvg(cat.id)}
+              <span style="color: #fbbf24; font-weight: 500;">${name}</span>
+            </div>
+            <span class="badge" style="background: rgba(245, 158, 11, 0.25); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); font-weight: 700;">${cat.count}</span>
+          `;
+        } else {
+          div.innerHTML = `
+            <div class="cat-item-content">
+              ${getCategoryIconSvg(cat.id)}
+              <span>${name}</span>
+            </div>
+            <span class="badge">${cat.count !== undefined ? cat.count : ''}</span>
+          `;
+        }
+        container.appendChild(div);
+      });
+    }
+
+    function selectCategory(catId) {
+      activeCategory = catId;
+      renderCategories();
+      renderCards();
+      document.getElementById('appCardsContainer').scrollTop = 0;
+    }
+
+    function onSearch() {
+      searchQuery = document.getElementById('searchInput').value.trim().toLowerCase();
+      renderCards();
+    }
+
+
+    // ==========================================
+    // Исключения автообновления
+    // ==========================================
+    function openExclusionsModal() {
+      const modal = document.getElementById('exclusionsModal');
+      if (!modal) return;
+      renderExclusionsList();
+      modal.style.display = 'flex';
+    }
+
+    function closeExclusionsModal() {
+      const modal = document.getElementById('exclusionsModal');
+      if (modal) modal.style.display = 'none';
+      renderCards();
+    }
+
+    async function toggleAppExclusion(appId) {
+      if (!appData.ignored_updates) appData.ignored_updates = [];
+      const idx = appData.ignored_updates.indexOf(appId);
+      if (idx >= 0) {
+        appData.ignored_updates.splice(idx, 1);
+      } else {
+        appData.ignored_updates.push(appId);
+      }
+
+      if (window.pywebview && window.pywebview.api && window.pywebview.api.toggle_ignore_update) {
+        try {
+          await window.pywebview.api.toggle_ignore_update(appId);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      renderCards();
+      const modal = document.getElementById('exclusionsModal');
+      if (modal && modal.style.display !== 'none') {
+        renderExclusionsList();
+      }
+    }
+
+    function renderExclusionsList() {
+      const container = document.getElementById('exclusionsListContainer');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const ignored = new Set(appData.ignored_updates || []);
+      const sortedApps = [...appData.apps].sort((a, b) => {
+        const aIgn = ignored.has(a.id) ? 0 : 1;
+        const bIgn = ignored.has(b.id) ? 0 : 1;
+        if (aIgn !== bIgn) return aIgn - bIgn;
+        return a.name.localeCompare(b.name);
+      });
+
+      sortedApps.forEach(app => {
+        const isIgn = ignored.has(app.id);
+        const item = document.createElement('div');
+        item.className = 'exclusion-item';
+        item.onclick = () => toggleAppExclusion(app.id);
+
+        item.innerHTML = `
+          <div class="exclusion-item-info">
+            <img src="icons/${app.id}.svg" class="exclusion-item-icon" onerror="this.src='icons/default.svg'">
+            <div>
+              <div style="font-weight: 500; font-size: 13px;">${app.name}</div>
+              <div style="font-size: 11px; color: var(--text-dim);">${app.category}</div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 11px; color: ${isIgn ? '#fbbf24' : 'var(--text-dim)'};">${isIgn ? 'Исключено' : 'Обновлять'}</span>
+            <input type="checkbox" ${isIgn ? 'checked' : ''} style="accent-color: #eab308; pointer-events: none;">
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    // Render App Cards
+    function renderCards() {
+      const container = document.getElementById('appCardsContainer');
+      container.innerHTML = '';
+      const s = appData.strings;
+
+      const filtered = appData.apps.filter(app => {
+        if (activeCategory === 'installed') {
+          return appData.installed_apps && appData.installed_apps[app.id];
+        }
+        if (activeCategory === 'updates_available') {
+          return Boolean(availableUpdates && availableUpdates[app.id]);
+        }
+        if (activeCategory !== 'all' && app.category !== activeCategory) return false;
+        if (searchQuery) {
+          const name = app.name.toLowerCase();
+          const descRu = (app.description || '').toLowerCase();
+          const descEn = (app.description_en || '').toLowerCase();
+          if (!name.includes(searchQuery) && !descRu.includes(searchQuery) && !descEn.includes(searchQuery)) {
+            return false;
+          }
+        }
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        const emptyDiv = document.createElement('div');
+        emptyDiv.style.cssText = 'padding: 60px 20px; text-align: center; color: var(--text-dim); font-size: 14px;';
+        if (activeCategory === 'updates_available') {
+          emptyDiv.innerHTML = '✨ Все установленные программы обновлены до актуальных версий!';
+        } else if (activeCategory === 'installed') {
+          emptyDiv.innerHTML = '🔍 Установленные приложения не обнаружены.';
+        } else {
+          emptyDiv.innerHTML = 'Ничего не найдено.';
+        }
+        container.appendChild(emptyDiv);
+        return;
+      }
+
+      let lastCat = null;
+      filtered.forEach(app => {
+        if (activeCategory === 'all' && !searchQuery) {
+          if (app.category !== lastCat) {
+            lastCat = app.category;
+            const catObj = appData.categories.find(c => c.id === app.category);
+            const catName = catObj ? (appData.lang === 'ru' ? catObj.name_ru : catObj.name_en) : app.category;
+            const catCount = catObj ? catObj.count : '';
+            const sec = document.createElement('div');
+            sec.className = 'category-section-divider';
+            sec.innerHTML = `
+              <span class="category-section-title">${catName}</span>
+              <span class="category-section-badge">${catCount}</span>
+            `;
+            container.appendChild(sec);
+          }
+        }
+        const isChecked = selectedApps.has(app.id);
+        const st = appStatuses[app.id] || { status: 'idle', progress: 0, detail: '' };
+        const mode = appModes[app.id] || 'interactive';
+        const desc = appData.lang === 'ru' ? app.description : app.description_en;
+        const notes = appData.lang === 'ru' ? app.notes : app.notes_en;
+        const isInstalled = appData.installed_apps && appData.installed_apps[app.id];
+        const instInfo = isInstalled ? appData.installed_apps[app.id] : null;
+        const verStr = instInfo && instInfo.version ? ` (${instInfo.version})` : '';
+
+        const card = document.createElement('div');
+        card.className = 'app-card';
+        card.id = `card_${app.id}`;
+
+        // Left side
+        const left = document.createElement('div');
+        left.className = 'card-left';
+
+        const checkLabel = document.createElement('label');
+        checkLabel.className = 'checkbox-wrap';
+        checkLabel.innerHTML = `
+          <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleSelect('${app.id}', this.checked)">
+          <div class="custom-checkbox">
+            <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+          </div>
+        `;
+
+        const info = document.createElement('div');
+        info.className = 'card-info';
+        info.innerHTML = `
+          <div class="card-title">
+            ${app.name}
+            ${isInstalled ? `<span class="badge-installed" title="${instInfo.name || ''}">✓ ${s.status_installed || 'Установлено'}${verStr}</span>` : ''}
+            ${availableUpdates[app.id] ? `<span class="badge-update" title="Доступно обновление">⬆️ ${availableUpdates[app.id].available_version}</span>` : ''}
+            ${notes ? `<span class="card-note" title="${notes}">ⓘ ${notes}</span>` : ''}
+          </div>
+          <div class="card-desc">${desc}</div>
+        `;
+
+        const iconWrap = document.createElement('div');
+        iconWrap.className = 'card-icon-wrap';
+        iconWrap.innerHTML = `
+          <img class="app-icon" src="icons/${app.id}.svg" onerror="this.onerror=null; this.src='icons/default.svg'" alt="${app.name}">
+        `;
+
+        left.appendChild(checkLabel);
+        left.appendChild(iconWrap);
+        left.appendChild(info);
+
+        // Right side
+        const right = document.createElement('div');
+        right.className = 'card-right';
+
+        // Mode selector (скрываем для уже установленных приложений)
+        if (!isInstalled) {
+          const select = document.createElement('select');
+          select.className = 'mode-select';
+          select.innerHTML = `
+            <option value="interactive" ${mode === 'interactive' ? 'selected' : ''}>${s.mode_interactive || 'Интерактивная'}</option>
+            <option value="silent" ${mode === 'silent' ? 'selected' : ''}>${s.mode_silent || 'Тихая'}</option>
+          `;
+          select.onchange = (e) => { appModes[app.id] = e.target.value; };
+          right.appendChild(select);
+        }
+
+        // Action area
+        const actionArea = document.createElement('div');
+        actionArea.id = `action_${app.id}`;
+        actionArea.innerHTML = getActionHtml(app, st);
+        right.appendChild(actionArea);
+
+        card.appendChild(left);
+        card.appendChild(right);
+        container.appendChild(card);
+      });
+    }
+
+    function getActionHtml(app, st) {
+      const s = appData.strings;
+
+      // 1. Внешняя ссылка (например, 1progs.ru)
+      if (app.web_url) {
+        return `<button class="btn-action btn-primary" onclick="openExternalUrl('${app.web_url}')" title="Открыть страницу скачивания на 1progs.ru">🌐 ${s.open_web_1progs || 'Скачать с 1progs.ru'}</button>`;
+      }
+      if (st.status === 'downloading') {
+        const percent = Math.max(0, Math.min(100, st.progress));
+        return `
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="progress-bar-wrap" style="min-width: 110px;">
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: ${percent}%"></div>
+              </div>
+              <div class="progress-text">${percent > 0 ? percent + '%' : (st.detail || '...')}</div>
+            </div>
+            <button class="btn-action btn-danger-outline" onclick="cancelSingleDownload('${app.id}')" title="Отменить скачивание" style="padding: 0 10px; height: 32px; font-size: 12px; white-space: nowrap;">⛔ ${s.btn_cancel || 'Отмена'}</button>
+          </div>
+        `;
+      } else if (st.status === 'downloaded') {
+        const btnText = app.installer_type === 'zip' ? (s.btn_extract || '📂 Распаковать') : (s.btn_install || '⚙️ Установить');
+        return `
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <button class="btn-action btn-success" onclick="installSingle('${app.id}', false)">${btnText}</button>
+            <button class="btn-action btn-danger-outline" onclick="deleteDownloaded('${app.id}')" title="Удалить скачанный файл" style="padding: 0 9px; height: 32px; font-size: 14px; min-width: 34px;">🗑️</button>
+          </div>
+        `;
+      } else if (st.status === 'installing') {
+        const percent = st.progress || 0;
+        return `
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="progress-wrap" style="min-width: 110px; text-align: right;">
+              <div class="progress-bar" style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin-bottom: 4px;">
+                <div class="progress-fill" style="width: ${percent > 0 ? percent : 20}%; height: 100%; background: linear-gradient(90deg, #38bdf8, #10b981); transition: width 0.2s ease;"></div>
+              </div>
+              <div class="progress-text" style="font-size: 11px; color: #38bdf8; font-weight: 500;">${st.detail || (percent > 0 ? percent + '%' : (s.status_installing || 'Установка...'))}</div>
+            </div>
+            <button class="btn-action btn-danger-outline" onclick="cancelSingleDownload('${app.id}')" title="Отменить" style="padding: 0 10px; height: 32px; font-size: 12px; white-space: nowrap;">⛔ ${s.btn_cancel || 'Отмена'}</button>
+          </div>
+        `;
+      } else if (st.status === 'done' || st.status === 'extracted') {
+        return `<button class="btn-action btn-success btn-disabled" disabled>✅ ${s.status_done || 'Готово!'}</button>`;
+      } else if (st.status === 'error') {
+        // Если ошибка и файл уже был скачан — предлагаем Установить (Админ)
+        if (st.has_file) {
+          return `
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+              <button class="btn-action btn-warning" onclick="installSingle('${app.id}', true)">${s.btn_install_admin || '🛡️ Установить (Админ)'}</button>
+              <div class="status-text" style="color: #ef4444;" title="${st.detail}">❌ ${st.detail}</div>
+            </div>
+          `;
+        } else {
+          return `
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+              <button class="btn-action btn-primary" onclick="downloadSingle('${app.id}')">${s.btn_download || '📥 Скачать'}</button>
+              <div class="status-text" style="color: #ef4444;" title="${st.detail}">❌ ${st.detail}</div>
+            </div>
+          `;
+        }
+      } else {
+        // Idle
+        const isInstalled = appData.installed_apps && appData.installed_apps[app.id];
+        if (isInstalled) {
+          const hasUpdate = availableUpdates[app.id];
+          return `
+            <div style="display: flex; gap: 8px; align-items: center;">
+              ${hasUpdate ? `<button class="btn-action btn-upgrade" onclick="upgradeSingle('${app.id}')" title="Обновить до ${hasUpdate.available_version}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> <span>${s.btn_upgrade || 'Обновить'}</span></button>` : ''}
+              <button class="btn-action btn-outline" onclick="reinstallSingle('${app.id}')" title="${s.btn_reinstall || 'Переустановить'}">${s.btn_reinstall || '🔄 Переустановить'}</button>
+              <button class="btn-action btn-danger-outline" onclick="uninstallSingle('${app.id}')" title="${s.btn_uninstall || 'Удалить'}">${s.btn_uninstall || '🗑️ Удалить'}</button>
+            </div>
+          `;
+        }
+        return `<button class="btn-action btn-primary" onclick="downloadSingle('${app.id}')">${s.btn_download || '📥 Скачать'}</button>`;
+      }
+    }
+
+    function reinstallSingle(appId) {
+      selectedApps.add(appId);
+      downloadSingle(appId);
+      updateFooter();
+    }
+
+    function showConfirmModal(title, text, confirmText) {
+      return new Promise((resolve) => {
+        const overlay = document.getElementById('confirmModal');
+        document.getElementById('modalTitle').textContent = title;
+        document.getElementById('modalDesc').textContent = text;
+        const confirmBtn = document.getElementById('modalConfirmBtn');
+        const cancelBtn = document.getElementById('modalCancelBtn');
+        const s = appData.strings || {};
+        cancelBtn.textContent = s.btn_cancel || (appData.lang === 'ru' ? 'Отмена' : 'Cancel');
+        confirmBtn.textContent = confirmText || (s.btn_uninstall || (appData.lang === 'ru' ? 'Удалить' : 'Uninstall'));
+
+        overlay.style.display = 'flex';
+
+        function cleanup(result) {
+          overlay.style.display = 'none';
+          document.removeEventListener('keydown', onKey);
+          resolve(result);
+        }
+
+        function onKey(e) {
+          if (e.key === 'Escape') cleanup(false);
+          if (e.key === 'Enter') cleanup(true);
+        }
+
+        cancelBtn.onclick = () => cleanup(false);
+        confirmBtn.onclick = () => cleanup(true);
+        overlay.onclick = (e) => { if (e.target === overlay) cleanup(false); };
+        document.addEventListener('keydown', onKey);
+      });
+    }
+
+    async function uninstallSingle(appId) {
+      const app = appData.apps.find(a => a.id === appId);
+      const name = app ? app.name : appId;
+      const title = appData.lang === 'ru' ? 'Удаление приложения' : 'Uninstall Application';
+      const confirmMsg = (appData.strings.confirm_uninstall || 'Вы действительно хотите запустить деинсталляцию {name}?').replace('{name}', name);
+      const btnText = appData.strings.btn_uninstall || (appData.lang === 'ru' ? 'Удалить' : 'Uninstall');
+
+      const confirmed = await showConfirmModal(title, confirmMsg, btnText);
+      if (!confirmed) return;
+
+      addLog(`🗑️ ${name} — запрос на деинсталляцию...`);
+      if (window.pywebview && window.pywebview.api) {
+        try {
+          const res = await window.pywebview.api.uninstall_app(appId);
+          if (res && res.success) {
+            addLog(`ℹ️ ${name} — ${res.message || 'деинсталлятор запущен'}`);
+          } else {
+            addLog(`❌ ${name} — ошибка: ${res ? res.error : 'не удалось запустить'}`);
+          }
+        } catch (err) {
+          addLog(`❌ ${name} — ошибка вызова API: ${err}`);
+        }
+      }
+    }
+
+    function toggleSelect(appId, checked) {
+      if (checked) {
+        selectedApps.add(appId);
+      } else {
+        selectedApps.delete(appId);
+      }
+      updateFooter();
+    }
+
+    function selectRecommended() {
+      selectedApps.clear();
+      appData.apps.forEach(a => {
+        const isInstalled = appData.installed_apps && appData.installed_apps[a.id];
+        if (a.recommended && !isInstalled) selectedApps.add(a.id);
+      });
+      renderCards();
+      updateFooter();
+    }
+
+    function selectAll() {
+      appData.apps.forEach(a => selectedApps.add(a.id));
+      renderCards();
+      updateFooter();
+    }
+
+    function deselectAll() {
+      selectedApps.clear();
+      renderCards();
+      updateFooter();
+    }
+
+    function setAllMode(mode) {
+      appData.apps.forEach(a => { appModes[a.id] = mode; });
+      renderCards();
+    }
+
+    function updateFooter() {
+      const s = appData.strings;
+      const count = selectedApps.size;
+      const template = s.selected_count || 'Выбрано: {count}';
+      document.getElementById('selectedCountDisplay').textContent = template.replace('{count}', count);
+
+      const hasDownloaded = Object.values(appStatuses).some(st => st.status === 'downloaded');
+      const installAllBtn = document.getElementById('btnInstallAll');
+      installAllBtn.disabled = !hasDownloaded;
+    }
+
+    // Actions
+    function downloadSingle(appId) {
+      window.pywebview.api.download_single(appId);
+    }
+
+    function cancelSingleDownload(appId) {
+      if (window.pywebview && window.pywebview.api && window.pywebview.api.cancel_single_download) {
+        window.pywebview.api.cancel_single_download(appId);
+      }
+    }
+
+    function deleteDownloaded(appId) {
+      if (window.pywebview && window.pywebview.api && window.pywebview.api.delete_downloaded_app) {
+        window.pywebview.api.delete_downloaded_app(appId);
+      }
+    }
+
+    function installSingle(appId, asAdmin = false) {
+      const mode = appModes[appId] || 'interactive';
+      window.pywebview.api.install_single(appId, mode, asAdmin);
+    }
+
+    let toastTimer = null;
+    function showToast(message, type = 'warning', duration = 3000) {
+      const toast = document.getElementById('appToast');
+      const icon = document.getElementById('toastIcon');
+      const text = document.getElementById('toastMessage');
+      if (!toast || !text) return;
+
+      toast.className = `toast-container show toast-${type}`;
+      if (type === 'warning') icon.textContent = '⚠️';
+      else if (type === 'error') icon.textContent = '❌';
+      else if (type === 'success') icon.textContent = '✅';
+      else icon.textContent = 'ℹ️';
+
+      text.textContent = message;
+      addLog(`${icon.textContent} ${message}`);
+
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.remove('show');
+      }, duration);
+    }
+
+    function handleDownloadSelected() {
+      const s = appData.strings || {};
+      if (isDownloading) {
+        window.pywebview.api.cancel_downloads();
+        return;
+      }
+      const ids = Array.from(selectedApps);
+      if (ids.length === 0) {
+        const msg = s.select_at_least_one || 'Выберите хотя бы одно приложение галочкой!';
+        showToast(msg, 'warning');
+        const btn = document.getElementById('btnDownloadSelected');
+        if (btn) {
+          btn.classList.add('btn-shake');
+          setTimeout(() => btn.classList.remove('btn-shake'), 500);
+        }
+        return;
+      }
+      isDownloading = true;
+      document.getElementById('btnDownloadSelected').textContent = s.btn_cancel || '⛔ Отменить';
+      document.getElementById('btnDownloadSelected').className = 'footer-btn btn-danger';
+      window.pywebview.api.download_selected(ids);
+    }
+
+    function handleInstallAll() {
+      window.pywebview.api.install_all(appModes);
+    }
+
+    // ==========================================
+    // Python Callbacks (invoked via call_js)
+    // ==========================================
+
+    window.onAppStatus = function(appId, status, detail = '') {
+      if (status === 'idle') {
+        appStatuses[appId] = { status: 'idle', progress: 0, detail: '', has_file: false };
+      } else {
+        const current = appStatuses[appId] || {};
+        appStatuses[appId] = {
+          ...current,
+          status: status,
+          detail: detail,
+          has_file: status === 'error' ? (current.has_file || current.status === 'downloaded') : current.has_file
+        };
+      }
+
+      if (status === 'done' || status === 'extracted') {
+        if (!appData.installed_apps) appData.installed_apps = {};
+        appData.installed_apps[appId] = { installed: true };
+        renderCategories();
+      }
+
+      const target = document.getElementById(`action_${appId}`);
+      if (target) {
+        const app = appData.apps.find(a => a.id === appId);
+        if (app) target.innerHTML = getActionHtml(app, appStatuses[appId]);
+      }
+      updateFooter();
+    };
+
+    window.onAppProgress = function(appId, percent, text) {
+      const current = appStatuses[appId] || {};
+      appStatuses[appId] = {
+        ...current,
+        status: (current.status === 'installing' ? 'installing' : 'downloading'),
+        progress: percent,
+        detail: text
+      };
+      const target = document.getElementById(`action_${appId}`);
+      if (target) {
+        const app = appData.apps.find(a => a.id === appId);
+        if (app) target.innerHTML = getActionHtml(app, appStatuses[appId]);
+      }
+    };
+
+    window.onAppDownloaded = function(appId, installerPath) {
+      downloadedCount++;
+      appStatuses[appId] = {
+        status: 'downloaded',
+        progress: 100,
+        detail: '',
+        has_file: true
+      };
+      const target = document.getElementById(`action_${appId}`);
+      if (target) {
+        const app = appData.apps.find(a => a.id === appId);
+        if (app) target.innerHTML = getActionHtml(app, appStatuses[appId]);
+      }
+      updateFooter();
+    };
+
+    window.onOverallProgress = function(done, total, text) {
+      const percent = Math.round((done / total) * 100);
+      document.getElementById('overallProgressFill').style.width = percent + '%';
+      document.getElementById('overallStatusText').textContent = text;
+    };
+
+    window.onDownloadPhaseDone = function(count) {
+      isDownloading = false;
+      const s = appData.strings;
+      const btn = document.getElementById('btnDownloadSelected');
+      btn.textContent = s.btn_download_selected || '📥 Скачать выбранное';
+      btn.className = 'footer-btn btn-primary';
+
+      const statusTpl = s.downloaded_count || 'Скачано: {count}';
+      document.getElementById('overallStatusText').textContent = statusTpl.replace('{count}', count);
+      updateFooter();
+    };
+
+    window.onDownloadCancelled = function() {
+      isDownloading = false;
+      const s = appData.strings;
+      const btn = document.getElementById('btnDownloadSelected');
+      btn.textContent = s.btn_download_selected || '📥 Скачать выбранное';
+      btn.className = 'footer-btn btn-primary';
+      document.getElementById('overallStatusText').textContent = s.log_cancelled || 'Отменено';
+      updateFooter();
+    };
+
+    window.onInstallAllProgress = function(done, total, text) {
+      const percent = Math.round((done / total) * 100);
+      document.getElementById('overallProgressFill').style.width = percent + '%';
+      document.getElementById('overallStatusText').textContent = text;
+    };
+
+    window.onInstallAllDone = function() {
+      const s = appData.strings;
+      document.getElementById('overallProgressFill').style.width = '100%';
+      document.getElementById('overallStatusText').textContent = s.completed || '✅ Завершено';
+      updateFooter();
+    };
+
+    window.onLog = function(msg) {
+      addLog(msg);
+    };
+
+    // ==========================================
+    // Управление вкладками (Приложения / Твики)
+    // ==========================================
+    let currentMainTab = 'apps';
+    let availableUpdates = {};
+    let isCheckingUpdates = false;
+
+    function switchMainTab(tab) {
+      currentMainTab = tab;
+      document.getElementById('tabBtnApps').classList.toggle('active', tab === 'apps');
+      document.getElementById('tabBtnTweaks').classList.toggle('active', tab === 'tweaks');
+
+      const viewApps = document.getElementById('viewApps');
+      const viewTweaks = document.getElementById('viewTweaks');
+      const footer = document.getElementById('mainFooter');
+
+      if (tab === 'apps') {
+        viewApps.style.display = 'flex';
+        viewTweaks.style.display = 'none';
+        footer.style.display = 'flex';
+      } else {
+        viewApps.style.display = 'none';
+        viewTweaks.style.display = 'flex';
+        footer.style.display = 'none';
+        renderTweaks();
+      }
+    }
+
+    // ==========================================
+    // Твики и фичи
+    // ==========================================
+    function renderTweaks() {
+      const container = document.getElementById('tweaksGrid');
+      if (!container) return;
+      container.innerHTML = '';
+      const s = appData.strings;
+      const tweaks = appData.tweaks || [];
+
+      if (tweaks.length === 0) {
+        container.innerHTML = '<div style="color:var(--text-muted); font-size:13px;">Загрузка списка твиков...</div>';
+        return;
+      }
+
+      tweaks.forEach(tw => {
+        const isUnavailable = tw.available === false;
+        const card = document.createElement('div');
+        card.className = 'tweak-card' + (isUnavailable ? ' tweak-card-unavailable' : '');
+        card.id = `tweak_${tw.id}`;
+
+        let btnClass = 'btn-action btn-success';
+        let btnText = s.btn_apply_tweak || 'Включить';
+        let statusText = `⚪ ${s.tweak_not_applied || 'Отключено'}`;
+        let statusClass = 'tweak-status not-applied';
+
+        if (isUnavailable) {
+          btnClass = 'btn-action btn-disabled';
+          btnText = '⚠️ Недоступно';
+          statusText = `⚠️ ${tw.unavailable_reason || 'Не поддерживается на этой системе'}`;
+          statusClass = 'tweak-status unavailable';
+        } else if (tw.type === 'action') {
+          btnClass = 'btn-clean-action';
+          btnText = `🧹 ${s.btn_clean_action || 'Очистить'}`;
+          if (tw.last_result) {
+            statusText = `✅ ${tw.last_result}`;
+            statusClass = 'tweak-status result-badge';
+          } else {
+            statusText = '';
+            statusClass = 'tweak-status';
+          }
+        } else {
+          const isApplied = Boolean(tw.applied);
+          btnClass = isApplied ? 'btn-action btn-danger-outline' : 'btn-action btn-success';
+          btnText = isApplied ? (s.btn_revert_tweak || 'Отключить') : (s.btn_apply_tweak || 'Включить');
+          statusText = isApplied ? `✓ ${s.tweak_applied || 'Включено'}` : `⚪ ${s.tweak_not_applied || 'Отключено'}`;
+          statusClass = isApplied ? 'tweak-status applied' : 'tweak-status not-applied';
+        }
+
+        const disAttr = isUnavailable ? 'disabled' : '';
+        card.innerHTML = `
+          <div class="tweak-top">
+            <div class="tweak-icon-wrap">${tw.icon || '⚡'}</div>
+            <div class="tweak-info">
+              <div class="tweak-title">${tw.name}</div>
+              <div class="tweak-desc">${tw.description}</div>
+            </div>
+          </div>
+          <div class="tweak-bottom">
+            <div class="${statusClass}" id="tweak_status_${tw.id}">${statusText}</div>
+            <button class="${btnClass}" id="tweak_btn_${tw.id}" onclick="handleToggleTweak('${tw.id}')" ${disAttr}>${btnText}</button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    async function handleToggleTweak(tweakId) {
+      const tw = (appData.tweaks || []).find(t => t.id === tweakId);
+      if (!tw) return;
+
+      const btn = document.getElementById(`tweak_btn_${tweakId}`);
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳ ...';
+      }
+
+      try {
+        let res;
+        if (tw.applied) {
+          res = await window.pywebview.api.revert_tweak(tweakId);
+        } else {
+          res = await window.pywebview.api.apply_tweak(tweakId);
+        }
+
+        if (res) {
+          tw.applied = res.applied;
+          if (tw.type === 'action') {
+            tw.last_result = res.message;
+          }
+          addLog(res.message);
+          renderTweaks();
+        }
+      } catch (e) {
+        console.error('Tweak toggle error:', e);
+        addLog(`❌ Ошибка выполнения твика: ${e}`);
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    // ==========================================
+    // Пересканирование установленных программ
+    // ==========================================
+    let isRescanning = false;
+
+    function triggerRescanInstalled() {
+      if (isRescanning) return;
+      if (window.pywebview && window.pywebview.api && window.pywebview.api.rescan_installed_apps) {
+        window.pywebview.api.rescan_installed_apps();
+      }
+    }
+
+    window.onRescanStart = function() {
+      isRescanning = true;
+      const icon = document.getElementById('rescanIcon');
+      if (icon) icon.classList.add('spin-animation');
+      const s = appData.strings || {};
+      showToast(s.rescanning_installed || 'Проверка установленных программ...', 'info', 2500);
+    };
+
+    window.onRescanDone = function(count) {
+      isRescanning = false;
+      const icon = document.getElementById('rescanIcon');
+      if (icon) icon.classList.remove('spin-animation');
+      const s = appData.strings || {};
+      if (count >= 0) {
+        const tpl = s.rescan_completed || 'Проверка завершена: найдено {count} установленных программ';
+        showToast(tpl.replace('{count}', count), 'success', 3500);
+      } else {
+        showToast('Не удалось обновить список установленных программ', 'error');
+      }
+    };
+
+    // ==========================================
+    // Проверка обновлений
+    // ==========================================
+    async function triggerCheckUpdates() {
+      if (isCheckingUpdates) return;
+      isCheckingUpdates = true;
+      const spinner = document.getElementById('updateSpinner');
+      const btnText = document.getElementById('updateBtnText');
+      if (spinner) spinner.style.display = 'inline-block';
+      if (btnText) btnText.textContent = appData.strings.checking_updates || 'Проверка...';
+
+      addLog('🔍 Проверка обновлений через winget и GitHub...');
+      try {
+        window.pywebview.api.check_updates();
+      } catch (e) {
+        console.error('Check updates error:', e);
+        window.onUpdatesChecked({});
+      }
+    }
+
+    window.onUpdateCheckStart = function() {
+      isCheckingUpdates = true;
+      const spinner = document.getElementById('updateSpinner');
+      const btnText = document.getElementById('updateBtnText');
+      if (spinner) spinner.style.display = 'inline-block';
+      if (btnText) btnText.textContent = appData.strings.checking_updates || 'Проверка...';
+    };
+
+    window.onUpdatesChecked = function(updates) {
+      isCheckingUpdates = false;
+      const spinner = document.getElementById('updateSpinner');
+      const btnText = document.getElementById('updateBtnText');
+      const badge = document.getElementById('updateBadge');
+      const banner = document.getElementById('updatesBanner');
+      const bannerText = document.getElementById('updatesBannerText');
+      const qaAll = document.getElementById('qaUpgradeAll');
+      const qaSel = document.getElementById('qaUpgradeSelected');
+
+      if (spinner) spinner.style.display = 'none';
+      if (btnText) btnText.textContent = appData.strings.btn_check_updates || '🔄 Проверить обновления';
+
+      availableUpdates = updates || {};
+      const count = Object.keys(availableUpdates).length;
+
+      if (count > 0) {
+        if (badge) { badge.textContent = count; badge.style.display = 'inline-flex'; }
+        if (banner) banner.style.display = 'flex';
+        if (qaAll) qaAll.style.display = 'block';
+        if (qaSel) qaSel.style.display = 'block';
+        const tpl = (appData.strings && appData.strings.updates_available_banner) || '✨ Доступно обновлений: {count}';
+        if (bannerText) bannerText.textContent = tpl.replace('{count}', count);
+        addLog(`✨ Найдено доступных обновлений: ${count}`);
+      } else {
+        if (badge) badge.style.display = 'none';
+        if (banner) banner.style.display = 'none';
+        if (qaAll) qaAll.style.display = 'none';
+        if (qaSel) qaSel.style.display = 'none';
+        if (activeCategory === 'updates_available') {
+          activeCategory = 'all';
+        }
+        addLog('✅ Все установленные программы имеют последние версии!');
+      }
+
+      renderCategories();
+      renderCards();
+    };
+
+    window.onInstalledAppsDetected = function(installedMap) {
+      if (installedMap && typeof installedMap === 'object') {
+        appData.installed_apps = installedMap;
+        renderCategories();
+        renderCards();
+        const count = Object.keys(installedMap).length;
+        addLog(`Обновлен список установленных программ: ${count} шт.`);
+      }
+    };
+
+    window.onUpdateCompleted = function(appId) {
+      if (availableUpdates[appId]) {
+        delete availableUpdates[appId];
+      }
+      if (!appData.installed_apps) appData.installed_apps = {};
+      appData.installed_apps[appId] = { installed: true };
+
+      const count = Object.keys(availableUpdates).length;
+      if (count === 0 && activeCategory === 'updates_available') {
+        activeCategory = 'all';
+      }
+      renderCategories();
+
+      const badge = document.getElementById('updateBadge');
+      const banner = document.getElementById('updatesBanner');
+      const bannerText = document.getElementById('updatesBannerText');
+      const qaAll = document.getElementById('qaUpgradeAll');
+      const qaSel = document.getElementById('qaUpgradeSelected');
+
+      if (count > 0) {
+        if (badge) { badge.textContent = count; badge.style.display = 'inline-flex'; }
+        if (banner) banner.style.display = 'flex';
+        if (qaAll) qaAll.style.display = 'block';
+        if (qaSel) qaSel.style.display = 'block';
+        const tpl = (appData.strings && appData.strings.updates_available_banner) || '✨ Доступно обновлений: {count}';
+        if (bannerText) bannerText.textContent = tpl.replace('{count}', count);
+      } else {
+        if (badge) badge.style.display = 'none';
+        if (banner) banner.style.display = 'none';
+        if (qaAll) qaAll.style.display = 'none';
+        if (qaSel) qaSel.style.display = 'none';
+      }
+      renderCards();
+    };
+
+    function handleUpgradeAll() {
+      const allIds = Object.keys(availableUpdates);
+      const ignoredSet = new Set(appData.ignored_updates || []);
+      const ids = allIds.filter(id => !ignoredSet.has(id));
+      if (ids.length === 0) {
+        addLog('ℹ️ Нет доступных обновлений (все программы в списке исключений или обновлены).');
+        return;
+      }
+      ids.forEach(id => {
+        appStatuses[id] = { status: 'installing', progress: 0, detail: 'В очереди обновления...' };
+      });
+      renderCards();
+      addLog(`⬆️ Запуск массового обновления ${ids.length} программ...`);
+      window.pywebview.api.upgrade_all(ids);
+    }
+
+    function handleUpgradeSelected() {
+      const s = appData.strings || {};
+      if (selectedApps.size === 0) {
+        const msg = s.select_at_least_one_update || 'Выберите хотя бы одно приложение галочкой для обновления!';
+        showToast(msg, 'warning');
+        const b1 = document.getElementById('btnBannerUpgradeSelected');
+        const b2 = document.getElementById('qaUpgradeSelected');
+        if (b1) { b1.classList.add('btn-shake'); setTimeout(() => b1.classList.remove('btn-shake'), 500); }
+        if (b2) { b2.classList.add('btn-shake'); setTimeout(() => b2.classList.remove('btn-shake'), 500); }
+        return;
+      }
+      const selectedWithUpdates = Array.from(selectedApps).filter(id => Boolean(availableUpdates[id]));
+      if (selectedWithUpdates.length === 0) {
+        const msg = s.no_updates_in_selection || 'Среди выбранных приложений нет доступных обновлений.';
+        showToast(msg, 'warning');
+        return;
+      }
+      selectedWithUpdates.forEach(id => {
+        appStatuses[id] = { status: 'installing', progress: 0, detail: 'В очереди обновления...' };
+      });
+      renderCards();
+      addLog(`⬆️ Запуск обновления выбранных программ (${selectedWithUpdates.length})...`);
+      window.pywebview.api.upgrade_selected(selectedWithUpdates);
+    }
+
+    async function upgradeSingle(appId) {
+      const up = availableUpdates[appId];
+      const name = up ? up.name : appId;
+      addLog(`⬆️ Запуск обновления: ${name}...`);
+      appStatuses[appId] = { status: 'installing', progress: 0, detail: 'Обновление...' };
+      renderCards();
+      try {
+        await window.pywebview.api.upgrade_app(appId);
+      } catch (e) {
+        console.error('Upgrade error:', e);
+      }
+    }
+
+    function openExternalUrl(url) {
+      if (window.pywebview && window.pywebview.api && window.pywebview.api.open_url) {
+        window.pywebview.api.open_url(url);
+      } else {
+        window.open(url, '_blank');
+      }
+    }
+
+  </script>
+
+  <!-- Exclusions Modal -->
+  <div id="exclusionsModal" class="modal-overlay" style="display: none;">
+    <div class="exclusions-modal-card">
+      <div class="exclusions-modal-header">
+        <h3>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span id="exclusionsModalTitle">Исключения из «Обновить все»</span>
+        </h3>
+        <button onclick="closeExclusionsModal()" style="background:none; border:none; color:#888; font-size:18px; cursor:pointer;">✕</button>
+      </div>
+      <div style="padding: 10px 20px 4px 20px; font-size: 12px; color: var(--text-muted);" id="exclusionsModalDesc">
+        Отмеченные программы будут пропускаться при массовом обновлении. Вы всегда сможете обновить их вручную.
+      </div>
+      <div class="exclusions-list" id="exclusionsListContainer"></div>
+      <div style="padding: 12px 20px; border-top: 1px solid #333; display: flex; justify-content: flex-end;">
+        <button class="btn-action btn-primary" onclick="closeExclusionsModal()" style="padding: 6px 16px;">Готово</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="appToast" class="toast-container">
+    <span id="toastIcon" class="toast-icon">⚠️</span>
+    <span id="toastMessage" class="toast-message"></span>
+  </div>
+
+</body>
+</html>
