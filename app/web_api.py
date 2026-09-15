@@ -27,6 +27,13 @@ from app.detector import detect_installed_apps, uninstall_app
 from app.downloader import Downloader, DownloadResult
 from app.i18n import STRINGS, CATEGORY_NAMES, i18n
 from app.installer import Installer, InstallResult, get_desktop_path, get_exe_dir
+from app.metro import (
+    get_all_metro_apps,
+    remove_metro_app_by_id,
+    restore_metro_app_by_id,
+    remove_batch_metro,
+    restore_batch_metro,
+)
 from app.settings import (
     get_ignored_update_apps,
     load_settings,
@@ -145,6 +152,7 @@ class AppBridge:
             "installed_apps": installed_map,
             "installed": list(installed_map.keys()),
             "tweaks": get_all_tweaks(user_lang),
+            "metro_apps": get_all_metro_apps(user_lang),
             "ignored_updates": ignored_update_ids,
             "system_info": system_info,
             "settings": settings,
@@ -173,6 +181,7 @@ class AppBridge:
             "lang": new_lang,
             "strings": STRINGS.get(new_lang, STRINGS["ru"]),
             "tweaks": get_all_tweaks(new_lang),
+            "metro_apps": get_all_metro_apps(new_lang),
         }
 
     def refresh_installed(self) -> list[str]:
@@ -545,6 +554,30 @@ class AppBridge:
 
     def revert_tweak(self, tweak_id: str) -> dict[str, Any]:
         return revert_tweak_by_id(tweak_id)
+
+    # ==========================================
+    # Metro / UWP приложения Windows
+    # ==========================================
+
+    def get_metro_apps(self) -> list[dict[str, Any]]:
+        """Возвращает список всех Metro приложений со статусом установки."""
+        return get_all_metro_apps(i18n.lang)
+
+    def remove_metro_app(self, app_id: str) -> dict[str, Any]:
+        """Удаляет одно Metro приложение."""
+        return remove_metro_app_by_id(app_id)
+
+    def restore_metro_app(self, app_id: str) -> dict[str, Any]:
+        """Восстанавливает одно Metro приложение."""
+        return restore_metro_app_by_id(app_id)
+
+    def remove_selected_metro(self, app_ids: list[str]) -> list[dict[str, Any]]:
+        """Пакетное удаление выбранных Metro приложений."""
+        return remove_batch_metro(app_ids)
+
+    def restore_selected_metro(self, app_ids: list[str]) -> list[dict[str, Any]]:
+        """Пакетное восстановление выбранных Metro приложений."""
+        return restore_batch_metro(app_ids)
 
     # ==========================================
     # Потоковое обновление и проверка версий

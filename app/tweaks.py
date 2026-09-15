@@ -89,6 +89,19 @@ def _is_torrent_available() -> bool:
 # 1. ТВИК: Отключение рекламы в uTorrent и BitTorrent
 # ==========================================
 
+_TORRENT_AD_KEYS = [
+    b"offers.left_rail_offer_enabled",
+    b"offers.sponsored_torrent_offer_enabled",
+    b"gui.show_plus_upsell",
+    b"gui.show_notices",
+    b"offers.content_offer_autoexec",
+    b"bt.enable_pulse",
+    b"offers.featured_content_badge_enabled",
+    b"offers.featured_content_notifications_enabled",
+    b"offers.featured_content_rss_enabled",
+]
+
+
 def _check_torrent_ads_applied() -> bool:
     appdata = os.environ.get("APPDATA", "")
     checked_any = False
@@ -98,9 +111,11 @@ def _check_torrent_ads_applied() -> bool:
             checked_any = True
             try:
                 data = settings_file.read_bytes()
+                # Если хотя бы один флаг рекламы активен (i1e) — твик не применен
                 if b"offers.left_rail_offer_enabledi1e" in data or b"offers.sponsored_torrent_offer_enabledi1e" in data:
                     return False
-                if b"offers.left_rail_offer_enabledi0e" in data and b"offers.sponsored_torrent_offer_enabledi0e" in data:
+                # Если флаг явно выключен (i0e) — считаем примененным
+                if b"offers.left_rail_offer_enabledi0e" in data:
                     continue
                 return False
             except Exception:
@@ -113,34 +128,33 @@ def _apply_torrent_ads() -> tuple[bool, str]:
     for proc in ["bittorrent.exe", "utorrent.exe"]:
         subprocess.run(["taskkill", "/F", "/IM", proc], capture_output=True, creationflags=NO_WINDOW)
 
-    ad_keys = [
-        b"offers.left_rail_offer_enabled",
-        b"offers.sponsored_torrent_offer_enabled",
-        b"gui.show_plus_upsell",
-        b"gui.show_notices",
-        b"offers.content_offer_autoexec",
-        b"bt.enable_pulse",
-        b"offers.featured_content_badge_enabled",
-        b"offers.featured_content_notifications_enabled",
-        b"offers.featured_content_rss_enabled",
-    ]
-
     found_clients = []
     for client in ["BitTorrent", "uTorrent"]:
         c_dir = Path(appdata) / client
         settings_file = c_dir / "settings.dat"
         if settings_file.exists():
-            bak_file = c_dir / "settings.dat.bak"
             try:
-                shutil.copy2(settings_file, bak_file)
                 data = settings_file.read_bytes()
+                # Бэкап создаем только если в исходнике реклама еще не была выключена
+                bak_file = c_dir / "settings.dat.bak"
+                if b"offers.left_rail_offer_enabledi1e" in data:
+                    shutil.copy2(settings_file, bak_file)
+
                 new_data = data
-                for k in ad_keys:
+                for k in _TORRENT_AD_KEYS:
                     new_data = new_data.replace(k + b"i1e", k + b"i0e")
                 settings_file.write_bytes(new_data)
+
+                old_file = c_dir / "settings.dat.old"
+                if old_file.exists():
+                    old_data = old_file.read_bytes()
+                    for k in _TORRENT_AD_KEYS:
+                        old_data = old_data.replace(k + b"i1e", k + b"i0e")
+                    old_file.write_bytes(old_data)
+
                 found_clients.append(client)
             except Exception as e:
-                return False, f"Ошибка записи {client}: {e}"
+                return False, f"Ошибка записи настроек {client}: {e}"
 
     if not found_clients:
         return False, "Клиенты BitTorrent или uTorrent не найдены в системе."
@@ -157,25 +171,51 @@ def _revert_torrent_ads() -> tuple[bool, str]:
         c_dir = Path(appdata) / client
         settings_file = c_dir / "settings.dat"
         bak_file = c_dir / "settings.dat.bak"
+
+        # Проверяем, валиден ли бэкап (содержит ли включенную рекламу)
+        valid_bak = False
         if bak_file.exists():
             try:
-                shutil.copy2(bak_file, settings_file)
-                restored.append(client)
+                bdata = bak_file.read_bytes()
+                if b"offers.left_rail_offer_enabledi1e" in bdata:
+                    valid_bak = True
+                else:
+                    bak_file.unlink(missing_ok=True)
             except Exception:
                 pass
-        elif settings_file.exists():
+
+        if valid_bak:
+            try:
+                shutil.copy2(bak_file, settings_file)
+                bak_file.unlink(missing_ok=True)
+                restored.append(client)
+                continue
+            except Exception:
+                pass
+
+        # Если бэкапа нет или он был поврежден — напрямую переключаем все ключи в i1e
+        if settings_file.exists():
             try:
                 data = settings_file.read_bytes()
-                data = data.replace(b"offers.left_rail_offer_enabledi0e", b"offers.left_rail_offer_enabledi1e")
-                data = data.replace(b"offers.sponsored_torrent_offer_enabledi0e", b"offers.sponsored_torrent_offer_enabledi1e")
-                settings_file.write_bytes(data)
+                new_data = data
+                for k in _TORRENT_AD_KEYS:
+                    new_data = new_data.replace(k + b"i0e", k + b"i1e")
+                settings_file.write_bytes(new_data)
+
+                old_file = c_dir / "settings.dat.old"
+                if old_file.exists():
+                    old_data = old_file.read_bytes()
+                    for k in _TORRENT_AD_KEYS:
+                        old_data = old_data.replace(k + b"i0e", k + b"i1e")
+                    old_file.write_bytes(old_data)
+
                 restored.append(client)
             except Exception:
                 pass
 
     if not restored:
-        return False, "Резервные копии настроек не найдены."
-    return True, f"Настройки по умолчанию восстановлены для: {', '.join(restored)}."
+        return False, "Клиенты BitTorrent или uTorrent не найдены."
+    return True, f"Оригинальные настройки рекламы восстановлены для: {', '.join(restored)}."
 
 
 # ==========================================
@@ -514,6 +554,133 @@ def _clean_telegram_cache() -> tuple[bool, str]:
 
 
 # ==========================================
+# 8. ТВИК: Отключение индексации (Windows Search) для SSD
+# ==========================================
+
+_WSEARCH_KEY = r"SYSTEM\CurrentControlSet\Services\WSearch"
+
+
+def _check_indexing_disabled() -> bool:
+    try:
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, _WSEARCH_KEY) as key:
+            val, _ = winreg.QueryValueEx(key, "Start")
+            return val == 4
+    except Exception:
+        try:
+            res = subprocess.run(["sc.exe", "qc", "WSearch"], capture_output=True, text=True, creationflags=NO_WINDOW)
+            return "DISABLED" in res.stdout.upper()
+        except Exception:
+            return False
+
+
+def _apply_indexing_disabled() -> tuple[bool, str]:
+    try:
+        subprocess.run(["sc.exe", "stop", "WSearch"], capture_output=True, creationflags=NO_WINDOW)
+        res = subprocess.run(["sc.exe", "config", "WSearch", "start=disabled"], capture_output=True, text=True, creationflags=NO_WINDOW)
+        if res.returncode == 0 or _check_indexing_disabled():
+            return True, "Служба индексации (Windows Search) отключена. Нагрузка на SSD снижена!"
+        cmd = "sc.exe stop WSearch && sc.exe config WSearch start=disabled"
+        ret = ctypes.windll.shell32.ShellExecuteW(None, "runas", "cmd.exe", f"/c {cmd}", None, 0)
+        if ret > 32:
+            return True, "Запрос на отключение службы индексации отправлен с правами Администратора."
+        return False, "Не удалось изменить конфигурацию службы (требуются права администратора)."
+    except Exception as e:
+        return False, f"Ошибка отключения индексации: {e}"
+
+
+def _revert_indexing_disabled() -> tuple[bool, str]:
+    try:
+        res = subprocess.run(["sc.exe", "config", "WSearch", "start=delayed-auto"], capture_output=True, text=True, creationflags=NO_WINDOW)
+        subprocess.run(["sc.exe", "start", "WSearch"], capture_output=True, creationflags=NO_WINDOW)
+        if res.returncode == 0 or not _check_indexing_disabled():
+            return True, "Служба индексации (Windows Search) включена в автозапуск и запущена."
+        cmd = "sc.exe config WSearch start=delayed-auto && sc.exe start WSearch"
+        ret = ctypes.windll.shell32.ShellExecuteW(None, "runas", "cmd.exe", f"/c {cmd}", None, 0)
+        if ret > 32:
+            return True, "Запрос на включение службы индексации отправлен с правами Администратора."
+        return False, "Не удалось запустить службу индексации."
+    except Exception as e:
+        return False, f"Ошибка включения индексации: {e}"
+
+
+# ==========================================
+# 9. ТВИК: Скрыть строку поиска на панели задач
+# ==========================================
+
+_SEARCHBOX_KEY = r"Software\Microsoft\Windows\CurrentVersion\Search"
+
+
+def _check_taskbar_search_hidden() -> bool:
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, _SEARCHBOX_KEY) as key:
+            val, _ = winreg.QueryValueEx(key, "SearchboxTaskbarMode")
+            return val == 0
+    except Exception:
+        return False
+
+
+def _apply_taskbar_search_hidden() -> tuple[bool, str]:
+    try:
+        with winreg.CreateKey(winreg.HKEY_CURRENT_USER, _SEARCHBOX_KEY) as key:
+            winreg.SetValueEx(key, "SearchboxTaskbarMode", 0, winreg.REG_DWORD, 0)
+        _restart_explorer()
+        return True, "Строка поиска на панели задач скрыта."
+    except Exception as e:
+        return False, f"Ошибка изменения реестра: {e}"
+
+
+def _revert_taskbar_search_hidden() -> tuple[bool, str]:
+    try:
+        with winreg.CreateKey(winreg.HKEY_CURRENT_USER, _SEARCHBOX_KEY) as key:
+            default_val = 1 if _is_win11() else 2
+            winreg.SetValueEx(key, "SearchboxTaskbarMode", 0, winreg.REG_DWORD, default_val)
+        _restart_explorer()
+        return True, "Отображение поиска на панели задач восстановлено."
+    except Exception as e:
+        return False, f"Ошибка изменения реестра: {e}"
+
+
+# ==========================================
+# 10. ТВИК: Кнопка Пуск и значки панели задач слева (Windows 11)
+# ==========================================
+
+_EXPLORER_ADV_KEY = r"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"
+
+
+def _check_taskbar_align_left() -> bool:
+    if not _is_win11():
+        return True
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, _EXPLORER_ADV_KEY) as key:
+            val, _ = winreg.QueryValueEx(key, "TaskbarAl")
+            return val == 0
+    except Exception:
+        return False
+
+
+def _apply_taskbar_align_left() -> tuple[bool, str]:
+    if not _is_win11():
+        return False, "Панель задач уже выровнена по левому краю в этой версии Windows."
+    try:
+        with winreg.CreateKey(winreg.HKEY_CURRENT_USER, _EXPLORER_ADV_KEY) as key:
+            winreg.SetValueEx(key, "TaskbarAl", 0, winreg.REG_DWORD, 0)
+        return True, "Кнопка «Пуск» и значки перемещены в левый угол панели задач."
+    except Exception as e:
+        return False, f"Ошибка изменения реестра: {e}"
+
+
+def _revert_taskbar_align_left() -> tuple[bool, str]:
+    if not _is_win11():
+        return False, "Действие доступно только в Windows 11."
+    try:
+        with winreg.CreateKey(winreg.HKEY_CURRENT_USER, _EXPLORER_ADV_KEY) as key:
+            winreg.SetValueEx(key, "TaskbarAl", 0, winreg.REG_DWORD, 1)
+        return True, "Панель задач возвращена в центр."
+    except Exception as e:
+        return False, f"Ошибка изменения реестра: {e}"
+
+
+# ==========================================
 # РЕЕСТР ВСЕХ ТВproperties
 # ==========================================
 
@@ -551,6 +718,48 @@ TWEAKS: list[TweakEntry] = [
         unavailable_reason_en="Available on Windows 11 only",
     ),
     TweakEntry(
+        id="taskbar_align_left",
+        name="Кнопка «Пуск» слева (как в Windows 10)",
+        name_en="Align Start Button to Left",
+        description="Перемещает кнопку «Пуск» и значки панели задач в левый угол, возвращая привычный классический вид Windows 10.",
+        description_en="Moves the Start button and taskbar icons to the left corner, restoring the classic Windows 10 layout.",
+        category="system",
+        icon="📌",
+        is_applied=_check_taskbar_align_left,
+        apply=_apply_taskbar_align_left,
+        revert=_revert_taskbar_align_left,
+        type="toggle",
+        is_available=_is_win11,
+        unavailable_reason="Доступно только в Windows 11",
+        unavailable_reason_en="Available on Windows 11 only",
+    ),
+    TweakEntry(
+        id="hide_taskbar_search",
+        name="Скрыть строку поиска на панели задач",
+        name_en="Hide Taskbar Search Box",
+        description="Убирает громоздкое поле поиска с панели задач, освобождая полезное место для открытых окон и программ.",
+        description_en="Hides the bulky search box from the taskbar, freeing up space for active window icons.",
+        category="system",
+        icon="🔍",
+        is_applied=_check_taskbar_search_hidden,
+        apply=_apply_taskbar_search_hidden,
+        revert=_revert_taskbar_search_hidden,
+        type="toggle",
+    ),
+    TweakEntry(
+        id="disable_indexing_ssd",
+        name="Отключение службы индексации (для SSD)",
+        name_en="Disable Search Indexing (for SSD)",
+        description="Отключает постоянное фоновое чтение и запись индексатора Windows Search. Продлевает ресурс ячеек SSD (TBW) и снижает нагрузку на CPU.",
+        description_en="Disables background Windows Search indexing service to preserve SSD write endurance (TBW) and reduce background CPU usage.",
+        category="perf",
+        icon="⚡",
+        is_applied=_check_indexing_disabled,
+        apply=_apply_indexing_disabled,
+        revert=_revert_indexing_disabled,
+        type="toggle",
+    ),
+    TweakEntry(
         id="show_file_ext",
         name="Отображение расширений файлов",
         name_en="Show File Extensions",
@@ -570,7 +779,7 @@ TWEAKS: list[TweakEntry] = [
         description="Активирует скрытую схему питания от Microsoft, отключающую задержки троттлинга процессора для максимального отклика в играх.",
         description_en="Activates Microsoft hidden Ultimate Performance plan to minimize CPU latencies.",
         category="perf",
-        icon="⚡",
+        icon="🚀",
         is_applied=_check_ultimate_perf,
         apply=_apply_ultimate_perf,
         revert=_revert_ultimate_perf,

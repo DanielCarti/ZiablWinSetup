@@ -18,6 +18,19 @@ window.__INIT_DATA__ = {
     "cat_office": "Офис и документы",
     "tab_apps": "Приложения",
     "tab_tweaks": "Твики и фичи",
+    "tab_metro": "Metro приложения",
+    "metro_title": "Встроенные Metro / UWP приложения Windows",
+    "metro_subtitle": "Предустановленный системный софт. Удаляйте ненужные встроенные программы и восстанавливайте их в один клик.",
+    "metro_status_installed": "Установлено",
+    "metro_status_removed": "Удалено",
+    "metro_btn_remove": "Удалить",
+    "metro_btn_restore": "Восстановить",
+    "metro_btn_remove_selected": "Удалить выбранные",
+    "metro_btn_restore_selected": "Восстановить выбранные",
+    "metro_count_installed": "Установлено: {installed} из {total}",
+    "metro_select_all": "Выбрать все",
+    "metro_deselect_all": "Снять все",
+    "metro_confirm_remove": "Вы действительно хотите удалить выбранные Metro-приложения ({count} шт.)?",
     "btn_check_updates": "Проверить обновления",
     "checking_updates": "Проверка обновлений...",
     "btn_rescan_installed": "Проверить установленное",
@@ -121,6 +134,19 @@ window.__INIT_DATA__ = {
       "cat_office": "Офис и документы",
       "tab_apps": "Приложения",
       "tab_tweaks": "Твики и фичи",
+      "tab_metro": "Metro приложения",
+      "metro_title": "Встроенные Metro / UWP приложения Windows",
+      "metro_subtitle": "Предустановленный системный софт. Удаляйте ненужные встроенные программы и восстанавливайте их в один клик.",
+      "metro_status_installed": "Установлено",
+      "metro_status_removed": "Удалено",
+      "metro_btn_remove": "Удалить",
+      "metro_btn_restore": "Восстановить",
+      "metro_btn_remove_selected": "Удалить выбранные",
+      "metro_btn_restore_selected": "Восстановить выбранные",
+      "metro_count_installed": "Установлено: {installed} из {total}",
+      "metro_select_all": "Выбрать все",
+      "metro_deselect_all": "Снять все",
+      "metro_confirm_remove": "Вы действительно хотите удалить выбранные Metro-приложения ({count} шт.)?",
       "btn_check_updates": "Проверить обновления",
       "checking_updates": "Проверка обновлений...",
       "btn_rescan_installed": "Проверить установленное",
@@ -223,6 +249,19 @@ window.__INIT_DATA__ = {
       "cat_office": "Office & Docs",
       "tab_apps": "Apps",
       "tab_tweaks": "Tweaks & Features",
+      "tab_metro": "Metro Apps",
+      "metro_title": "Built-in Windows Metro / UWP Apps",
+      "metro_subtitle": "Pre-installed system applications. Uninstall unwanted software and restore apps in a single click.",
+      "metro_status_installed": "Installed",
+      "metro_status_removed": "Uninstalled",
+      "metro_btn_remove": "Uninstall",
+      "metro_btn_restore": "Restore",
+      "metro_btn_remove_selected": "Uninstall Selected",
+      "metro_btn_restore_selected": "Restore Selected",
+      "metro_count_installed": "Installed: {installed} of {total}",
+      "metro_select_all": "Select All",
+      "metro_deselect_all": "Deselect All",
+      "metro_confirm_remove": "Are you sure you want to remove the selected Metro apps ({count})?",
       "btn_check_updates": "Check for Updates",
       "checking_updates": "Checking updates...",
       "btn_rescan_installed": "Re-scan Installed",
@@ -1193,6 +1232,39 @@ window.__INIT_DATA__ = {
       "type": "toggle"
     },
     {
+      "id": "taskbar_align_left",
+      "name": "Кнопка «Пуск» слева (как в Windows 10)",
+      "description": "Перемещает кнопку «Пуск» и значки панели задач в левый угол, возвращая привычный классический вид Windows 10.",
+      "category": "system",
+      "icon": "📌",
+      "applied": false,
+      "available": true,
+      "unavailable_reason": "",
+      "type": "toggle"
+    },
+    {
+      "id": "hide_taskbar_search",
+      "name": "Скрыть строку поиска на панели задач",
+      "description": "Убирает громоздкое поле поиска с панели задач, освобождая полезное место для открытых окон и программ.",
+      "category": "system",
+      "icon": "🔍",
+      "applied": false,
+      "available": true,
+      "unavailable_reason": "",
+      "type": "toggle"
+    },
+    {
+      "id": "disable_indexing_ssd",
+      "name": "Отключение службы индексации (для SSD)",
+      "description": "Отключает постоянное фоновое чтение и запись индексатора Windows Search. Продлевает ресурс ячеек SSD (TBW) и снижает нагрузку на CPU.",
+      "category": "perf",
+      "icon": "⚡",
+      "applied": false,
+      "available": true,
+      "unavailable_reason": "",
+      "type": "toggle"
+    },
+    {
       "id": "show_file_ext",
       "name": "Отображение расширений файлов",
       "description": "Показывает реальные расширения файлов (.exe, .bat, .zip) в Проводнике Windows для безопасности и защиты от вирусов.",
@@ -1208,7 +1280,7 @@ window.__INIT_DATA__ = {
       "name": "Схема «Максимальная производительность»",
       "description": "Активирует скрытую схему питания от Microsoft, отключающую задержки троттлинга процессора для максимального отклика в играх.",
       "category": "perf",
-      "icon": "⚡",
+      "icon": "🚀",
       "applied": false,
       "available": true,
       "unavailable_reason": "",
@@ -1246,6 +1318,197 @@ window.__INIT_DATA__ = {
       "available": true,
       "unavailable_reason": "",
       "type": "action"
+    }
+  ],
+  "metro_apps": [
+    {
+      "id": "weather",
+      "name": "MSN Погода",
+      "description": "Прогноз погоды, карты осадков и виджеты от Microsoft.",
+      "icon": "🌤️",
+      "store_id": "9WZDNCRFJ3Q2",
+      "can_remove": true,
+      "installed": false
+    },
+    {
+      "id": "news",
+      "name": "Microsoft Новости",
+      "description": "Новостная лента MSN и встроенный контент виджетов Windows.",
+      "icon": "📰",
+      "store_id": "9WZDNCRFHVFW",
+      "can_remove": true,
+      "installed": false
+    },
+    {
+      "id": "camera",
+      "name": "Камера Windows",
+      "description": "Стандартное UWP-приложение для веб-камеры и съемки фото/видео.",
+      "icon": "📷",
+      "store_id": "9WZDNCRFJBBG",
+      "can_remove": true,
+      "installed": false
+    },
+    {
+      "id": "maps",
+      "name": "Карты Windows",
+      "description": "Встроенные оффлайн-карты, навигация и геолокация от Microsoft.",
+      "icon": "🗺️",
+      "store_id": "9WZDNCRBXB69",
+      "can_remove": true,
+      "installed": false
+    },
+    {
+      "id": "sound_recorder",
+      "name": "Запись голоса (Диктофон)",
+      "description": "Базовое приложение записи звука и заметок с микрофона.",
+      "icon": "🎙️",
+      "store_id": "9WZDNCRFHWKN",
+      "can_remove": true,
+      "installed": false
+    },
+    {
+      "id": "phone_link",
+      "name": "Связь с телефоном (Phone Link)",
+      "description": "Синхронизация звонков, SMS и уведомлений со смартфона Android/iOS.",
+      "icon": "📱",
+      "store_id": "9NBLGGH4VST9",
+      "can_remove": true,
+      "installed": false
+    },
+    {
+      "id": "feedback_hub",
+      "name": "Центр отзывов (Feedback Hub)",
+      "description": "Отправка диагностических отчетов и предложений в Microsoft.",
+      "icon": "💬",
+      "store_id": "9NBLGGH4R32N",
+      "can_remove": true,
+      "installed": false
+    },
+    {
+      "id": "get_help",
+      "name": "Техническая поддержка (Get Help)",
+      "description": "Справка и виртуальный агент службы поддержки Microsoft.",
+      "icon": "❓",
+      "store_id": "9PKDZBMV1H3T",
+      "can_remove": true,
+      "installed": false
+    },
+    {
+      "id": "tips",
+      "name": "Советы Windows (Tips)",
+      "description": "Обучающие подсказки и руководство по функциям Windows.",
+      "icon": "💡",
+      "store_id": "9WZDNCRFJBDG",
+      "can_remove": true,
+      "installed": false
+    },
+    {
+      "id": "solitaire",
+      "name": "Пасьянсы (Solitaire Collection)",
+      "description": "Предустановленная карточная игра (Косынка, Паук, Солитер) со встроенной рекламой.",
+      "icon": "🃏",
+      "store_id": "9WZDNCRFHWD2",
+      "can_remove": true,
+      "installed": false
+    },
+    {
+      "id": "zune_video",
+      "name": "Кино и ТВ (Movies & TV)",
+      "description": "Встроенный UWP-плеер видеофайлов и магазин фильмов.",
+      "icon": "🎬",
+      "store_id": "9WZDNCRFJ3P2",
+      "can_remove": true,
+      "installed": false
+    },
+    {
+      "id": "zune_music",
+      "name": "Windows Медиаплеер (Groove)",
+      "description": "Стандартный музыкальный проигрыватель Windows 11.",
+      "icon": "🎵",
+      "store_id": "9WZDNCRFJ3PT",
+      "can_remove": true,
+      "installed": false
+    },
+    {
+      "id": "xbox_overlay",
+      "name": "Xbox Game Bar",
+      "description": "Игровой оверлей Windows (Win+G): запись экрана, виджеты и мониторинг FPS.",
+      "icon": "🎮",
+      "store_id": "9NZKPSTSNW4P",
+      "can_remove": true,
+      "installed": false
+    },
+    {
+      "id": "xbox_app",
+      "name": "Приложение Xbox",
+      "description": "Клиент сервиса Xbox Game Pass и облачных игр.",
+      "icon": "🎯",
+      "store_id": "9MV0B5HZVK9Z",
+      "can_remove": true,
+      "installed": false
+    },
+    {
+      "id": "cortana",
+      "name": "Cortana (Кортана)",
+      "description": "Устаревший голосовой ассистент от Microsoft.",
+      "icon": "⭕",
+      "store_id": "9NBLGGH4NS1M",
+      "can_remove": true,
+      "installed": false
+    },
+    {
+      "id": "paint_3d",
+      "name": "Paint 3D",
+      "description": "Редактор трехмерных моделей и графики.",
+      "icon": "🧊",
+      "store_id": "9NBLGGH5FV99",
+      "can_remove": true,
+      "installed": false
+    },
+    {
+      "id": "sticky_notes",
+      "name": "Записки (Sticky Notes)",
+      "description": "Быстрые цветные стикеры-заметки на Рабочем столе.",
+      "icon": "📝",
+      "store_id": "9NBLGGH4QGHW",
+      "can_remove": true,
+      "installed": false
+    },
+    {
+      "id": "alarms",
+      "name": "Часы и будильники",
+      "description": "Таймеры, секундомер, будильники и мировое время.",
+      "icon": "⏰",
+      "store_id": "9WZDNCRFJ3PR",
+      "can_remove": true,
+      "installed": false
+    },
+    {
+      "id": "calculator",
+      "name": "Калькулятор Windows",
+      "description": "Встроенный калькулятор с инженерным режимом и конвертером валют.",
+      "icon": "🔢",
+      "store_id": "9WZDNCRFHVN5",
+      "can_remove": true,
+      "installed": false
+    },
+    {
+      "id": "clipchamp",
+      "name": "Clipchamp (Видеоредактор)",
+      "description": "Встроенный в Windows 11 онлайн/UWP редактор видеоклипов.",
+      "icon": "✂️",
+      "store_id": "9P1J8S7CCWWT",
+      "can_remove": true,
+      "installed": false
+    },
+    {
+      "id": "people",
+      "name": "Люди (Контакты)",
+      "description": "Интеграция адресной книги и контактов Windows.",
+      "icon": "👥",
+      "store_id": "9NBLGGH10PG8",
+      "can_remove": true,
+      "installed": false
     }
   ],
   "ignored_updates": [

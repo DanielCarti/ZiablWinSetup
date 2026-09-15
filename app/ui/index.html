@@ -1191,6 +1191,134 @@
       opacity: 0.72;
     }
 
+    /* Metro Apps Grid & Tiles */
+    .metro-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+      padding-bottom: 30px;
+    }
+
+    .metro-tile {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+      position: relative;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      cursor: default;
+    }
+
+    .metro-tile:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(255, 255, 255, 0.18);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+    }
+
+    .metro-tile.is-removed {
+      opacity: 0.65;
+      border-style: dashed;
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .metro-tile.is-removed:hover {
+      opacity: 0.92;
+    }
+
+    .metro-tile-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .metro-tile-icon {
+      font-size: 28px;
+      width: 44px;
+      height: 44px;
+      min-width: 44px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .metro-tile-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .metro-tile-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .metro-tile-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      line-height: 1.35;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .metro-tile-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      padding-top: 12px;
+      margin-top: 2px;
+    }
+
+    .metro-badge-installed {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #4ade80;
+      background: rgba(74, 222, 128, 0.12);
+      border: 1px solid rgba(74, 222, 128, 0.3);
+      border-radius: 12px;
+      padding: 1px 8px;
+    }
+
+    .metro-badge-removed {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #94a3b8;
+      background: rgba(148, 163, 184, 0.1);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: 12px;
+      padding: 1px 8px;
+    }
+
+    .metro-counter-badge {
+      font-size: 12px;
+      font-weight: 600;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 4px 12px;
+      border-radius: 20px;
+    }
+
     /* Modern vector SVG icons for categories and quick actions */
     .cat-item-content {
       display: flex;
@@ -1373,6 +1501,10 @@
           <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
           <span class="tab-label">Твики и фичи</span>
         </button>
+        <button class="tab-btn" id="tabBtnMetro" onclick="switchMainTab('metro')">
+          <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          <span class="tab-label">Metro приложения</span>
+        </button>
       </div>
 
       <button class="btn-check-updates" id="btnCheckUpdates" onclick="triggerCheckUpdates()" title="Проверить обновления установленных программ">
@@ -1477,6 +1609,24 @@
         <p style="font-size: 13px; color: var(--text-muted);" id="tweaksSubtitle">Полезные системные настройки Windows и оптимизации программ в один клик.</p>
       </div>
       <div class="tweaks-grid" id="tweaksGrid"></div>
+    </div>
+
+    <!-- View 3: Metro / UWP Apps view -->
+    <div id="viewMetro" style="display: none; flex: 1; min-height: 0; width: 100%; flex-direction: column; overflow-y: auto; padding: 24px 32px; background: var(--bg-app);">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <h2 style="font-size: 20px; font-weight: 600; margin-bottom: 4px;" id="metroTitle">🪟 Встроенные Metro / UWP приложения Windows</h2>
+          <p style="font-size: 13px; color: var(--text-muted);" id="metroSubtitle">Удаляйте ненужные встроенные программы и восстанавливайте нужные в один клик.</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <div class="metro-counter-badge" id="metroCounterBadge">Установлено: 0 из 0</div>
+          <button class="btn-action btn-outline" id="btnMetroSelectAll" onclick="toggleAllMetroSelection(true)" style="height: 32px; font-size: 12px; padding: 0 10px;">Выбрать все</button>
+          <button class="btn-action btn-outline" id="btnMetroDeselectAll" onclick="toggleAllMetroSelection(false)" style="height: 32px; font-size: 12px; padding: 0 10px;">Снять все</button>
+          <button class="btn-action btn-danger-outline" id="btnMetroRemoveSelected" onclick="handleRemoveSelectedMetro()" style="height: 32px; font-size: 12px; padding: 0 12px;">🗑️ Удалить выбранные</button>
+          <button class="btn-action btn-primary" id="btnMetroRestoreSelected" onclick="handleRestoreSelectedMetro()" style="height: 32px; font-size: 12px; padding: 0 12px;">↩️ Восстановить выбранные</button>
+        </div>
+      </div>
+      <div class="metro-grid" id="metroGrid"></div>
     </div>
   </div>
 
@@ -1619,9 +1769,11 @@
           if (data.system_info) appData.system_info = data.system_info;
           if (data.installed_apps) appData.installed_apps = data.installed_apps;
           if (data.tweaks) appData.tweaks = data.tweaks;
+          if (data.metro_apps) appData.metro_apps = data.metro_apps;
         }
         initAppDefaults();
         if (currentMainTab === 'tweaks') renderTweaks();
+        if (currentMainTab === 'metro') renderMetro();
         const instCount = Object.keys(appData.installed_apps || {}).length;
         addLog(`Система готова. Всего программ: ${appData.apps.length}, обнаружено установленных в Windows: ${instCount}`);
       } catch (e) {
@@ -1705,6 +1857,26 @@
       if (btnBUpAll) btnBUpAll.textContent = s.btn_upgrade_all || '⬆️ Обновить все';
       const btnBUpSel = document.getElementById('btnBannerUpgradeSelected');
       if (btnBUpSel) btnBUpSel.textContent = s.btn_upgrade_selected || '⬆️ Обновить выбранные';
+
+      // Metro translation
+      const tabMetro = document.getElementById('tabBtnMetro');
+      if (tabMetro) {
+        const lbl = tabMetro.querySelector('.tab-label');
+        if (lbl) lbl.textContent = (s.tab_metro || 'Metro приложения').replace(/^[^\w\u0400-\u04FF]+\s*/, '').trim();
+        else tabMetro.textContent = s.tab_metro || 'Metro приложения';
+      }
+      const metroTitle = document.getElementById('metroTitle');
+      if (metroTitle) metroTitle.textContent = s.metro_title || '🪟 Встроенные Metro / UWP приложения Windows';
+      const metroSub = document.getElementById('metroSubtitle');
+      if (metroSub) metroSub.textContent = s.metro_subtitle || 'Удаляйте ненужные встроенные программы и восстанавливайте нужные в один клик.';
+      const btnMSelAll = document.getElementById('btnMetroSelectAll');
+      if (btnMSelAll) btnMSelAll.textContent = s.metro_select_all || 'Выбрать все';
+      const btnMDeselAll = document.getElementById('btnMetroDeselectAll');
+      if (btnMDeselAll) btnMDeselAll.textContent = s.metro_deselect_all || 'Снять все';
+      const btnMRemSel = document.getElementById('btnMetroRemoveSelected');
+      if (btnMRemSel) btnMRemSel.textContent = `🗑️ ${s.metro_btn_remove_selected || 'Удалить выбранные'}`;
+      const btnMResSel = document.getElementById('btnMetroRestoreSelected');
+      if (btnMResSel) btnMResSel.textContent = `↩️ ${s.metro_btn_restore_selected || 'Восстановить выбранные'}`;
     }
 
     async function toggleLanguage() {
@@ -1715,6 +1887,7 @@
             appData.lang = res.lang || (appData.lang === 'ru' ? 'en' : 'ru');
             if (res.strings) appData.strings = res.strings;
             if (res.tweaks) appData.tweaks = res.tweaks;
+            if (res.metro_apps) appData.metro_apps = res.metro_apps;
           }
         } else {
           appData.lang = appData.lang === 'ru' ? 'en' : 'ru';
@@ -1728,6 +1901,7 @@
         renderCategories();
         renderCards();
         if (typeof renderTweaks === 'function') renderTweaks();
+        if (typeof renderMetro === 'function' && currentMainTab === 'metro') renderMetro();
         updateFooter();
       } catch (err) {
         console.error('toggleLanguage error:', err);
@@ -2480,20 +2654,31 @@
       currentMainTab = tab;
       document.getElementById('tabBtnApps').classList.toggle('active', tab === 'apps');
       document.getElementById('tabBtnTweaks').classList.toggle('active', tab === 'tweaks');
+      const tabMetro = document.getElementById('tabBtnMetro');
+      if (tabMetro) tabMetro.classList.toggle('active', tab === 'metro');
 
       const viewApps = document.getElementById('viewApps');
       const viewTweaks = document.getElementById('viewTweaks');
+      const viewMetro = document.getElementById('viewMetro');
       const footer = document.getElementById('mainFooter');
 
       if (tab === 'apps') {
         viewApps.style.display = 'flex';
         viewTweaks.style.display = 'none';
+        if (viewMetro) viewMetro.style.display = 'none';
         footer.style.display = 'flex';
-      } else {
+      } else if (tab === 'tweaks') {
         viewApps.style.display = 'none';
         viewTweaks.style.display = 'flex';
+        if (viewMetro) viewMetro.style.display = 'none';
         footer.style.display = 'none';
         renderTweaks();
+      } else if (tab === 'metro') {
+        viewApps.style.display = 'none';
+        viewTweaks.style.display = 'none';
+        if (viewMetro) viewMetro.style.display = 'flex';
+        footer.style.display = 'none';
+        renderMetro();
       }
     }
 
@@ -2594,6 +2779,222 @@
         console.error('Tweak toggle error:', e);
         addLog(`❌ Ошибка выполнения твика: ${e}`);
         if (btn) btn.disabled = false;
+      }
+    }
+
+    // ==========================================
+    // Metro / UWP приложения Windows
+    // ==========================================
+    let selectedMetroApps = new Set();
+
+    function renderMetro() {
+      const container = document.getElementById('metroGrid');
+      if (!container) return;
+      container.innerHTML = '';
+      const s = appData.strings || {};
+      const metroApps = appData.metro_apps || [];
+
+      const installedCount = metroApps.filter(a => a.installed).length;
+      const totalCount = metroApps.length;
+
+      const badge = document.getElementById('metroCounterBadge');
+      if (badge) {
+        const countTpl = s.metro_count_installed || 'Установлено: {installed} из {total}';
+        badge.textContent = countTpl.replace('{installed}', installedCount).replace('{total}', totalCount);
+      }
+
+      if (totalCount === 0) {
+        container.innerHTML = '<div style="color:var(--text-muted); font-size:13px; grid-column: 1 / -1; text-align: center; padding: 40px 0;">Загрузка списка Metro-приложений...</div>';
+        return;
+      }
+
+      metroApps.forEach(app => {
+        const isInstalled = Boolean(app.installed);
+        const isSelected = selectedMetroApps.has(app.id);
+        const card = document.createElement('div');
+        card.className = 'metro-tile' + (isInstalled ? '' : ' is-removed');
+        card.id = `metro_card_${app.id}`;
+
+        const statusBadge = isInstalled
+          ? `<span class="metro-badge-installed">✓ ${s.metro_status_installed || 'Установлено'}</span>`
+          : `<span class="metro-badge-removed">✕ ${s.metro_status_removed || 'Удалено'}</span>`;
+
+        const btnClass = isInstalled ? 'btn-action btn-danger-outline' : 'btn-action btn-primary';
+        const btnText = isInstalled ? `🗑️ ${s.metro_btn_remove || 'Удалить'}` : `↩️ ${s.metro_btn_restore || 'Восстановить'}`;
+        const actionHandler = isInstalled ? `handleRemoveMetro('${app.id}')` : `handleRestoreMetro('${app.id}')`;
+
+        card.innerHTML = `
+          <div class="metro-tile-top">
+            <label class="checkbox-wrap" onclick="event.stopPropagation();" title="Выбрать">
+              <input type="checkbox" onchange="toggleMetroItemSelection('${app.id}', this.checked)" ${isSelected ? 'checked' : ''}>
+              <div class="custom-checkbox">
+                <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              </div>
+            </label>
+            <div class="metro-tile-icon">${app.icon || '📦'}</div>
+            <div class="metro-tile-info">
+              <div class="metro-tile-title">${app.name}</div>
+              <div class="metro-tile-desc" title="${app.description}">${app.description}</div>
+            </div>
+          </div>
+          <div class="metro-tile-bottom">
+            <div id="metro_status_${app.id}">${statusBadge}</div>
+            <button class="${btnClass}" id="btn_metro_${app.id}" onclick="${actionHandler}" style="font-size: 11px; padding: 4px 10px; height: 28px;">${btnText}</button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function toggleMetroItemSelection(appId, checked) {
+      if (checked) {
+        selectedMetroApps.add(appId);
+      } else {
+        selectedMetroApps.delete(appId);
+      }
+    }
+
+    function toggleAllMetroSelection(select) {
+      const metroApps = appData.metro_apps || [];
+      if (select) {
+        metroApps.forEach(a => selectedMetroApps.add(a.id));
+      } else {
+        selectedMetroApps.clear();
+      }
+      renderMetro();
+    }
+
+    async function handleRemoveMetro(appId) {
+      const app = (appData.metro_apps || []).find(a => a.id === appId);
+      if (!app) return;
+      const btn = document.getElementById(`btn_metro_${appId}`);
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳ ...';
+      }
+      addLog(`🗑️ Удаление ${app.name}...`);
+      try {
+        const res = await window.pywebview.api.remove_metro_app(appId);
+        if (res) {
+          app.installed = res.installed;
+          addLog(res.message);
+          showToast(res.message, res.success ? 'success' : 'error');
+          renderMetro();
+        }
+      } catch (e) {
+        console.error('Remove metro app error:', e);
+        addLog(`❌ Ошибка удаления: ${e}`);
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    async function handleRestoreMetro(appId) {
+      const app = (appData.metro_apps || []).find(a => a.id === appId);
+      if (!app) return;
+      const btn = document.getElementById(`btn_metro_${appId}`);
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳ ...';
+      }
+      addLog(`↩️ Восстановление ${app.name}...`);
+      try {
+        const res = await window.pywebview.api.restore_metro_app(appId);
+        if (res) {
+          app.installed = res.installed;
+          addLog(res.message);
+          showToast(res.message, res.success ? 'success' : 'error');
+          renderMetro();
+        }
+      } catch (e) {
+        console.error('Restore metro app error:', e);
+        addLog(`❌ Ошибка восстановления: ${e}`);
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    async function handleRemoveSelectedMetro() {
+      const s = appData.strings || {};
+      const metroApps = appData.metro_apps || [];
+      const toRemove = metroApps.filter(a => selectedMetroApps.has(a.id) && a.installed);
+      if (toRemove.length === 0) {
+        showToast(s.select_at_least_one || 'Выберите хотя бы одно установленное Metro-приложение!', 'warning');
+        return;
+      }
+
+      const count = toRemove.length;
+      addLog(`🗑️ Массовое удаление Metro-приложений (${count} шт.)...`);
+      showToast(`Удаление ${count} приложений...`, 'info', 2500);
+
+      const btn = document.getElementById('btnMetroRemoveSelected');
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳ ...';
+      }
+
+      try {
+        const results = await window.pywebview.api.remove_selected_metro(toRemove.map(a => a.id));
+        if (results && Array.isArray(results)) {
+          let succ = 0;
+          results.forEach(res => {
+            const app = metroApps.find(a => a.id === res.id);
+            if (app) app.installed = res.installed;
+            if (res.success) succ++;
+            addLog(res.message);
+          });
+          showToast(`Удалено: ${succ} из ${count}`, 'success');
+        }
+      } catch (e) {
+        console.error('Batch remove error:', e);
+        addLog(`❌ Ошибка массового удаления: ${e}`);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = s.metro_btn_remove_selected || '🗑️ Удалить выбранные';
+        }
+        renderMetro();
+      }
+    }
+
+    async function handleRestoreSelectedMetro() {
+      const s = appData.strings || {};
+      const metroApps = appData.metro_apps || [];
+      const toRestore = metroApps.filter(a => selectedMetroApps.has(a.id) && !a.installed);
+      if (toRestore.length === 0) {
+        showToast(s.select_at_least_one || 'Выберите хотя бы одно удаленное Metro-приложение для восстановления!', 'warning');
+        return;
+      }
+
+      const count = toRestore.length;
+      addLog(`↩️ Массовое восстановление Metro-приложений (${count} шт.)...`);
+      showToast(`Восстановление ${count} приложений...`, 'info', 2500);
+
+      const btn = document.getElementById('btnMetroRestoreSelected');
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳ ...';
+      }
+
+      try {
+        const results = await window.pywebview.api.restore_selected_metro(toRestore.map(a => a.id));
+        if (results && Array.isArray(results)) {
+          let succ = 0;
+          results.forEach(res => {
+            const app = metroApps.find(a => a.id === res.id);
+            if (app) app.installed = res.installed;
+            if (res.success) succ++;
+            addLog(res.message);
+          });
+          showToast(`Восстановлено: ${succ} из ${count}`, 'success');
+        }
+      } catch (e) {
+        console.error('Batch restore error:', e);
+        addLog(`❌ Ошибка массового восстановления: ${e}`);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = s.metro_btn_restore_selected || '🔄 Восстановить выбранные';
+        }
+        renderMetro();
       }
     }
 
