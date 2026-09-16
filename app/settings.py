@@ -23,6 +23,7 @@ _DEFAULT_SETTINGS = {
     "theme": "dark",
     "language": "ru",
     "silent_mode_default": True,
+    "extract_mode": "exe_dir",
 }
 
 
@@ -37,6 +38,10 @@ def load_settings() -> dict:
         for k, v in _DEFAULT_SETTINGS.items():
             if k not in data:
                 data[k] = v
+        # Очищаем устаревший жестко прописанный путь распаковки, если он остался от прошлых версий
+        if "extract_path" in data:
+            data.pop("extract_path", None)
+            save_settings(data)
         return data
     except Exception:
         return dict(_DEFAULT_SETTINGS)
@@ -45,7 +50,10 @@ def load_settings() -> dict:
 def save_settings(settings: dict) -> bool:
     path = _get_settings_path()
     try:
-        path.write_text(json.dumps(settings, indent=2, ensure_ascii=False), encoding="utf-8")
+        # Гарантируем, что персональные жестко заданные пути никогда не записываются в настройки
+        clean_settings = dict(settings)
+        clean_settings.pop("extract_path", None)
+        path.write_text(json.dumps(clean_settings, indent=2, ensure_ascii=False), encoding="utf-8")
         return True
     except Exception:
         return False

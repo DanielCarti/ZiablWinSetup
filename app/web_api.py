@@ -48,6 +48,24 @@ from app.utils import check_winget, get_winget_version, is_admin
 logger = logging.getLogger("WinSetup")
 
 
+def _resolve_extract_path(settings: dict) -> Path:
+    """
+    Определяет путь для распаковки ZIP динамически в реальном времени:
+    - 'exe_dir' (по умолчанию): папка рядом с запущенным файлом .exe
+    - 'desktop': текущий рабочий стол пользователя (динамически)
+    - 'custom': выбранная вручную папка (если она существует на этом компьютере)
+    Никогда не сохраняет жестко заданный абсолютный путь по умолчанию!
+    """
+    mode = settings.get("extract_mode", "exe_dir")
+    if mode == "desktop":
+        return get_desktop_path()
+    elif mode == "custom":
+        custom = settings.get("custom_extract_path")
+        if custom and os.path.exists(custom):
+            return Path(custom)
+    return get_exe_dir()
+
+
 class AppBridge:
     """API-объект, методы которого доступны напрямую из JavaScript через window.pywebview.api."""
 
@@ -55,11 +73,7 @@ class AppBridge:
         self._window: webview.Window | None = None
         self._downloader = Downloader()
         settings = load_settings()
-        saved_path = settings.get("extract_path")
-        if saved_path and os.path.exists(saved_path):
-            self._extract_path = Path(saved_path)
-        else:
-            self._extract_path = get_desktop_path()
+        self._extract_path = _resolve_extract_path(settings)
         self._installer = Installer(extract_path=self._extract_path)
         self._catalog_map: dict[str, AppEntry] = {a.id: a for a in get_catalog()}
         self._downloaded_results: dict[str, DownloadResult] = {}
@@ -128,11 +142,7 @@ class AppBridge:
         installed_map = detect_installed_apps()
         ignored_update_ids = settings.get("ignored_update_apps", ["photoshop", "premiere"])
 
-        saved_path = settings.get("extract_path")
-        if saved_path and os.path.exists(saved_path):
-            self._extract_path = Path(saved_path)
-        else:
-            self._extract_path = get_desktop_path()
+        self._extract_path = _resolve_extract_path(settings)
         self._installer.extract_path = self._extract_path
 
         system_info = {
@@ -255,11 +265,12 @@ class AppBridge:
             )
             if res and len(res) > 0:
                 chosen = Path(res[0])
-                if chosen.exists():
+                if chosen.exists() and chosen.is_dir():
                     self._extract_path = chosen
                     self._installer.extract_path = self._extract_path
                     settings = load_settings()
-                    settings["extract_path"] = str(self._extract_path)
+                    settings["extract_mode"] = "custom"
+                    settings["custom_extract_path"] = str(self._extract_path)
                     save_settings(settings)
                     self.call_js("onLog", f"📁 Путь распаковки: {self._extract_path}")
                     return str(self._extract_path)
@@ -268,23 +279,25 @@ class AppBridge:
         return str(self._extract_path)
 
     def set_extract_path_to_desktop(self) -> str:
-        """Устанавливает путь распаковки на Рабочий стол текущего пользователя."""
+        """Устанавливает режим распаковки на Рабочий стол текущего пользователя."""
         desktop = get_desktop_path()
         self._extract_path = desktop
         self._installer.extract_path = self._extract_path
         settings = load_settings()
-        settings["extract_path"] = str(self._extract_path)
+        settings["extract_mode"] = "desktop"
+        settings.pop("custom_extract_path", None)
         save_settings(settings)
         self.call_js("onLog", f"📁 Путь распаковки установлен на Рабочий стол: {self._extract_path}")
         return str(self._extract_path)
 
     def set_extract_path_to_exe_dir(self) -> str:
-        """Устанавливает путь распаковки рядом с исполняемым файлом программы."""
+        """Устанавливает режим распаковки рядом с исполняемым файлом программы."""
         exe_dir = get_exe_dir()
         self._extract_path = exe_dir
         self._installer.extract_path = self._extract_path
         settings = load_settings()
-        settings["extract_path"] = str(self._extract_path)
+        settings["extract_mode"] = "exe_dir"
+        settings.pop("custom_extract_path", None)
         save_settings(settings)
         self.call_js("onLog", f"📁 Путь распаковки установлен рядом с программой: {self._extract_path}")
         return str(self._extract_path)

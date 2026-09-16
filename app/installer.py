@@ -206,7 +206,7 @@ class Installer:
         self._active_processes: dict[str, subprocess.Popen] = {}
         self._active_handles: dict[str, int] = {}
         self._lock = threading.Lock()
-        self.extract_path = extract_path or get_desktop_path()
+        self.extract_path = extract_path or get_exe_dir()
 
     def cancel(self):
         """Отменяет дальнейшие и текущие установки."""
