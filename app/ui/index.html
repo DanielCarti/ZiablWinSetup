@@ -1800,6 +1800,12 @@
     let appStatuses = {}; // app_id -> { status, progress, detail }
     let isDownloading = false;
     let downloadedCount = 0;
+    let currentMainTab = 'apps';
+    let availableUpdates = {};
+    let isCheckingUpdates = false;
+    let selectedMetroApps = new Set();
+    let isRescanning = false;
+    let toastTimer = null;
 
     // Splitter resize logic
     const splitter = document.getElementById('splitter');
@@ -2518,9 +2524,6 @@
       downloadSingle(appId);
       updateFooter();
     }
-      downloadSingle(appId);
-      updateFooter();
-    }
 
     function showConfirmModal(title, text, confirmText) {
       return new Promise((resolve) => {
@@ -2647,7 +2650,6 @@
       window.pywebview.api.install_single(appId, mode, asAdmin);
     }
 
-    let toastTimer = null;
     function showToast(message, type = 'warning', duration = 3000) {
       const toast = document.getElementById('appToast');
       const icon = document.getElementById('toastIcon');
@@ -2899,9 +2901,6 @@
     // ==========================================
     // Управление вкладками (Приложения / Твики)
     // ==========================================
-    let currentMainTab = 'apps';
-    let availableUpdates = {};
-    let isCheckingUpdates = false;
 
     function switchMainTab(tab) {
       currentMainTab = tab;
@@ -3038,7 +3037,6 @@
     // ==========================================
     // Metro / UWP приложения Windows
     // ==========================================
-    let selectedMetroApps = new Set();
 
     function renderMetro() {
       const container = document.getElementById('metroGrid');
@@ -3254,7 +3252,6 @@
     // ==========================================
     // Пересканирование установленных программ
     // ==========================================
-    let isRescanning = false;
 
     function triggerRescanInstalled() {
       if (isRescanning) return;
