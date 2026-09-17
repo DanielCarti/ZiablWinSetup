@@ -89,6 +89,7 @@ STRINGS: dict[Language, dict[str, str]] = {
         "btn_uninstall": "Удалить",
         "confirm_uninstall": "Вы действительно хотите запустить деинсталляцию {name}?",
         "btn_extract": "Распаковать",
+        "btn_launch": "Запустить",
         "btn_open_folder": "Открыть",
 
         # Основные кнопки панели действий
@@ -228,6 +229,7 @@ STRINGS: dict[Language, dict[str, str]] = {
         "btn_uninstall": "Uninstall",
         "confirm_uninstall": "Are you sure you want to uninstall {name}?",
         "btn_extract": "Extract",
+        "btn_launch": "Launch",
         "btn_open_folder": "Open",
 
         # Main buttons

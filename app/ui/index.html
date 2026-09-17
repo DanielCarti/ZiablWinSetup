@@ -2255,8 +2255,8 @@
         const right = document.createElement('div');
         right.className = 'card-right';
 
-        // Mode selector (скрываем для уже установленных приложений)
-        if (!isInstalled) {
+        // Mode selector (скрываем для уже установленных и для portable-приложений)
+        if (!isInstalled && app.installer_type !== 'portable') {
           const select = document.createElement('select');
           select.className = 'mode-select';
           select.innerHTML = `
@@ -2300,7 +2300,12 @@
           </div>
         `;
       } else if (st.status === 'downloaded') {
-        const btnText = app.installer_type === 'zip' ? (s.btn_extract || '📂 Распаковать') : (s.btn_install || '⚙️ Установить');
+        let btnText = s.btn_install || '⚙️ Установить';
+        if (app.installer_type === 'zip') {
+          btnText = s.btn_extract || '📂 Распаковать';
+        } else if (app.installer_type === 'portable') {
+          btnText = `🚀 ${s.btn_launch || 'Запустить'}`;
+        }
         return `
           <div style="display: flex; align-items: center; gap: 6px;">
             <button class="btn-action btn-success" onclick="installSingle('${app.id}', false)">${btnText}</button>
@@ -2321,6 +2326,14 @@
           </div>
         `;
       } else if (st.status === 'done' || st.status === 'extracted') {
+        if (app.installer_type === 'portable') {
+          return `
+            <div style="display: flex; gap: 6px; align-items: center;">
+              <button class="btn-action btn-primary" onclick="launchApp('${app.id}')" title="${s.btn_launch || 'Запустить'}">🚀 ${s.btn_launch || 'Запустить'}</button>
+              <button class="btn-action btn-outline" onclick="openAppFolder('${app.id}')" title="Открыть папку" style="padding: 0 9px; height: 32px;">📁</button>
+            </div>
+          `;
+        }
         return `<button class="btn-action btn-success btn-disabled" disabled>✅ ${s.status_done || 'Готово!'}</button>`;
       } else if (st.status === 'error') {
         // Если ошибка и файл уже был скачан — предлагаем Установить (Админ)
@@ -2343,6 +2356,14 @@
         // Idle
         const isInstalled = appData.installed_apps && appData.installed_apps[app.id];
         if (isInstalled) {
+          if (app.installer_type === 'portable') {
+            return `
+              <div style="display: flex; gap: 6px; align-items: center;">
+                <button class="btn-action btn-primary" onclick="launchApp('${app.id}')" title="${s.btn_launch || 'Запустить'}">🚀 ${s.btn_launch || 'Запустить'}</button>
+                <button class="btn-action btn-outline" onclick="openAppFolder('${app.id}')" title="Открыть папку" style="padding: 0 9px; height: 32px;">📁</button>
+              </div>
+            `;
+          }
           const hasUpdate = availableUpdates[app.id];
           return `
             <div style="display: flex; gap: 8px; align-items: center;">
@@ -2356,8 +2377,23 @@
       }
     }
 
+    function launchApp(appId) {
+      if (window.pywebview && window.pywebview.api && window.pywebview.api.launch_app) {
+        window.pywebview.api.launch_app(appId);
+      }
+    }
+
+    function openAppFolder(appId) {
+      if (window.pywebview && window.pywebview.api && window.pywebview.api.open_app_folder) {
+        window.pywebview.api.open_app_folder(appId);
+      }
+    }
+
     function reinstallSingle(appId) {
       selectedApps.add(appId);
+      downloadSingle(appId);
+      updateFooter();
+    }
       downloadSingle(appId);
       updateFooter();
     }

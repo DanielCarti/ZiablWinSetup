@@ -24,6 +24,14 @@ logger = logging.getLogger("WinSetup")
 ProgressCallback = Callable[[str, float, str], None]
 
 
+def _safe_cb(cb: ProgressCallback, *args):
+    """Безопасный вызов callback-функции без риска прерывания загрузки из-за ошибок UI или кодировки."""
+    try:
+        cb(*args)
+    except Exception:
+        pass
+
+
 @dataclass
 class DownloadResult:
     """Результат скачивания."""
@@ -97,6 +105,8 @@ class Downloader:
         app_dir = self.download_dir / app.id
         app_dir.mkdir(parents=True, exist_ok=True)
 
+        last_error = ""
+
         # Приоритет 1: winget download
         if app.winget_id:
             if self.is_app_cancelled(app.id):
@@ -105,6 +115,7 @@ class Downloader:
             result = self._download_winget(app, app_dir, cb)
             if result.success or self.is_app_cancelled(app.id):
                 return result
+            last_error = result.error
             logger.warning(f"winget download failed for {app.name}: {result.error}, trying fallback...")
 
         # Приоритет 2: GitHub releases
@@ -115,6 +126,7 @@ class Downloader:
             result = self._download_github(app, app_dir, cb)
             if result.success or self.is_app_cancelled(app.id):
                 return result
+            last_error = result.error
             logger.warning(f"GitHub download failed for {app.name}: {result.error}")
 
         # Приоритет 3: Direct URL
@@ -125,12 +137,21 @@ class Downloader:
             result = self._download_url(app, app.direct_url, app_dir, cb)
             if result.success or self.is_app_cancelled(app.id):
                 return result
+            last_error = result.error
             logger.warning(f"Direct URL download failed for {app.name}: {result.error}")
+
+        if last_error:
+            if "не удается найти указанный файл" in last_error.lower() or "winerror 2" in last_error.lower():
+                final_error = "Winget не установлен в системе, а резервная ссылка недоступна"
+            else:
+                final_error = f"Ошибка скачивания: {last_error}"
+        else:
+            final_error = "Нет доступных источников для скачивания"
 
         return DownloadResult(
             app=app,
             success=False,
-            error="Нет доступных источников для скачивания",
+            error=final_error,
         )
 
     def _download_winget(self, app: AppEntry, dest_dir: Path, cb: ProgressCallback) -> DownloadResult:
@@ -210,7 +231,7 @@ class Downloader:
             installer_path = self._find_downloaded_file(dest_dir, existing_files)
 
             if installer_path:
-                cb(app.id, 100, "Скачано ✓")
+                _safe_cb(cb, app.id, 100, "Скачано")
                 logger.info(f"Downloaded {app.name} → {installer_path}")
                 return DownloadResult(app=app, success=True, installer_path=installer_path)
 
@@ -306,10 +327,14 @@ class Downloader:
             if "amd.com" in parsed.netloc:
                 referer = "https://www.amd.com/"
 
+            user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            if "techpowerup.com" in parsed.netloc:
+                user_agent = "winget-cli"
+
             req = urllib.request.Request(
                 url,
                 headers={
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                    "User-Agent": user_agent,
                     "Referer": referer,
                 },
             )
@@ -346,7 +371,7 @@ class Downloader:
                         else:
                             cb(app.id, -1, f"Скачивание... {format_size(downloaded)}")
 
-            cb(app.id, 100, "Скачано ✓")
+            _safe_cb(cb, app.id, 100, "Скачано")
             logger.info(f"Downloaded {app.name} → {dest_path}")
             return DownloadResult(app=app, success=True, installer_path=dest_path)
 

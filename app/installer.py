@@ -296,6 +296,8 @@ class Installer:
                 return self._run_msi(app, installer_path, silent, as_admin=as_admin)
             elif ext in (".msix", ".msixbundle", ".appx", ".appxbundle"):
                 return self._run_msix(app, installer_path)
+            elif app.installer_type == "portable" or self.is_portable_executable(app, installer_path):
+                return self._handle_portable(app, installer_path, launch=True)
             else:
                 # .exe и всё остальное
                 return self._run_exe(app, installer_path, silent, as_admin=as_admin)
@@ -573,3 +575,84 @@ class Installer:
             return InstallResult(app=app, success=False, error="Повреждённый ZIP-архив")
         except Exception as e:
             return InstallResult(app=app, success=False, error=str(e))
+
+    def is_portable_executable(self, app: AppEntry, path: Path) -> bool:
+        """
+        Определяет, является ли исполняемый файл портативной утилитой,
+        а не традиционным инсталлятором (NSIS, Inno Setup, WiX и др.).
+        """
+        if app.installer_type == "portable":
+            return True
+        if app.installer_type in ("zip", "msi") or path.suffix.lower() in (".msi", ".zip", ".msix", ".appx"):
+            return False
+
+        # Если заданы аргументы для тихой установки — это явно инсталлятор
+        if app.silent_args:
+            return False
+
+        # Проверка ключевых слов в имени файла
+        stem = path.stem.lower()
+        if any(w in stem for w in ("setup", "install", "installer", "update", "patch")):
+            return False
+
+        # Эвристическая проверка PE сигнатур инсталляторов
+        try:
+            with open(path, "rb") as f:
+                header = f.read(1024 * 256)
+            installer_sigs = [
+                b"Inno Setup", b"NullsoftInst", b"InstallShield",
+                b"WiX.Bootstrapper", b"Wise Installation", b"Advanced Installer"
+            ]
+            if any(sig in header for sig in installer_sigs):
+                return False
+        except Exception:
+            pass
+
+        return True
+
+    def _handle_portable(self, app: AppEntry, path: Path, launch: bool = True) -> InstallResult:
+        """
+        Обрабатывает запуск и размещение портативной программы:
+        1. Копирует .exe в директорию пользователя (extract_path / app.name).
+        2. Создает ярлык на Рабочем столе.
+        3. Запускает утилиту в фоне БЕЗ блокировки окна WinSetup.
+        """
+        try:
+            dest_dir = self.extract_path / app.name
+            dest_dir.mkdir(parents=True, exist_ok=True)
+            dest_exe = dest_dir / f"{app.name}.exe"
+
+            logger.info(f"Placing portable app {app.name} to {dest_exe}")
+            shutil.copy2(path, dest_exe)
+
+            shortcut = create_desktop_shortcut(
+                dest_exe,
+                shortcut_name=app.name,
+                working_dir=dest_dir,
+            )
+            shortcut_msg = f" (Ярлык: {shortcut.name})" if shortcut else ""
+
+            if launch:
+                creationflags = 0
+                if hasattr(subprocess, "DETACHED_PROCESS") and hasattr(subprocess, "CREATE_NEW_PROCESS_GROUP"):
+                    creationflags = subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
+                try:
+                    subprocess.Popen(
+                        [str(dest_exe)],
+                        cwd=str(dest_dir),
+                        creationflags=creationflags,
+                        close_fds=True,
+                    )
+                    logger.info(f"Launched portable app {app.name}")
+                except Exception as e:
+                    logger.warning(f"Could not launch {dest_exe}: {e}")
+
+            return InstallResult(
+                app=app,
+                success=True,
+                error=f"{dest_exe}{shortcut_msg}",
+            )
+        except Exception as e:
+            logger.error(f"Error handling portable app {app.name}: {e}")
+            return InstallResult(app=app, success=False, error=str(e))
+

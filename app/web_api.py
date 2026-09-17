@@ -482,6 +482,10 @@ class AppBridge:
                     if app.installer_type == "zip":
                         self.call_js("onAppStatus", app.id, "extracted", res.error)
                         self.call_js("onLog", i18n.t("log_extracted", name=app.name, path=res.error))
+                    elif app.installer_type == "portable":
+                        self.call_js("onAppStatus", app.id, "done", "")
+                        self.call_js("onAppInstalled", app.id)
+                        self.call_js("onLog", f"🚀 {app.name}: ярлык создан на Рабочем столе, приложение готово к работе.")
                     else:
                         self.call_js("onAppStatus", app.id, "done", "")
                         self.call_js("onLog", i18n.t("log_installed", name=app.name))
@@ -536,6 +540,10 @@ class AppBridge:
                     if app.installer_type == "zip":
                         self.call_js("onAppStatus", app.id, "extracted", res.error)
                         self.call_js("onLog", i18n.t("log_extracted", name=app.name, path=res.error))
+                    elif app.installer_type == "portable":
+                        self.call_js("onAppStatus", app.id, "done", "")
+                        self.call_js("onAppInstalled", app.id)
+                        self.call_js("onLog", f"🚀 {app.name}: ярлык создан на Рабочем столе, приложение готово к работе.")
                     else:
                         self.call_js("onAppStatus", app.id, "done", "")
                         self.call_js("onLog", i18n.t("log_installed", name=app.name))
@@ -554,6 +562,68 @@ class AppBridge:
 
         thread = threading.Thread(target=worker, daemon=True)
         thread.start()
+
+    def launch_app(self, app_id: str):
+        """Запускает установленное или портативное приложение."""
+        app = self._catalog_map.get(app_id)
+        if not app:
+            return
+
+        # 1. Проверяем в папке распаковки пользователя
+        portable_exe = self._extract_path / app.name / f"{app.name}.exe"
+        if not portable_exe.exists():
+            portable_exe = self._extract_path / f"{app.name}.exe"
+
+        # 2. Если файл есть в скачанных
+        if not portable_exe.exists() and app_id in self._downloaded_results:
+            dres = self._downloaded_results[app_id]
+            if dres.installer_path and Path(dres.installer_path).exists():
+                portable_exe = Path(dres.installer_path)
+
+        # 3. Ищем ярлык на рабочем столе
+        if not portable_exe.exists():
+            desktop = get_desktop_path()
+            for lnk in (desktop / f"{app.name}.lnk", desktop / f"{app.id}.lnk", desktop / "GPU-Z.lnk", desktop / "TechPowerUp GPU-Z.lnk"):
+                if lnk.exists():
+                    try:
+                        os.startfile(str(lnk))
+                        self.call_js("onLog", f"🚀 {app.name} запущен через ярлык.")
+                        return
+                    except Exception as e:
+                        logger.warning(f"Failed to start shortcut {lnk}: {e}")
+
+        if portable_exe.exists():
+            try:
+                creationflags = 0
+                if hasattr(subprocess, "DETACHED_PROCESS") and hasattr(subprocess, "CREATE_NEW_PROCESS_GROUP"):
+                    creationflags = subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
+                subprocess.Popen(
+                    [str(portable_exe)],
+                    cwd=str(portable_exe.parent),
+                    creationflags=creationflags,
+                    close_fds=True,
+                )
+                self.call_js("onLog", f"🚀 {app.name} запущен.")
+            except Exception as e:
+                self.call_js("onLog", f"❌ Ошибка запуска {app.name}: {e}")
+        else:
+            try:
+                os.startfile(app.name)
+            except Exception as e:
+                logger.warning(f"Could not start {app.name}: {e}")
+
+    def open_app_folder(self, app_id: str):
+        """Открывает папку с установленным/распакованным приложением."""
+        app = self._catalog_map.get(app_id)
+        if not app:
+            return
+        target_dir = self._extract_path / app.name
+        if not target_dir.exists():
+            target_dir = self._extract_path
+        try:
+            os.startfile(str(target_dir))
+        except Exception as e:
+            logger.error(f"Error opening folder {target_dir}: {e}")
 
     # ==========================================
     # Твики и фичи

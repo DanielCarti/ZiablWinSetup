@@ -457,6 +457,53 @@ def detect_installed_apps() -> dict[str, dict[str, Any]]:
                     }
                     break
 
+        # 4. Fallback: проверка portable-приложений и ярлыков на Рабочем столе
+        if not match_info and (app.installer_type == "portable" or app.id in ("gpuz", "tgwsproxy", "operaproxy", "zapret")):
+            try:
+                from app.installer import get_desktop_path, get_exe_dir
+                desktop = get_desktop_path()
+                exe_dir = get_exe_dir()
+
+                desktop_shortcuts = [
+                    desktop / f"{app.name}.lnk",
+                    desktop / f"{app.id}.lnk",
+                    desktop / "GPU-Z.lnk",
+                    desktop / "TechPowerUp GPU-Z.lnk",
+                ]
+                portable_paths = [
+                    exe_dir / app.name / f"{app.name}.exe",
+                    exe_dir / f"{app.name}.exe",
+                    exe_dir / "Portable" / app.name / f"{app.name}.exe",
+                    desktop / f"{app.name}.exe",
+                ]
+
+                for sc in desktop_shortcuts:
+                    if sc.exists():
+                        match_info = {
+                            "installed": True,
+                            "name": app.name,
+                            "version": "Portable",
+                            "uninstall_cmd": "",
+                            "quiet_uninstall": "",
+                            "path": str(sc),
+                        }
+                        break
+
+                if not match_info:
+                    for pp in portable_paths:
+                        if pp.exists():
+                            match_info = {
+                                "installed": True,
+                                "name": app.name,
+                                "version": "Portable",
+                                "uninstall_cmd": "",
+                                "quiet_uninstall": "",
+                                "path": str(pp),
+                            }
+                            break
+            except Exception:
+                pass
+
         if match_info:
             results[app.id] = match_info
 
