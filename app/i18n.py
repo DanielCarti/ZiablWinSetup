@@ -147,6 +147,14 @@ STRINGS: dict[Language, dict[str, str]] = {
         "no_admin_warning": "Запущено без прав администратора. Некоторые инсталляторы могут запросить подтверждение UAC.",
         "settings_exclusions": "Исключения автообновления",
         "settings_exclusions_desc": "Выбранные приложения не будут обновляться при нажатии «Обновить все». Вы по-прежнему сможете обновить их вручную.",
+
+        # Winget баннер
+        "winget_banner_title": "Windows Package Manager (Winget) не установлен в системе",
+        "winget_banner_desc": "Он необходим для быстрой фоновой загрузки и автоматического обновления большинства программ.",
+        "btn_install_winget_auto": "⚡ Установить Winget автоматически",
+        "btn_open_store": "🛍️ Microsoft Store",
+        "winget_installing": "Установка Winget...",
+        "winget_install_success": "Winget успешно установлен!",
     },
 
     "en": {
@@ -287,6 +295,14 @@ STRINGS: dict[Language, dict[str, str]] = {
         "no_admin_warning": "Running without admin rights. Some installers may request UAC.",
         "settings_exclusions": "Auto-Update Exclusions",
         "settings_exclusions_desc": "Selected apps will not be updated when clicking 'Update All'. You can still update them manually.",
+
+        # Winget banner
+        "winget_banner_title": "Windows Package Manager (Winget) is not installed",
+        "winget_banner_desc": "It is required for fast background downloading and automatic updates for most software.",
+        "btn_install_winget_auto": "⚡ Install Winget Automatically",
+        "btn_open_store": "🛍️ Microsoft Store",
+        "winget_installing": "Installing Winget...",
+        "winget_install_success": "Winget installed successfully!",
     },
 }
 

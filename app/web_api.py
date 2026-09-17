@@ -43,7 +43,7 @@ from app.settings import (
 )
 from app.tweaks import apply_tweak_by_id, get_all_tweaks, revert_tweak_by_id
 from app.updater import check_updates_sync
-from app.utils import check_winget, get_winget_version, is_admin
+from app.utils import check_winget, get_winget_version, is_admin, install_winget, open_winget_store
 
 logger = logging.getLogger("WinSetup")
 
@@ -826,3 +826,32 @@ class AppBridge:
             webbrowser.open(url)
         except Exception as e:
             logger.error(f"Error opening url {url}: {e}")
+
+    def install_winget_auto(self):
+        """Запускает автоматическое скачивание и установку Winget."""
+        def worker():
+            self.call_js("onWingetInstallProgress", 5, i18n.t("winget_installing"))
+            self.call_js("onLog", "🚀 Запуск автоматической установки Windows Package Manager (Winget)...")
+
+            def progress_cb(pct, text):
+                self.call_js("onWingetInstallProgress", pct, text)
+                self.call_js("onLog", f"📦 Winget: {text}")
+
+            success, msg_or_ver = install_winget(progress_cb)
+            if success:
+                # Обновляем кэш winget в self._app_data
+                if self._app_data and "system_info" in self._app_data:
+                    self._app_data["system_info"]["winget_available"] = True
+                    self._app_data["system_info"]["winget_version"] = msg_or_ver
+                self.call_js("onWingetInstalled", msg_or_ver)
+                self.call_js("onLog", f"✅ {i18n.t('winget_install_success')} ({msg_or_ver})")
+            else:
+                self.call_js("onWingetInstallProgress", 0, f"Ошибка: {msg_or_ver}")
+                self.call_js("onLog", f"❌ Ошибка установки Winget: {msg_or_ver}")
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def open_winget_store(self):
+        """Открывает страницу App Installer в Microsoft Store."""
+        self.call_js("onLog", "🛍️ Открытие страницы Microsoft Store (App Installer)...")
+        open_winget_store()

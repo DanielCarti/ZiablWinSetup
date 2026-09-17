@@ -660,6 +660,94 @@
       transform: translateY(-1px);
     }
 
+    /* Winget banner */
+    .winget-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px 24px;
+      background: linear-gradient(90deg, rgba(239, 68, 68, 0.12) 0%, rgba(245, 158, 11, 0.08) 100%);
+      border-bottom: 1px solid rgba(239, 68, 68, 0.25);
+      animation: fadeInModal 0.2s ease-out;
+      flex-shrink: 0;
+    }
+    .winget-banner-content {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+    .winget-banner-icon {
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+    .winget-banner-texts {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+    }
+    .winget-banner-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #f87171;
+    }
+    .winget-banner-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .winget-banner-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .winget-btn {
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .winget-btn-primary {
+      background: #0078d4;
+      color: #ffffff;
+    }
+    .winget-btn-primary:hover {
+      background: #106ebe;
+      transform: translateY(-1px);
+    }
+    .winget-btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: var(--text-main);
+    }
+    .winget-btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+      transform: translateY(-1px);
+    }
+    .winget-progress-bar-wrap {
+      width: 220px;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+    .winget-progress-bar {
+      height: 100%;
+      background: #0078d4;
+      width: 0%;
+      transition: width 0.2s ease;
+    }
+
     .badge-installed {
       display: inline-flex;
       align-items: center;
@@ -1585,6 +1673,31 @@
 
     <!-- App Content Column -->
     <div style="flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden;">
+      <!-- Winget Missing Warning Banner -->
+      <div id="wingetBanner" class="winget-banner" style="display: none;">
+        <div class="winget-banner-content">
+          <div class="winget-banner-icon">⚠️</div>
+          <div class="winget-banner-texts">
+            <div class="winget-banner-title" id="wingetBannerTitle">Windows Package Manager (Winget) не установлен в системе</div>
+            <div class="winget-banner-desc" id="wingetBannerDesc">Он необходим для быстрой фоновой загрузки и автоматического обновления большинства программ.</div>
+            <div id="wingetInstallStatus" style="display: none;">
+              <div class="winget-progress-bar-wrap">
+                <div class="winget-progress-bar" id="wingetProgressBar"></div>
+              </div>
+              <span id="wingetProgressText" style="font-size: 11px; color: var(--text-muted); margin-top: 4px; display: block;"></span>
+            </div>
+          </div>
+        </div>
+        <div class="winget-banner-actions" id="wingetBannerActions">
+          <button class="winget-btn winget-btn-primary" id="btnInstallWingetAuto" onclick="installWingetAuto()">
+            ⚡ Установить Winget автоматически
+          </button>
+          <button class="winget-btn winget-btn-secondary" id="btnOpenWingetStore" onclick="openWingetStore()">
+            🛍️ Microsoft Store
+          </button>
+        </div>
+      </div>
+
       <!-- Updates Banner -->
       <div id="updatesBanner" class="updates-banner" style="display: none;">
         <div class="updates-banner-info" onclick="selectCategory('updates_available')" style="cursor: pointer;" title="Показать только приложения, требующие обновления">
@@ -1740,6 +1853,7 @@
       renderCategories();
       renderCards();
       updateFooter();
+      updateWingetBanner();
       if (appData.system_info && appData.system_info.extract_path) {
         document.getElementById('extractPathDisplay').textContent = appData.system_info.extract_path;
       }
@@ -1877,6 +1991,16 @@
       if (btnMRemSel) btnMRemSel.textContent = `🗑️ ${s.metro_btn_remove_selected || 'Удалить выбранные'}`;
       const btnMResSel = document.getElementById('btnMetroRestoreSelected');
       if (btnMResSel) btnMResSel.textContent = `↩️ ${s.metro_btn_restore_selected || 'Восстановить выбранные'}`;
+
+      // Winget banner translation
+      const wbTitle = document.getElementById('wingetBannerTitle');
+      if (wbTitle) wbTitle.textContent = s.winget_banner_title || 'Windows Package Manager (Winget) не установлен в системе';
+      const wbDesc = document.getElementById('wingetBannerDesc');
+      if (wbDesc) wbDesc.textContent = s.winget_banner_desc || 'Он необходим для быстрой фоновой загрузки и автоматического обновления большинства программ.';
+      const wbBtnAuto = document.getElementById('btnInstallWingetAuto');
+      if (wbBtnAuto && !wbBtnAuto.disabled) wbBtnAuto.textContent = s.btn_install_winget_auto || '⚡ Установить Winget автоматически';
+      const wbBtnStore = document.getElementById('btnOpenWingetStore');
+      if (wbBtnStore) wbBtnStore.textContent = s.btn_open_store || '🛍️ Microsoft Store';
     }
 
     async function toggleLanguage() {
@@ -2677,6 +2801,99 @@
 
     window.onLog = function(msg) {
       addLog(msg);
+    };
+
+    // ==========================================
+    // Управление Winget (установка и статус)
+    // ==========================================
+    function updateWingetBanner() {
+      const banner = document.getElementById('wingetBanner');
+      if (!banner) return;
+      if (appData.system_info && !appData.system_info.winget_available) {
+        banner.style.display = 'flex';
+      } else {
+        banner.style.display = 'none';
+      }
+    }
+
+    function installWingetAuto() {
+      const btn = document.getElementById('btnInstallWingetAuto');
+      const storeBtn = document.getElementById('btnOpenWingetStore');
+      const statusWrap = document.getElementById('wingetInstallStatus');
+      const progressText = document.getElementById('wingetProgressText');
+      const progressBar = document.getElementById('wingetProgressBar');
+
+      if (btn) {
+        btn.disabled = true;
+        btn.style.opacity = '0.6';
+        btn.textContent = (appData.strings && appData.strings.winget_installing) || 'Установка Winget...';
+      }
+      if (storeBtn) storeBtn.disabled = true;
+      if (statusWrap) statusWrap.style.display = 'block';
+      if (progressBar) progressBar.style.width = '10%';
+      if (progressText) {
+        progressText.style.color = 'var(--text-muted)';
+        progressText.textContent = 'Подготовка к установке...';
+      }
+
+      addLog('🚀 Запрос автоматической установки Winget отправлен...');
+      if (window.pywebview && window.pywebview.api && window.pywebview.api.install_winget_auto) {
+        window.pywebview.api.install_winget_auto();
+      }
+    }
+
+    function openWingetStore() {
+      addLog('🛍️ Открытие Microsoft Store (App Installer)...');
+      if (window.pywebview && window.pywebview.api && window.pywebview.api.open_winget_store) {
+        window.pywebview.api.open_winget_store();
+      }
+    }
+
+    window.onWingetInstallProgress = function(percent, msg) {
+      const progressBar = document.getElementById('wingetProgressBar');
+      const progressText = document.getElementById('wingetProgressText');
+      if (progressBar) progressBar.style.width = `${percent}%`;
+      if (progressText) {
+        progressText.textContent = msg || '';
+        if (msg && msg.startsWith('Ошибка')) {
+          progressText.style.color = '#ef4444';
+          const btn = document.getElementById('btnInstallWingetAuto');
+          const storeBtn = document.getElementById('btnOpenWingetStore');
+          if (btn) {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.textContent = (appData.strings && appData.strings.btn_install_winget_auto) || '⚡ Установить Winget автоматически';
+          }
+          if (storeBtn) storeBtn.disabled = false;
+        }
+      }
+    };
+
+    window.onWingetInstalled = function(version) {
+      if (appData.system_info) {
+        appData.system_info.winget_available = true;
+        appData.system_info.winget_version = version || 'v1.x';
+      }
+      applyTranslations();
+
+      const banner = document.getElementById('wingetBanner');
+      const progressText = document.getElementById('wingetProgressText');
+      const progressBar = document.getElementById('wingetProgressBar');
+      if (progressBar) progressBar.style.width = '100%';
+      if (progressText) {
+        progressText.style.color = '#4ade80';
+        progressText.textContent = `✅ ${(appData.strings && appData.strings.winget_install_success) || 'Winget успешно установлен!'} (${version})`;
+      }
+
+      setTimeout(() => {
+        if (banner) {
+          banner.style.transition = 'opacity 0.4s ease, height 0.4s ease';
+          banner.style.opacity = '0';
+          setTimeout(() => {
+            banner.style.display = 'none';
+          }, 400);
+        }
+      }, 2500);
     };
 
     // ==========================================
