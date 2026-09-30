@@ -12,6 +12,8 @@ import webview
 
 from app.web_api import AppBridge
 from app.i18n import i18n
+from app.settings import load_settings
+from app.tray import SystemTrayManager
 
 logger = logging.getLogger("WinSetup")
 
@@ -36,10 +38,10 @@ def get_ui_path() -> Path:
     return here.parent / "app" / "ui" / "index.html"
 
 
-def run_app():
+def run_app(start_in_tray: bool = False):
     """Запускает главное окно приложения с максимальной скоростью загрузки."""
     html_path = get_ui_path()
-    logger.info(f"Loading UI from: {html_path}")
+    logger.info(f"Loading UI from: {html_path} (start_in_tray={start_in_tray})")
 
     # Флаги Chromium для Edge WebView2: исключаем зависания при ресайзе/разворачивании окна
     os.environ["WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS"] = (
@@ -72,10 +74,27 @@ def run_app():
         min_size=(900, 600),
         background_color="#181818",
         easy_drag=False,
+        hidden=start_in_tray,
     )
     bridge.set_window(window)
 
+    # Инициализация системного трея
+    tray_manager = SystemTrayManager(window=window, on_quit_callback=bridge.quit_app)
+    if start_in_tray:
+        tray_manager._is_visible = False
+    bridge.set_tray_manager(tray_manager)
+    tray_manager.start()
+
     def on_closing():
+        if bridge.is_quitting():
+            tray_manager.stop()
+            return True
+
+        settings = load_settings()
+        if settings.get("minimize_to_tray_on_close", True):
+            tray_manager.hide_window(show_notify=True)
+            return False
+
         if bridge.is_busy():
             try:
                 import ctypes
@@ -95,9 +114,15 @@ def run_app():
                     return False
             except Exception as e:
                 logger.error(f"Error in on_closing confirmation dialog: {e}")
+
+        tray_manager.stop()
         return True
 
+    def on_closed():
+        tray_manager.stop()
+
     window.events.closing += on_closing
+    window.events.closed += on_closed
 
     # Запуск с движком EdgeChromium (DirectX GPU) с сохраненным кэшем
     webview.start(

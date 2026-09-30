@@ -50,6 +50,7 @@ CATEGORIES: dict[str, str] = {
     "vpn_network":   "🔒  VPN и сеть",
     "gaming":        "🎮  Игры и загрузки",
     "office":        "📑  Офис и документы",
+    "runtimes":      "📦  Библиотеки и Runtimes",
 }
 
 
@@ -324,6 +325,17 @@ def _build_catalog() -> list[AppEntry]:
             silent_args=["/VERYSILENT"],
             recommended=True,
         ),
+        AppEntry(
+            id="hitmanpro",
+            name="HitmanPro",
+            description="Быстрый облачный антивирусный сканер второго мнения (активированная версия на 1progs.ru)",
+            description_en="Fast second-opinion cloud-based malware and rootkit scanner (1progs.ru)",
+            category="utilities",
+            web_url="https://1progs.ru/hitmanpro/",
+            direct_url="https://dl.surfright.nl/HitmanPro_x64.exe",
+            silent_args=["/quiet"],
+            recommended=True,
+        ),
 
         # ========================
         # 4. СВЯЗЬ И МЕССЕНДЖЕРЫ (5)
@@ -533,6 +545,17 @@ def _build_catalog() -> list[AppEntry]:
             winget_id="IObit.DriverBooster",
             silent_args=["/VERYSILENT"],
         ),
+        AppEntry(
+            id="nvidiabroadcast",
+            name="NVIDIA Broadcast",
+            description="Интеллектуальное шумоподавление микрофона и эффекты веб-камеры на базе ИИ для видеокарт RTX",
+            description_en="AI-powered microphone noise reduction and webcam effects for RTX GPUs",
+            category="gpu_drivers",
+            winget_id="Nvidia.Broadcast",
+            web_url="https://www.nvidia.com/ru-ru/geforce/broadcasting/broadcast-app/",
+            direct_url="https://international.download.nvidia.com/Windows/broadcast/1.4.0.29/NVIDIA_Broadcast_v1.4.0.29.exe",
+            silent_args=["-s"],
+        ),
 
         # ========================
         # 7. VPN И СЕТЬ (6)
@@ -652,6 +675,30 @@ def _build_catalog() -> list[AppEntry]:
             winget_id="Dropbox.Dropbox",
             silent_args=["/S"],
         ),
+        AppEntry(
+            id="roblox",
+            name="Roblox",
+            description="Популярная онлайн-платформа игр и создания виртуальных миров",
+            description_en="Popular online gaming platform and universe creation system",
+            category="gaming",
+            winget_id="Roblox.Roblox",
+            web_url="https://www.roblox.com/download/client",
+            direct_url="https://setup.rbxcdn.com/RobloxPlayerInstaller.exe",
+            silent_args=["/silent"],
+            recommended=True,
+        ),
+        AppEntry(
+            id="tlauncher",
+            name="TLauncher (Minecraft)",
+            description="Один из самых популярных лаунчеров Minecraft с модами, скинами и версиями",
+            description_en="Popular Minecraft launcher with modpack, skin, and version support",
+            category="gaming",
+            winget_id="TLauncher.TLauncher",
+            web_url="https://tlauncher.org/",
+            direct_url="https://tlauncher.org/installer",
+            silent_args=["/VERYSILENT", "/NORESTART"],
+            recommended=True,
+        ),
 
         # ========================
         # 9. ОФИС И ДОКУМЕНТЫ (3)
@@ -685,6 +732,105 @@ def _build_catalog() -> list[AppEntry]:
             category="office",
             winget_id="Apache.OpenOffice",
             silent_args=["/qn"],
+        ),
+
+        # ========================
+        # 10. БИБЛИОТЕКИ И RUNTIMES (9)
+        # ========================
+        AppEntry(
+            id="directx",
+            name="DirectX End-User Runtimes (June 2010)",
+            description="Полный набор библиотек DirectX 9.0c / 10 / 11 для совместимости со всеми играми",
+            description_en="Legacy DirectX 9.0c / 10 / 11 runtime libraries for PC games compatibility",
+            category="runtimes",
+            winget_id="Microsoft.DirectX",
+            web_url="https://www.microsoft.com/download/details.aspx?id=35",
+            direct_url="https://download.microsoft.com/download/1/7/1/1718CCC4-6316-448E-938E-11910E20D5F4/directx_Jun2010_redist.exe",
+            silent_args=["/Q"],
+            recommended=True,
+        ),
+        AppEntry(
+            id="vcredist_aio",
+            name="Visual C++ Runtimes All-in-One",
+            description="Универсальный полный пакет всех версий Microsoft Visual C++ (2005-2022 x86/x64)",
+            description_en="Complete all-in-one package of Microsoft Visual C++ runtimes (2005-2022 x86/x64)",
+            category="runtimes",
+            winget_id="abbodi1406.vcredist",
+            web_url="https://github.com/abbodi1406/vcredist",
+            direct_url="https://github.com/abbodi1406/vcredist/releases/latest/download/Visual-C-Runtimes-All-in-One-Setup.zip",
+            silent_args=["/y"],
+            recommended=True,
+        ),
+        AppEntry(
+            id="vcredist_2015_2022_x64",
+            name="Visual C++ 2015-2022 Redistributable (x64)",
+            description="Официальные распространяемые компоненты Microsoft Visual C++ 2015-2022 для 64-бит",
+            description_en="Official Microsoft Visual C++ 2015-2022 redistributable for 64-bit Windows",
+            category="runtimes",
+            winget_id="Microsoft.VCRedist.2015+.x64",
+            direct_url="https://aka.ms/vs/17/release/vc_redist.x64.exe",
+            silent_args=["/quiet", "/norestart"],
+            recommended=True,
+        ),
+        AppEntry(
+            id="vcredist_2015_2022_x86",
+            name="Visual C++ 2015-2022 Redistributable (x86)",
+            description="Официальные компоненты Microsoft Visual C++ 2015-2022 для 32-бит программ и игр",
+            description_en="Official Microsoft Visual C++ 2015-2022 redistributable for 32-bit apps and games",
+            category="runtimes",
+            winget_id="Microsoft.VCRedist.2015+.x86",
+            direct_url="https://aka.ms/vs/17/release/vc_redist.x86.exe",
+            silent_args=["/quiet", "/norestart"],
+        ),
+        AppEntry(
+            id="dotnet_desktop_8",
+            name=".NET Desktop Runtime 8.0 (LTS x64)",
+            description="Среда выполнения Microsoft .NET 8.0 LTS для современных настольных приложений Windows",
+            description_en="Microsoft .NET 8.0 LTS Desktop Runtime for modern Windows applications",
+            category="runtimes",
+            winget_id="Microsoft.DotNet.DesktopRuntime.8",
+            direct_url="https://aka.ms/dotnet/8.0/windowsdesktop-runtime-win-x64.exe",
+            silent_args=["/install", "/quiet", "/norestart"],
+            recommended=True,
+        ),
+        AppEntry(
+            id="dotnet_desktop_9",
+            name=".NET Desktop Runtime 9.0 (x64)",
+            description="Новейшая среда выполнения Microsoft .NET 9.0 для самых современных программ",
+            description_en="Latest Microsoft .NET 9.0 Desktop Runtime for Windows applications",
+            category="runtimes",
+            winget_id="Microsoft.DotNet.DesktopRuntime.9",
+            direct_url="https://aka.ms/dotnet/9.0/windowsdesktop-runtime-win-x64.exe",
+            silent_args=["/install", "/quiet", "/norestart"],
+        ),
+        AppEntry(
+            id="dotnet_desktop_6",
+            name=".NET Desktop Runtime 6.0 (x64)",
+            description="Среда выполнения Microsoft .NET 6.0, требуемая многими популярными утилитами",
+            description_en="Microsoft .NET 6.0 Desktop Runtime required by many existing applications",
+            category="runtimes",
+            winget_id="Microsoft.DotNet.DesktopRuntime.6",
+            direct_url="https://aka.ms/dotnet/6.0/windowsdesktop-runtime-win-x64.exe",
+            silent_args=["/install", "/quiet", "/norestart"],
+        ),
+        AppEntry(
+            id="dotnet_framework_481",
+            name=".NET Framework 4.8.1 Runtime",
+            description="Классический рантайм .NET Framework 4.8.1 для широкой совместимости программ",
+            description_en="Classic .NET Framework 4.8.1 runtime for Windows software compatibility",
+            category="runtimes",
+            winget_id="Microsoft.DotNet.Framework.Runtime.4.8.1",
+            direct_url="https://go.microsoft.com/fwlink/?linkid=2203305",
+            silent_args=["/q", "/norestart"],
+        ),
+        AppEntry(
+            id="dotnet_framework_35",
+            name=".NET Framework 3.5 (включает 2.0 / 3.0)",
+            description="Пакет поддержки .NET Framework 3.5 / 2.0 для старых игр и классических утилит",
+            description_en="Legacy .NET Framework 3.5 / 2.0 package for classic software and older games",
+            category="runtimes",
+            winget_id="Microsoft.DotNet.Framework.DeveloperPack_3.5",
+            silent_args=["/q", "/norestart"],
         ),
     ]
 

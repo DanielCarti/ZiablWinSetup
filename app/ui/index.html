@@ -1407,6 +1407,219 @@
       border-radius: 20px;
     }
 
+    /* Startup Manager Styles */
+    .filter-chip {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      user-select: none;
+    }
+    .filter-chip:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+    }
+    .filter-chip.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+      font-weight: 600;
+    }
+    .startup-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-bottom: 40px;
+    }
+    .startup-item-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .startup-item-card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(255, 255, 255, 0.16);
+    }
+    .startup-item-card.is-disabled {
+      opacity: 0.6;
+    }
+    .startup-item-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex: 1;
+      min-width: 0;
+    }
+    .startup-toggle-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .switch-toggle {
+      position: relative;
+      display: inline-block;
+      width: 38px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+    .switch-toggle input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .switch-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: rgba(255, 255, 255, 0.15);
+      transition: .2s;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .switch-slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 2px;
+      bottom: 2px;
+      background-color: white;
+      transition: .2s;
+      border-radius: 50%;
+    }
+    .switch-toggle input:checked + .switch-slider {
+      background-color: #22c55e;
+      border-color: #22c55e;
+    }
+    .switch-toggle input:checked + .switch-slider:before {
+      transform: translateX(18px);
+    }
+    .startup-icon-box {
+      width: 36px;
+      height: 36px;
+      min-width: 36px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .startup-info-box {
+      flex: 1;
+      min-width: 0;
+    }
+    .startup-item-name-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .startup-item-name {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--text-main);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .startup-badge-source {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 1px 7px;
+      border-radius: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .badge-source-hkcu {
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+    .badge-source-hklm {
+      background: rgba(168, 85, 247, 0.15);
+      color: #c084fc;
+      border: 1px solid rgba(168, 85, 247, 0.3);
+    }
+    .badge-source-folder {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    .badge-source-task {
+      background: rgba(20, 184, 166, 0.15);
+      color: #2dd4bf;
+      border: 1px solid rgba(20, 184, 166, 0.3);
+    }
+    .startup-item-details-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 3px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .startup-item-publisher {
+      color: #94a3b8;
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+    .startup-item-command {
+      font-family: var(--font-mono, monospace);
+      opacity: 0.75;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .startup-item-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .btn-icon-action {
+      background: transparent;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-icon-action:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+    .btn-icon-action.btn-trash:hover {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border-color: rgba(239, 68, 68, 0.35);
+    }
+
     /* Modern vector SVG icons for categories and quick actions */
     .cat-item-content {
       display: flex;
@@ -1593,6 +1806,10 @@
           <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
           <span class="tab-label">Metro приложения</span>
         </button>
+        <button class="tab-btn" id="tabBtnStartup" onclick="switchMainTab('startup')">
+          <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.77.04"/></svg>
+          <span class="tab-label" id="tabLabelStartup">Автозагрузка</span>
+        </button>
       </div>
 
       <button class="btn-check-updates" id="btnCheckUpdates" onclick="triggerCheckUpdates()" title="Проверить обновления установленных программ">
@@ -1661,6 +1878,18 @@
           <button class="btn-browse" onclick="setPathDesktop()" style="flex: 1; padding: 0 4px; font-size: 11px; white-space: nowrap;" title="Распаковывать на Рабочий стол">🖥️ Desktop</button>
           <button class="btn-browse" onclick="setPathExeDir()" style="flex: 1; padding: 0 4px; font-size: 11px; white-space: nowrap;" title="Распаковывать в папку рядом с программой">📁 Рядом</button>
         </div>
+
+        <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--border-subtle); padding-top: 8px;">
+          <label style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-main); cursor: pointer;" title="Сворачивать приложение в системный трей вместо полного закрытия">
+            <input type="checkbox" id="chkMinimizeToTray" onchange="onToggleMinimizeToTray(this.checked)" checked style="accent-color: var(--accent); cursor: pointer;">
+            <span id="lblMinimizeToTray">В трей при закрытии</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-main); cursor: pointer;" title="Автоматически запускать ZiablWinSetup в трее при старте Windows">
+            <input type="checkbox" id="chkAutostartApp" onchange="onToggleAppAutostart(this.checked)" style="accent-color: var(--accent); cursor: pointer;">
+            <span id="lblAutostartApp">Автозапуск с Windows</span>
+          </label>
+        </div>
+
         <button class="quick-btn" onclick="openExclusionsModal()" style="margin-top: 10px; border: 1px solid var(--border-subtle); padding: 7px 10px;">
           <svg class="qa-svg" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           <span class="qa-label" id="lblExclusionsBtn">Исключения автообновления</span>
@@ -1741,6 +1970,40 @@
       </div>
       <div class="metro-grid" id="metroGrid"></div>
     </div>
+
+    <!-- View 4: Startup Manager view -->
+    <div id="viewStartup" style="display: none; flex: 1; min-height: 0; width: 100%; flex-direction: column; overflow-y: auto; padding: 24px 32px; background: var(--bg-app);">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <h2 style="font-size: 20px; font-weight: 600; margin-bottom: 4px;" id="startupTitle">🚀 Управление автозагрузкой Windows</h2>
+          <p style="font-size: 13px; color: var(--text-muted);" id="startupSubtitle">Полный контроль автозапуска: Реестр (HKCU/HKLM), Папки «Автозагрузка» и Задачи планировщика Windows.</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <div class="metro-counter-badge" id="startupCounterBadge">Всего: 0 (Включено: 0)</div>
+          <button class="btn-action btn-outline" id="btnRescanStartup" onclick="rescanStartupItems()" style="height: 32px; font-size: 12px; padding: 0 12px;">
+            <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;margin-right:6px;"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+            <span id="btnRescanStartupText">Обновить список</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filters & Search Toolbar -->
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+        <div class="startup-filter-chips" style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="filter-chip active" id="chipStartupAll" onclick="setStartupFilter('all')">Все (<span id="countStartupAll">0</span>)</button>
+          <button class="filter-chip" id="chipStartupRegistry" onclick="setStartupFilter('registry')">Реестр (<span id="countStartupRegistry">0</span>)</button>
+          <button class="filter-chip" id="chipStartupFolder" onclick="setStartupFilter('folder')">Папка (<span id="countStartupFolder">0</span>)</button>
+          <button class="filter-chip" id="chipStartupTask" onclick="setStartupFilter('task')">Планировщик (<span id="countStartupTask">0</span>)</button>
+        </div>
+        <div class="search-box" style="width: 280px;">
+          <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+          <input type="text" id="startupSearchInput" placeholder="Поиск по имени или пути..." oninput="onStartupSearch()">
+        </div>
+      </div>
+
+      <!-- Startup Items List -->
+      <div id="startupListContainer" class="startup-list"></div>
+    </div>
   </div>
 
   <!-- Footer -->
@@ -1806,6 +2069,9 @@
     let selectedMetroApps = new Set();
     let isRescanning = false;
     let toastTimer = null;
+    let startupItems = [];
+    let startupFilter = 'all'; // 'all' | 'registry' | 'folder' | 'task'
+    let startupSearchQuery = '';
 
     // Splitter resize logic
     const splitter = document.getElementById('splitter');
@@ -1869,6 +2135,7 @@
     const initialDataSource = window.INIT_DATA || window.PRELOAD_DATA;
     if (initialDataSource && initialDataSource.apps && initialDataSource.apps.length > 0) {
       appData = initialDataSource;
+      if (initialDataSource.startup_items) startupItems = initialDataSource.startup_items;
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initAppDefaults);
       } else {
@@ -1890,10 +2157,21 @@
           if (data.installed_apps) appData.installed_apps = data.installed_apps;
           if (data.tweaks) appData.tweaks = data.tweaks;
           if (data.metro_apps) appData.metro_apps = data.metro_apps;
+          if (data.startup_items) startupItems = data.startup_items;
+
+          if (typeof data.app_autostart_enabled === 'boolean') {
+            const chkAuto = document.getElementById('chkAutostartApp');
+            if (chkAuto) chkAuto.checked = data.app_autostart_enabled;
+          }
+          if (data.settings && typeof data.settings.minimize_to_tray_on_close === 'boolean') {
+            const chkTray = document.getElementById('chkMinimizeToTray');
+            if (chkTray) chkTray.checked = data.settings.minimize_to_tray_on_close;
+          }
         }
         initAppDefaults();
         if (currentMainTab === 'tweaks') renderTweaks();
         if (currentMainTab === 'metro') renderMetro();
+        if (currentMainTab === 'startup') renderStartup();
         const instCount = Object.keys(appData.installed_apps || {}).length;
         addLog(`Система готова. Всего программ: ${appData.apps.length}, обнаружено установленных в Windows: ${instCount}`);
       } catch (e) {
@@ -2007,6 +2285,35 @@
       if (wbBtnAuto && !wbBtnAuto.disabled) wbBtnAuto.textContent = s.btn_install_winget_auto || '⚡ Установить Winget автоматически';
       const wbBtnStore = document.getElementById('btnOpenWingetStore');
       if (wbBtnStore) wbBtnStore.textContent = s.btn_open_store || '🛍️ Microsoft Store';
+
+      // Startup translation
+      const tabStartup = document.getElementById('tabBtnStartup');
+      if (tabStartup) {
+        const lbl = tabStartup.querySelector('.tab-label');
+        if (lbl) lbl.textContent = (s.tab_startup || 'Автозагрузка').replace(/^[^\w\u0400-\u04FF]+\s*/, '').trim();
+      }
+      const stTitle = document.getElementById('startupTitle');
+      if (stTitle) stTitle.textContent = s.startup_title || '🚀 Управление автозагрузкой Windows';
+      const stSub = document.getElementById('startupSubtitle');
+      if (stSub) stSub.textContent = s.startup_subtitle || 'Полный контроль автозапуска: Реестр (HKCU/HKLM), Папки «Автозагрузка» и Задачи планировщика Windows.';
+      const btnRSt = document.getElementById('btnRescanStartupText');
+      if (btnRSt) btnRSt.textContent = s.btn_refresh_startup || 'Обновить список';
+      const sInp = document.getElementById('startupSearchInput');
+      if (sInp) sInp.placeholder = s.startup_search_placeholder || 'Поиск по имени или пути...';
+
+      const chipAll = document.getElementById('chipStartupAll');
+      if (chipAll && chipAll.childNodes[0]) chipAll.childNodes[0].nodeValue = (s.filter_all || 'Все') + ' ';
+      const chipReg = document.getElementById('chipStartupRegistry');
+      if (chipReg && chipReg.childNodes[0]) chipReg.childNodes[0].nodeValue = (s.startup_tab_registry || 'Реестр') + ' ';
+      const chipFld = document.getElementById('chipStartupFolder');
+      if (chipFld && chipFld.childNodes[0]) chipFld.childNodes[0].nodeValue = (s.startup_tab_folders || 'Папка') + ' ';
+      const chipTsk = document.getElementById('chipStartupTask');
+      if (chipTsk && chipTsk.childNodes[0]) chipTsk.childNodes[0].nodeValue = (s.startup_tab_scheduler || 'Планировщик') + ' ';
+
+      const lblTray = document.getElementById('lblMinimizeToTray');
+      if (lblTray) lblTray.textContent = s.settings_minimize_to_tray || 'В трей при закрытии';
+      const lblAuto = document.getElementById('lblAutostartApp');
+      if (lblAuto) lblAuto.textContent = s.settings_autostart_app || 'Автозапуск с Windows';
     }
 
     async function toggleLanguage() {
@@ -2032,6 +2339,7 @@
         renderCards();
         if (typeof renderTweaks === 'function') renderTweaks();
         if (typeof renderMetro === 'function' && currentMainTab === 'metro') renderMetro();
+        if (typeof renderStartup === 'function' && currentMainTab === 'startup') renderStartup();
         updateFooter();
       } catch (err) {
         console.error('toggleLanguage error:', err);
@@ -2112,6 +2420,8 @@
           return `<svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`;
         case 'updates_available':
           return `<svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>`;
+        case 'runtimes':
+          return `<svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg>`;
         default:
           return `<svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>`;
       }
@@ -2908,29 +3218,42 @@
       document.getElementById('tabBtnTweaks').classList.toggle('active', tab === 'tweaks');
       const tabMetro = document.getElementById('tabBtnMetro');
       if (tabMetro) tabMetro.classList.toggle('active', tab === 'metro');
+      const tabStartup = document.getElementById('tabBtnStartup');
+      if (tabStartup) tabStartup.classList.toggle('active', tab === 'startup');
 
       const viewApps = document.getElementById('viewApps');
       const viewTweaks = document.getElementById('viewTweaks');
       const viewMetro = document.getElementById('viewMetro');
+      const viewStartup = document.getElementById('viewStartup');
       const footer = document.getElementById('mainFooter');
 
       if (tab === 'apps') {
         viewApps.style.display = 'flex';
         viewTweaks.style.display = 'none';
         if (viewMetro) viewMetro.style.display = 'none';
+        if (viewStartup) viewStartup.style.display = 'none';
         footer.style.display = 'flex';
       } else if (tab === 'tweaks') {
         viewApps.style.display = 'none';
         viewTweaks.style.display = 'flex';
         if (viewMetro) viewMetro.style.display = 'none';
+        if (viewStartup) viewStartup.style.display = 'none';
         footer.style.display = 'none';
         renderTweaks();
       } else if (tab === 'metro') {
         viewApps.style.display = 'none';
         viewTweaks.style.display = 'none';
         if (viewMetro) viewMetro.style.display = 'flex';
+        if (viewStartup) viewStartup.style.display = 'none';
         footer.style.display = 'none';
         renderMetro();
+      } else if (tab === 'startup') {
+        viewApps.style.display = 'none';
+        viewTweaks.style.display = 'none';
+        if (viewMetro) viewMetro.style.display = 'none';
+        if (viewStartup) viewStartup.style.display = 'flex';
+        footer.style.display = 'none';
+        renderStartup();
       }
     }
 
@@ -3248,6 +3571,258 @@
         renderMetro();
       }
     }
+
+    // ==========================================
+    // Управление автозагрузкой Windows и настройками
+    // ==========================================
+
+    function setStartupFilter(filter) {
+      startupFilter = filter;
+      const cAll = document.getElementById('chipStartupAll');
+      if (cAll) cAll.classList.toggle('active', filter === 'all');
+      const cReg = document.getElementById('chipStartupRegistry');
+      if (cReg) cReg.classList.toggle('active', filter === 'registry');
+      const cFld = document.getElementById('chipStartupFolder');
+      if (cFld) cFld.classList.toggle('active', filter === 'folder');
+      const cTsk = document.getElementById('chipStartupTask');
+      if (cTsk) cTsk.classList.toggle('active', filter === 'task');
+      renderStartup();
+    }
+
+    function onStartupSearch() {
+      const input = document.getElementById('startupSearchInput');
+      startupSearchQuery = (input ? input.value : '').toLowerCase().trim();
+      renderStartup();
+    }
+
+    async function rescanStartupItems() {
+      const btn = document.getElementById('btnRescanStartup');
+      if (btn) btn.disabled = true;
+      addLog('🔄 Сканирование элементов автозагрузки Windows...');
+      try {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.rescan_startup_items) {
+          const items = await window.pywebview.api.rescan_startup_items();
+          if (items) {
+            startupItems = items;
+            renderStartup();
+            showToast(`Найдено ${items.length} элементов автозагрузки`, 'success', 2500);
+          }
+        }
+      } catch (err) {
+        console.error('rescanStartupItems error:', err);
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    function renderStartup() {
+      const container = document.getElementById('startupListContainer');
+      if (!container) return;
+      const s = appData.strings || {};
+
+      const regCount = startupItems.filter(i => i.source_type && i.source_type.startsWith('registry')).length;
+      const fldCount = startupItems.filter(i => i.source_type === 'startup_folder').length;
+      const tskCount = startupItems.filter(i => i.source_type === 'scheduled_task').length;
+      const totalCount = startupItems.length;
+      const enabledCount = startupItems.filter(i => i.enabled).length;
+
+      // Update counters
+      const cAll = document.getElementById('countStartupAll');
+      if (cAll) cAll.textContent = totalCount;
+      const cReg = document.getElementById('countStartupRegistry');
+      if (cReg) cReg.textContent = regCount;
+      const cFld = document.getElementById('countStartupFolder');
+      if (cFld) cFld.textContent = fldCount;
+      const cTsk = document.getElementById('countStartupTask');
+      if (cTsk) cTsk.textContent = tskCount;
+
+      const badge = document.getElementById('startupCounterBadge');
+      if (badge) {
+        badge.textContent = `Всего: ${totalCount} (Включено: ${enabledCount})`;
+      }
+
+      let filtered = startupItems;
+      if (startupFilter === 'registry') {
+        filtered = filtered.filter(i => i.source_type && i.source_type.startsWith('registry'));
+      } else if (startupFilter === 'folder') {
+        filtered = filtered.filter(i => i.source_type === 'startup_folder');
+      } else if (startupFilter === 'task') {
+        filtered = filtered.filter(i => i.source_type === 'scheduled_task');
+      }
+
+      if (startupSearchQuery) {
+        filtered = filtered.filter(i => {
+          const name = (i.name || '').toLowerCase();
+          const pub = (i.publisher || '').toLowerCase();
+          const cmd = (i.command || '').toLowerCase();
+          const loc = (i.location || '').toLowerCase();
+          return name.includes(startupSearchQuery) || pub.includes(startupSearchQuery) || cmd.includes(startupSearchQuery) || loc.includes(startupSearchQuery);
+        });
+      }
+
+      container.innerHTML = '';
+      if (filtered.length === 0) {
+        container.innerHTML = `<div style="text-align: center; padding: 40px; color: var(--text-muted); font-size: 13px;">${s.startup_no_items || 'Записи автозагрузки не найдены.'}</div>`;
+        return;
+      }
+
+      filtered.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'startup-item-card' + (item.enabled ? '' : ' is-disabled');
+        card.id = `startup_${item.id}`;
+
+        let badgeClass = 'badge-source-hkcu';
+        let badgeText = item.source_label || 'Реестр';
+        if (item.source_type === 'registry_machine') {
+          badgeClass = 'badge-source-hklm';
+        } else if (item.source_type === 'startup_folder') {
+          badgeClass = 'badge-source-folder';
+        } else if (item.source_type === 'scheduled_task') {
+          badgeClass = 'badge-source-task';
+        }
+
+        const iconEmoji = item.source_type === 'scheduled_task' ? '⏰' : (item.source_type === 'startup_folder' ? '📁' : '⚡');
+        const publisherHtml = item.publisher ? `<span class="startup-item-publisher" title="Издатель: ${item.publisher}">🏢 ${item.publisher}</span>` : '';
+        const commandText = item.command || item.location || '';
+
+        card.innerHTML = `
+          <div class="startup-item-left">
+            <div class="startup-toggle-wrap" title="${item.enabled ? 'Отключить автозапуск' : 'Включить автозапуск'}">
+              <label class="switch-toggle">
+                <input type="checkbox" id="chk_startup_${item.id}" ${item.enabled ? 'checked' : ''} onchange="handleToggleStartup('${item.id}', this.checked)">
+                <span class="switch-slider"></span>
+              </label>
+            </div>
+            <div class="startup-icon-box">${iconEmoji}</div>
+            <div class="startup-info-box">
+              <div class="startup-item-name-row">
+                <span class="startup-item-name" title="${item.name}">${item.name}</span>
+                <span class="startup-badge-source ${badgeClass}">${badgeText}</span>
+              </div>
+              <div class="startup-item-details-row">
+                ${publisherHtml}
+                <span class="startup-item-command" title="${commandText}">${commandText}</span>
+              </div>
+            </div>
+          </div>
+          <div class="startup-item-right">
+            <button class="btn-icon-action" onclick="handleOpenStartupFolder('${item.id}')" title="Открыть папку с файлом в Проводнике">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            </button>
+            <button class="btn-icon-action btn-trash" onclick="handleDeleteStartup('${item.id}', '${item.name.replace(/'/g, "\\'")}')" title="Удалить из автозагрузки">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    async function handleToggleStartup(itemId, enable) {
+      const item = startupItems.find(i => i.id === itemId);
+      if (!item) return;
+      const chk = document.getElementById(`chk_startup_${itemId}`);
+      if (chk) chk.disabled = true;
+
+      try {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.toggle_startup_item) {
+          const res = await window.pywebview.api.toggle_startup_item(itemId, enable);
+          if (res && res.success) {
+            item.enabled = enable;
+            const card = document.getElementById(`startup_${itemId}`);
+            if (card) card.classList.toggle('is-disabled', !enable);
+            const badge = document.getElementById('startupCounterBadge');
+            if (badge) {
+              const enabledCount = startupItems.filter(i => i.enabled).length;
+              badge.textContent = `Всего: ${startupItems.length} (Включено: ${enabledCount})`;
+            }
+            showToast(res.message, 'success', 2000);
+          } else {
+            if (chk) chk.checked = !enable;
+            showToast(res ? res.message : 'Ошибка изменения', 'error');
+          }
+        }
+      } catch (err) {
+        console.error('toggle startup error:', err);
+        if (chk) chk.checked = !enable;
+        showToast(`Ошибка: ${err}`, 'error');
+      } finally {
+        if (chk) chk.disabled = false;
+      }
+    }
+
+    async function handleOpenStartupFolder(itemId) {
+      try {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.open_startup_item_folder) {
+          const res = await window.pywebview.api.open_startup_item_folder(itemId);
+          if (res && !res.success) {
+            showToast(res.message, 'warning');
+          }
+        }
+      } catch (err) {
+        console.error('open folder error:', err);
+      }
+    }
+
+    async function handleDeleteStartup(itemId, itemName) {
+      const s = appData.strings || {};
+      const confirmed = confirm((s.startup_delete_confirm || 'Вы действительно хотите удалить «{name}» из автозагрузки?').replace('{name}', itemName));
+      if (!confirmed) return;
+
+      try {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.delete_startup_item) {
+          const res = await window.pywebview.api.delete_startup_item(itemId);
+          if (res && res.success) {
+            startupItems = startupItems.filter(i => i.id !== itemId);
+            renderStartup();
+            showToast(res.message, 'success', 2500);
+          } else {
+            showToast(res ? res.message : 'Ошибка удаления', 'error');
+          }
+        }
+      } catch (err) {
+        console.error('delete startup error:', err);
+        showToast(`Ошибка: ${err}`, 'error');
+      }
+    }
+
+    async function onToggleMinimizeToTray(enabled) {
+      try {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.set_minimize_to_tray_setting) {
+          await window.pywebview.api.set_minimize_to_tray_setting(enabled);
+        }
+      } catch (err) {
+        console.error('onToggleMinimizeToTray error:', err);
+      }
+    }
+
+    async function onToggleAppAutostart(enabled) {
+      const chk = document.getElementById('chkAutostartApp');
+      if (chk) chk.disabled = true;
+      try {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.set_app_autostart_active) {
+          const res = await window.pywebview.api.set_app_autostart_active(enabled);
+          if (res && res.success) {
+            showToast(enabled ? 'Автозапуск с Windows включен' : 'Автозапуск с Windows отключен', 'success', 2500);
+          } else {
+            if (chk) chk.checked = !enabled;
+            showToast('Не удалось изменить статус автозапуска', 'error');
+          }
+        }
+      } catch (err) {
+        console.error('onToggleAppAutostart error:', err);
+        if (chk) chk.checked = !enabled;
+      } finally {
+        if (chk) chk.disabled = false;
+      }
+    }
+
+    window.onStartupItemsUpdated = function(items) {
+      if (items && Array.isArray(items)) {
+        startupItems = items;
+        if (currentMainTab === 'startup') renderStartup();
+      }
+    };
 
     // ==========================================
     // Пересканирование установленных программ

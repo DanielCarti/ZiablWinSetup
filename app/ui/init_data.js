@@ -16,9 +16,11 @@ window.__INIT_DATA__ = {
     "cat_vpn_network": "VPN и сеть",
     "cat_gpu_drivers": "GPU и драйверы",
     "cat_office": "Офис и документы",
+    "cat_runtimes": "Библиотеки и Runtimes",
     "tab_apps": "Приложения",
     "tab_tweaks": "Твики и фичи",
     "tab_metro": "Metro приложения",
+    "tab_startup": "Автозагрузка",
     "metro_title": "Встроенные Metro / UWP приложения Windows",
     "metro_subtitle": "Предустановленный системный софт. Удаляйте ненужные встроенные программы и восстанавливайте их в один клик.",
     "metro_status_installed": "Установлено",
@@ -120,7 +122,26 @@ window.__INIT_DATA__ = {
     "btn_install_winget_auto": "⚡ Установить Winget автоматически",
     "btn_open_store": "🛍️ Microsoft Store",
     "winget_installing": "Установка Winget...",
-    "winget_install_success": "Winget успешно установлен!"
+    "winget_install_success": "Winget успешно установлен!",
+    "settings_autostart_label": "Запускать ZiablWinSetup вместе с Windows",
+    "settings_autostart_desc": "Автоматический запуск программы при старте системы (сворачивается в системный трей)",
+    "settings_tray_close_label": "Сворачивать в трей при закрытии (крестик)",
+    "settings_tray_close_desc": "Окно скрывается в системный трей вместо полного закрытия приложения",
+    "startup_title": "Менеджер автозагрузки Windows",
+    "startup_subtitle": "Программы, системные службы и задачи планировщика, запускающиеся при старте Windows. Отключайте лишнее для ускорения системы.",
+    "startup_filter_all": "Все",
+    "startup_filter_registry": "Реестр",
+    "startup_filter_folders": "Папка автозапуска",
+    "startup_filter_tasks": "Планировщик задач",
+    "startup_count_summary": "Всего: {total} • Включено: {enabled} • Отключено: {disabled}",
+    "startup_status_enabled": "Включено",
+    "startup_status_disabled": "Отключено",
+    "startup_btn_open_folder": "Открыть папку с файлом",
+    "startup_btn_delete": "Удалить",
+    "startup_confirm_delete": "Вы действительно хотите удалить запись «{name}» из автозагрузки?",
+    "startup_search_placeholder": "Поиск по автозагрузке (название, команда, издатель)...",
+    "startup_empty_list": "Записей автозагрузки не найдено.",
+    "startup_refresh": "Обновить список"
   },
   "strings_all": {
     "ru": {
@@ -139,9 +160,11 @@ window.__INIT_DATA__ = {
       "cat_vpn_network": "VPN и сеть",
       "cat_gpu_drivers": "GPU и драйверы",
       "cat_office": "Офис и документы",
+      "cat_runtimes": "Библиотеки и Runtimes",
       "tab_apps": "Приложения",
       "tab_tweaks": "Твики и фичи",
       "tab_metro": "Metro приложения",
+      "tab_startup": "Автозагрузка",
       "metro_title": "Встроенные Metro / UWP приложения Windows",
       "metro_subtitle": "Предустановленный системный софт. Удаляйте ненужные встроенные программы и восстанавливайте их в один клик.",
       "metro_status_installed": "Установлено",
@@ -243,7 +266,26 @@ window.__INIT_DATA__ = {
       "btn_install_winget_auto": "⚡ Установить Winget автоматически",
       "btn_open_store": "🛍️ Microsoft Store",
       "winget_installing": "Установка Winget...",
-      "winget_install_success": "Winget успешно установлен!"
+      "winget_install_success": "Winget успешно установлен!",
+      "settings_autostart_label": "Запускать ZiablWinSetup вместе с Windows",
+      "settings_autostart_desc": "Автоматический запуск программы при старте системы (сворачивается в системный трей)",
+      "settings_tray_close_label": "Сворачивать в трей при закрытии (крестик)",
+      "settings_tray_close_desc": "Окно скрывается в системный трей вместо полного закрытия приложения",
+      "startup_title": "Менеджер автозагрузки Windows",
+      "startup_subtitle": "Программы, системные службы и задачи планировщика, запускающиеся при старте Windows. Отключайте лишнее для ускорения системы.",
+      "startup_filter_all": "Все",
+      "startup_filter_registry": "Реестр",
+      "startup_filter_folders": "Папка автозапуска",
+      "startup_filter_tasks": "Планировщик задач",
+      "startup_count_summary": "Всего: {total} • Включено: {enabled} • Отключено: {disabled}",
+      "startup_status_enabled": "Включено",
+      "startup_status_disabled": "Отключено",
+      "startup_btn_open_folder": "Открыть папку с файлом",
+      "startup_btn_delete": "Удалить",
+      "startup_confirm_delete": "Вы действительно хотите удалить запись «{name}» из автозагрузки?",
+      "startup_search_placeholder": "Поиск по автозагрузке (название, команда, издатель)...",
+      "startup_empty_list": "Записей автозагрузки не найдено.",
+      "startup_refresh": "Обновить список"
     },
     "en": {
       "app_title": "ZiablWinSetup — Bulk Software Installer",
@@ -261,9 +303,11 @@ window.__INIT_DATA__ = {
       "cat_vpn_network": "VPN & Network",
       "cat_gpu_drivers": "GPU & Drivers",
       "cat_office": "Office & Docs",
+      "cat_runtimes": "Libraries & Runtimes",
       "tab_apps": "Apps",
       "tab_tweaks": "Tweaks & Features",
       "tab_metro": "Metro Apps",
+      "tab_startup": "Startup",
       "metro_title": "Built-in Windows Metro / UWP Apps",
       "metro_subtitle": "Pre-installed system applications. Uninstall unwanted software and restore apps in a single click.",
       "metro_status_installed": "Installed",
@@ -365,9 +409,107 @@ window.__INIT_DATA__ = {
       "btn_install_winget_auto": "⚡ Install Winget Automatically",
       "btn_open_store": "🛍️ Microsoft Store",
       "winget_installing": "Installing Winget...",
-      "winget_install_success": "Winget installed successfully!"
+      "winget_install_success": "Winget installed successfully!",
+      "settings_autostart_label": "Start ZiablWinSetup on Windows startup",
+      "settings_autostart_desc": "Application starts automatically with Windows and minimizes to system tray",
+      "settings_tray_close_label": "Minimize to tray on close",
+      "settings_tray_close_desc": "Clicking the window close button minimizes to system tray instead of exiting",
+      "startup_title": "Windows Startup Manager",
+      "startup_subtitle": "Applications, background services, and scheduled tasks that launch on Windows boot. Disable unnecessary items to accelerate system startup.",
+      "startup_filter_all": "All",
+      "startup_filter_registry": "Registry",
+      "startup_filter_folders": "Startup Folder",
+      "startup_filter_tasks": "Task Scheduler",
+      "startup_count_summary": "Total: {total} • Enabled: {enabled} • Disabled: {disabled}",
+      "startup_status_enabled": "Enabled",
+      "startup_status_disabled": "Disabled",
+      "startup_btn_open_folder": "Open file folder",
+      "startup_btn_delete": "Delete",
+      "startup_confirm_delete": "Are you sure you want to remove '{name}' from Windows startup?",
+      "startup_search_placeholder": "Search startup items (app, command, publisher)...",
+      "startup_empty_list": "No startup items found.",
+      "startup_refresh": "Refresh List"
     }
   },
+  "categories": [
+    {
+      "id": "all",
+      "name": "Все",
+      "name_ru": "Все",
+      "name_en": "All",
+      "count": 71
+    },
+    {
+      "id": "browsers",
+      "name": "Браузеры",
+      "name_ru": "Браузеры",
+      "name_en": "Browsers",
+      "count": 5
+    },
+    {
+      "id": "media",
+      "name": "Медиа",
+      "name_ru": "Медиа",
+      "name_en": "Media",
+      "count": 6
+    },
+    {
+      "id": "utilities",
+      "name": "Утилиты",
+      "name_ru": "Утилиты",
+      "name_en": "Utilities",
+      "count": 16
+    },
+    {
+      "id": "communication",
+      "name": "Связь",
+      "name_ru": "Связь",
+      "name_en": "Communication",
+      "count": 5
+    },
+    {
+      "id": "development",
+      "name": "Разработка",
+      "name_ru": "Разработка",
+      "name_en": "Development",
+      "count": 9
+    },
+    {
+      "id": "gpu_drivers",
+      "name": "GPU и драйверы",
+      "name_ru": "GPU и драйверы",
+      "name_en": "GPU & Drivers",
+      "count": 6
+    },
+    {
+      "id": "vpn_network",
+      "name": "VPN и сеть",
+      "name_ru": "VPN и сеть",
+      "name_en": "VPN & Network",
+      "count": 6
+    },
+    {
+      "id": "gaming",
+      "name": "Игры и загрузки",
+      "name_ru": "Игры и загрузки",
+      "name_en": "Gaming & Downloads",
+      "count": 6
+    },
+    {
+      "id": "office",
+      "name": "Офис и документы",
+      "name_ru": "Офис и документы",
+      "name_en": "Office & Docs",
+      "count": 3
+    },
+    {
+      "id": "runtimes",
+      "name": "Библиотеки и Runtimes",
+      "name_ru": "Библиотеки и Runtimes",
+      "name_en": "Libraries & Runtimes",
+      "count": 9
+    }
+  ],
   "apps": [
     {
       "id": "chrome",
@@ -708,6 +850,19 @@ window.__INIT_DATA__ = {
       "web_url": null
     },
     {
+      "id": "hitmanpro",
+      "name": "HitmanPro",
+      "description": "Быстрый облачный антивирусный сканер второго мнения (активированная версия на 1progs.ru)",
+      "description_en": "Fast second-opinion cloud-based malware and rootkit scanner (1progs.ru)",
+      "notes": "",
+      "notes_en": "",
+      "category": "utilities",
+      "recommended": true,
+      "installer_type": "exe",
+      "has_silent": true,
+      "web_url": "https://1progs.ru/hitmanpro/"
+    },
+    {
       "id": "telegram",
       "name": "Telegram Desktop",
       "description": "Быстрый и безопасный мессенджер с поддержкой каналов и групп",
@@ -955,6 +1110,19 @@ window.__INIT_DATA__ = {
       "web_url": "https://1progs.ru/iobit-driver-booster-pro/"
     },
     {
+      "id": "nvidiabroadcast",
+      "name": "NVIDIA Broadcast",
+      "description": "Интеллектуальное шумоподавление микрофона и эффекты веб-камеры на базе ИИ для видеокарт RTX",
+      "description_en": "AI-powered microphone noise reduction and webcam effects for RTX GPUs",
+      "notes": "",
+      "notes_en": "",
+      "category": "gpu_drivers",
+      "recommended": false,
+      "installer_type": "exe",
+      "has_silent": true,
+      "web_url": "https://www.nvidia.com/ru-ru/geforce/broadcasting/broadcast-app/"
+    },
+    {
       "id": "amnezia-vpn",
       "name": "AmneziaVPN",
       "description": "Бесплатный VPN-клиент с поддержкой устойчивых протоколов",
@@ -1085,6 +1253,32 @@ window.__INIT_DATA__ = {
       "web_url": null
     },
     {
+      "id": "roblox",
+      "name": "Roblox",
+      "description": "Популярная онлайн-платформа игр и создания виртуальных миров",
+      "description_en": "Popular online gaming platform and universe creation system",
+      "notes": "",
+      "notes_en": "",
+      "category": "gaming",
+      "recommended": true,
+      "installer_type": "exe",
+      "has_silent": true,
+      "web_url": "https://www.roblox.com/download/client"
+    },
+    {
+      "id": "tlauncher",
+      "name": "TLauncher (Minecraft)",
+      "description": "Один из самых популярных лаунчеров Minecraft с модами, скинами и версиями",
+      "description_en": "Popular Minecraft launcher with modpack, skin, and version support",
+      "notes": "",
+      "notes_en": "",
+      "category": "gaming",
+      "recommended": true,
+      "installer_type": "exe",
+      "has_silent": true,
+      "web_url": "https://tlauncher.org/"
+    },
+    {
       "id": "obsidian",
       "name": "Obsidian",
       "description": "База знаний и заметочник на основе локальных файлов Markdown",
@@ -1122,78 +1316,123 @@ window.__INIT_DATA__ = {
       "installer_type": "exe",
       "has_silent": true,
       "web_url": null
-    }
-  ],
-  "categories": [
-    {
-      "id": "all",
-      "name": "Все",
-      "name_ru": "Все",
-      "name_en": "All",
-      "count": 58
     },
     {
-      "id": "browsers",
-      "name": "Браузеры",
-      "name_ru": "Браузеры",
-      "name_en": "Browsers",
-      "count": 5
+      "id": "directx",
+      "name": "DirectX End-User Runtimes (June 2010)",
+      "description": "Полный набор библиотек DirectX 9.0c / 10 / 11 для совместимости со всеми играми",
+      "description_en": "Legacy DirectX 9.0c / 10 / 11 runtime libraries for PC games compatibility",
+      "notes": "",
+      "notes_en": "",
+      "category": "runtimes",
+      "recommended": true,
+      "installer_type": "exe",
+      "has_silent": true,
+      "web_url": "https://www.microsoft.com/download/details.aspx?id=35"
     },
     {
-      "id": "media",
-      "name": "Медиа",
-      "name_ru": "Медиа",
-      "name_en": "Media",
-      "count": 6
+      "id": "vcredist_aio",
+      "name": "Visual C++ Runtimes All-in-One",
+      "description": "Универсальный полный пакет всех версий Microsoft Visual C++ (2005-2022 x86/x64)",
+      "description_en": "Complete all-in-one package of Microsoft Visual C++ runtimes (2005-2022 x86/x64)",
+      "notes": "",
+      "notes_en": "",
+      "category": "runtimes",
+      "recommended": true,
+      "installer_type": "exe",
+      "has_silent": true,
+      "web_url": "https://github.com/abbodi1406/vcredist"
     },
     {
-      "id": "utilities",
-      "name": "Утилиты",
-      "name_ru": "Утилиты",
-      "name_en": "Utilities",
-      "count": 15
+      "id": "vcredist_2015_2022_x64",
+      "name": "Visual C++ 2015-2022 Redistributable (x64)",
+      "description": "Официальные распространяемые компоненты Microsoft Visual C++ 2015-2022 для 64-бит",
+      "description_en": "Official Microsoft Visual C++ 2015-2022 redistributable for 64-bit Windows",
+      "notes": "",
+      "notes_en": "",
+      "category": "runtimes",
+      "recommended": true,
+      "installer_type": "exe",
+      "has_silent": true,
+      "web_url": null
     },
     {
-      "id": "communication",
-      "name": "Связь",
-      "name_ru": "Связь",
-      "name_en": "Communication",
-      "count": 5
+      "id": "vcredist_2015_2022_x86",
+      "name": "Visual C++ 2015-2022 Redistributable (x86)",
+      "description": "Официальные компоненты Microsoft Visual C++ 2015-2022 для 32-бит программ и игр",
+      "description_en": "Official Microsoft Visual C++ 2015-2022 redistributable for 32-bit apps and games",
+      "notes": "",
+      "notes_en": "",
+      "category": "runtimes",
+      "recommended": false,
+      "installer_type": "exe",
+      "has_silent": true,
+      "web_url": null
     },
     {
-      "id": "development",
-      "name": "Разработка",
-      "name_ru": "Разработка",
-      "name_en": "Development",
-      "count": 9
+      "id": "dotnet_desktop_8",
+      "name": ".NET Desktop Runtime 8.0 (LTS x64)",
+      "description": "Среда выполнения Microsoft .NET 8.0 LTS для современных настольных приложений Windows",
+      "description_en": "Microsoft .NET 8.0 LTS Desktop Runtime for modern Windows applications",
+      "notes": "",
+      "notes_en": "",
+      "category": "runtimes",
+      "recommended": true,
+      "installer_type": "exe",
+      "has_silent": true,
+      "web_url": null
     },
     {
-      "id": "gpu_drivers",
-      "name": "GPU и драйверы",
-      "name_ru": "GPU и драйверы",
-      "name_en": "GPU & Drivers",
-      "count": 5
+      "id": "dotnet_desktop_9",
+      "name": ".NET Desktop Runtime 9.0 (x64)",
+      "description": "Новейшая среда выполнения Microsoft .NET 9.0 для самых современных программ",
+      "description_en": "Latest Microsoft .NET 9.0 Desktop Runtime for Windows applications",
+      "notes": "",
+      "notes_en": "",
+      "category": "runtimes",
+      "recommended": false,
+      "installer_type": "exe",
+      "has_silent": true,
+      "web_url": null
     },
     {
-      "id": "vpn_network",
-      "name": "VPN и сеть",
-      "name_ru": "VPN и сеть",
-      "name_en": "VPN & Network",
-      "count": 6
+      "id": "dotnet_desktop_6",
+      "name": ".NET Desktop Runtime 6.0 (x64)",
+      "description": "Среда выполнения Microsoft .NET 6.0, требуемая многими популярными утилитами",
+      "description_en": "Microsoft .NET 6.0 Desktop Runtime required by many existing applications",
+      "notes": "",
+      "notes_en": "",
+      "category": "runtimes",
+      "recommended": false,
+      "installer_type": "exe",
+      "has_silent": true,
+      "web_url": null
     },
     {
-      "id": "gaming",
-      "name": "Игры и загрузки",
-      "name_ru": "Игры и загрузки",
-      "name_en": "Gaming & Downloads",
-      "count": 4
+      "id": "dotnet_framework_481",
+      "name": ".NET Framework 4.8.1 Runtime",
+      "description": "Классический рантайм .NET Framework 4.8.1 для широкой совместимости программ",
+      "description_en": "Classic .NET Framework 4.8.1 runtime for Windows software compatibility",
+      "notes": "",
+      "notes_en": "",
+      "category": "runtimes",
+      "recommended": false,
+      "installer_type": "exe",
+      "has_silent": true,
+      "web_url": null
     },
     {
-      "id": "office",
-      "name": "Офис и документы",
-      "name_ru": "Офис и документы",
-      "name_en": "Office & Docs",
-      "count": 3
+      "id": "dotnet_framework_35",
+      "name": ".NET Framework 3.5 (включает 2.0 / 3.0)",
+      "description": "Пакет поддержки .NET Framework 3.5 / 2.0 для старых игр и классических утилит",
+      "description_en": "Legacy .NET Framework 3.5 / 2.0 package for classic software and older games",
+      "notes": "",
+      "notes_en": "",
+      "category": "runtimes",
+      "recommended": false,
+      "installer_type": "exe",
+      "has_silent": true,
+      "web_url": null
     }
   ],
   "recommended": [
@@ -1212,6 +1451,7 @@ window.__INIT_DATA__ = {
     "crystaldiskmark",
     "uninstalltool",
     "unchecker",
+    "hitmanpro",
     "telegram",
     "discord",
     "claude",
@@ -1226,9 +1466,16 @@ window.__INIT_DATA__ = {
     "tgwsproxy",
     "steam",
     "qbittorrent",
-    "obsidian"
+    "roblox",
+    "tlauncher",
+    "obsidian",
+    "directx",
+    "vcredist_aio",
+    "vcredist_2015_2022_x64",
+    "dotnet_desktop_8"
   ],
   "installed_apps": {},
+  "installed": [],
   "tweaks": [
     {
       "id": "torrent_ads",
@@ -1236,7 +1483,7 @@ window.__INIT_DATA__ = {
       "description": "Полностью выключает рекламные баннеры, всплывающие видео и спонсорские блоки в интерфейсе торрент-клиента без сторонних программ.",
       "category": "apps",
       "icon": "🚫",
-      "applied": false,
+      "applied": true,
       "available": true,
       "unavailable_reason": "",
       "type": "toggle"
@@ -1280,7 +1527,7 @@ window.__INIT_DATA__ = {
       "description": "Отключает постоянное фоновое чтение и запись индексатора Windows Search. Продлевает ресурс ячеек SSD (TBW) и снижает нагрузку на CPU.",
       "category": "perf",
       "icon": "⚡",
-      "applied": false,
+      "applied": true,
       "available": true,
       "unavailable_reason": "",
       "type": "toggle"
@@ -1291,7 +1538,7 @@ window.__INIT_DATA__ = {
       "description": "Показывает реальные расширения файлов (.exe, .bat, .zip) в Проводнике Windows для безопасности и защиты от вирусов.",
       "category": "system",
       "icon": "📁",
-      "applied": false,
+      "applied": true,
       "available": true,
       "unavailable_reason": "",
       "type": "toggle"
@@ -1313,7 +1560,7 @@ window.__INIT_DATA__ = {
       "description": "Отключает рекламу приложений, навязчивые предложения и подсказки в меню «Пуск» Windows 10/11.",
       "category": "system",
       "icon": "🔇",
-      "applied": false,
+      "applied": true,
       "available": true,
       "unavailable_reason": "",
       "type": "toggle"
@@ -1349,7 +1596,7 @@ window.__INIT_DATA__ = {
       "icon": "🌤️",
       "store_id": "9WZDNCRFJ3Q2",
       "can_remove": true,
-      "installed": false
+      "installed": true
     },
     {
       "id": "news",
@@ -1358,7 +1605,7 @@ window.__INIT_DATA__ = {
       "icon": "📰",
       "store_id": "9WZDNCRFHVFW",
       "can_remove": true,
-      "installed": false
+      "installed": true
     },
     {
       "id": "camera",
@@ -1367,7 +1614,7 @@ window.__INIT_DATA__ = {
       "icon": "📷",
       "store_id": "9WZDNCRFJBBG",
       "can_remove": true,
-      "installed": false
+      "installed": true
     },
     {
       "id": "maps",
@@ -1394,7 +1641,7 @@ window.__INIT_DATA__ = {
       "icon": "📱",
       "store_id": "9NBLGGH4VST9",
       "can_remove": true,
-      "installed": false
+      "installed": true
     },
     {
       "id": "feedback_hub",
@@ -1448,7 +1695,7 @@ window.__INIT_DATA__ = {
       "icon": "🎵",
       "store_id": "9WZDNCRFJ3PT",
       "can_remove": true,
-      "installed": false
+      "installed": true
     },
     {
       "id": "xbox_overlay",
@@ -1511,7 +1758,7 @@ window.__INIT_DATA__ = {
       "icon": "🔢",
       "store_id": "9WZDNCRFHVN5",
       "can_remove": true,
-      "installed": false
+      "installed": true
     },
     {
       "id": "clipchamp",
@@ -1529,7 +1776,7 @@ window.__INIT_DATA__ = {
       "icon": "👥",
       "store_id": "9NBLGGH10PG8",
       "can_remove": true,
-      "installed": false
+      "installed": true
     }
   ],
   "ignored_updates": [
@@ -1539,10 +1786,25 @@ window.__INIT_DATA__ = {
   ],
   "system_info": {
     "winget_available": true,
-    "winget_version": "",
+    "winget_version": "v1.29.380",
     "is_admin": false,
-    "extract_path": ""
-  }
+    "extract_path": "C:\\Users\\Daniel\\.gemini\\antigravity\\scratch\\WinSetup"
+  },
+  "settings": {
+    "ignored_update_apps": [
+      "photoshop",
+      "premiere",
+      "uninstalltool"
+    ],
+    "theme": "dark",
+    "language": "ru",
+    "silent_mode_default": true,
+    "extract_mode": "exe_dir",
+    "minimize_to_tray_on_close": true,
+    "autostart_with_windows": false
+  },
+  "startup_items": [],
+  "app_autostart_enabled": false
 };
 window.INIT_DATA = window.__INIT_DATA__;
 window.PRELOAD_DATA = window.__INIT_DATA__;

@@ -44,6 +44,8 @@ from app.settings import (
 from app.tweaks import apply_tweak_by_id, get_all_tweaks, revert_tweak_by_id
 from app.updater import check_updates_sync
 from app.utils import check_winget, get_winget_version, is_admin, install_winget, open_winget_store
+from app.autostart import is_app_autostart_enabled, set_app_autostart
+from app.startup_manager import StartupManager
 
 logger = logging.getLogger("WinSetup")
 
@@ -83,9 +85,40 @@ class AppBridge:
         self._active_installs = 0
         self._is_upgrading_bulk = False
         self._active_upgrades = 0
+        self._app_data: dict[str, Any] | None = None
+        self._tray_manager: Any = None
+        self._is_quitting = False
 
     def set_window(self, window: webview.Window):
         self._window = window
+
+    def set_tray_manager(self, tray_manager: Any):
+        self._tray_manager = tray_manager
+
+    def is_quitting(self) -> bool:
+        return self._is_quitting
+
+    def quit_app(self):
+        """Полное закрытие приложения (минуя сворачивание в трей)."""
+        logger.info("Quit requested via AppBridge.quit_app()")
+        self._is_quitting = True
+        if self._tray_manager:
+            try:
+                self._tray_manager.stop()
+            except Exception as e:
+                logger.debug(f"Error stopping tray manager: {e}")
+        if self._window:
+            try:
+                self._window.destroy()
+            except Exception as e:
+                logger.debug(f"Error destroying window: {e}")
+
+    def minimize_window_to_tray(self):
+        """Сворачивает главное окно в системный трей."""
+        if self._tray_manager:
+            self._tray_manager.hide_window(show_notify=True)
+        elif self._window:
+            self._window.hide()
 
     def call_js(self, func_name: str, *args):
         """Безопасный вызов JS-функции из любого потока."""
@@ -152,7 +185,16 @@ class AppBridge:
             "extract_path": str(self._extract_path),
         }
 
-        return {
+        # Сбор элементов автозагрузки Windows и статуса автозапуска приложения
+        try:
+            startup_items = StartupManager.get_all_items()
+        except Exception as e:
+            logger.warning(f"Ошибка получения элементов автозагрузки: {e}")
+            startup_items = []
+
+        app_autostart = is_app_autostart_enabled()
+
+        data = {
             "lang": user_lang,
             "strings": STRINGS.get(user_lang, STRINGS["ru"]),
             "strings_all": STRINGS,
@@ -166,7 +208,11 @@ class AppBridge:
             "ignored_updates": ignored_update_ids,
             "system_info": system_info,
             "settings": settings,
+            "startup_items": startup_items,
+            "app_autostart_enabled": app_autostart,
         }
+        self._app_data = data
+        return data
 
     def get_initial_data(self) -> dict[str, Any]:
         """Алиас для get_init_data для обратной совместимости."""
@@ -855,3 +901,92 @@ class AppBridge:
         """Открывает страницу App Installer в Microsoft Store."""
         self.call_js("onLog", "🛍️ Открытие страницы Microsoft Store (App Installer)...")
         open_winget_store()
+
+    # ==========================================
+    # Управление автозагрузкой Windows и автозапуском приложения
+    # ==========================================
+
+    def get_startup_items(self) -> list[dict]:
+        """Возвращает актуальный список всех элементов автозагрузки Windows."""
+        try:
+            return StartupManager.get_all_items()
+        except Exception as e:
+            logger.error(f"Error getting startup items: {e}")
+            return []
+
+    def rescan_startup_items(self) -> list[dict]:
+        """Повторно сканирует все источники автозагрузки и уведомляет интерфейс."""
+        items = self.get_startup_items()
+        self.call_js("onStartupItemsUpdated", items)
+        return items
+
+    def toggle_startup_item(self, item_id: str, enable: bool) -> dict[str, Any]:
+        """Включает или отключает элемент автозагрузки Windows."""
+        try:
+            success, msg = StartupManager.toggle_item(item_id, enable)
+            if success:
+                self.call_js("onLog", f"⚙️ Автозагрузка: {msg}")
+            else:
+                self.call_js("onLog", f"⚠️ Ошибка изменения автозагрузки: {msg}")
+            return {"success": success, "message": msg}
+        except Exception as e:
+            logger.error(f"Error toggling startup item {item_id}: {e}")
+            return {"success": False, "message": str(e)}
+
+    def delete_startup_item(self, item_id: str) -> dict[str, Any]:
+        """Удаляет элемент из автозагрузки Windows."""
+        try:
+            success, msg = StartupManager.delete_item(item_id)
+            if success:
+                self.call_js("onLog", f"🗑️ Автозагрузка: {msg}")
+            else:
+                self.call_js("onLog", f"⚠️ Ошибка удаления из автозагрузки: {msg}")
+            return {"success": success, "message": msg}
+        except Exception as e:
+            logger.error(f"Error deleting startup item {item_id}: {e}")
+            return {"success": False, "message": str(e)}
+
+    def open_startup_item_folder(self, item_id: str) -> dict[str, Any]:
+        """Открывает папку с файлом элемента автозагрузки в Проводнике."""
+        try:
+            success, msg = StartupManager.open_folder(item_id)
+            if success:
+                self.call_js("onLog", f"📂 {msg}")
+            else:
+                self.call_js("onLog", f"⚠️ Не удалось открыть папку: {msg}")
+            return {"success": success, "message": msg}
+        except Exception as e:
+            logger.error(f"Error opening folder for startup item {item_id}: {e}")
+            return {"success": False, "message": str(e)}
+
+    def is_app_autostart_active(self) -> bool:
+        """Проверяет, включен ли запуск ZiablWinSetup при старте Windows."""
+        return is_app_autostart_enabled()
+
+    def set_app_autostart_active(self, enabled: bool) -> dict[str, Any]:
+        """Включает или отключает запуск ZiablWinSetup при старте Windows."""
+        try:
+            success = set_app_autostart(enabled)
+            settings = load_settings()
+            settings["autostart_with_windows"] = enabled
+            save_settings(settings)
+            status_text = "включен" if enabled else "отключен"
+            self.call_js("onLog", f"⚙️ Автозапуск ZiablWinSetup с Windows {status_text}.")
+            return {"success": success, "enabled": enabled}
+        except Exception as e:
+            logger.error(f"Error setting app autostart: {e}")
+            return {"success": False, "error": str(e)}
+
+    def set_minimize_to_tray_setting(self, enabled: bool) -> dict[str, Any]:
+        """Включает или выключает сворачивание в трей при закрытии."""
+        try:
+            settings = load_settings()
+            settings["minimize_to_tray_on_close"] = enabled
+            save_settings(settings)
+            status_text = "включено" if enabled else "отключено"
+            self.call_js("onLog", f"🪟 Сворачивание в трей при закрытии {status_text}.")
+            return {"success": True, "enabled": enabled}
+        except Exception as e:
+            logger.error(f"Error setting minimize_to_tray_on_close: {e}")
+            return {"success": False, "error": str(e)}
+

@@ -24,6 +24,8 @@ _DEFAULT_SETTINGS = {
     "language": "ru",
     "silent_mode_default": True,
     "extract_mode": "exe_dir",
+    "minimize_to_tray_on_close": True,
+    "autostart_with_windows": False,
 }
 
 

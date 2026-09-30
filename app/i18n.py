@@ -28,11 +28,13 @@ STRINGS: dict[Language, dict[str, str]] = {
         "cat_vpn_network": "VPN и сеть",
         "cat_gpu_drivers": "GPU и драйверы",
         "cat_office": "Офис и документы",
+        "cat_runtimes": "Библиотеки и Runtimes",
 
         # Вкладки и твики
         "tab_apps": "Приложения",
         "tab_tweaks": "Твики и фичи",
         "tab_metro": "Metro приложения",
+        "tab_startup": "Автозагрузка",
         "metro_title": "Встроенные Metro / UWP приложения Windows",
         "metro_subtitle": "Предустановленный системный софт. Удаляйте ненужные встроенные программы и восстанавливайте их в один клик.",
         "metro_status_installed": "Установлено",
@@ -155,6 +157,29 @@ STRINGS: dict[Language, dict[str, str]] = {
         "btn_open_store": "🛍️ Microsoft Store",
         "winget_installing": "Установка Winget...",
         "winget_install_success": "Winget успешно установлен!",
+
+        # Настройки трея и автозапуска
+        "settings_autostart_label": "Запускать ZiablWinSetup вместе с Windows",
+        "settings_autostart_desc": "Автоматический запуск программы при старте системы (сворачивается в системный трей)",
+        "settings_tray_close_label": "Сворачивать в трей при закрытии (крестик)",
+        "settings_tray_close_desc": "Окно скрывается в системный трей вместо полного закрытия приложения",
+
+        # Менеджер автозагрузки Windows
+        "startup_title": "Менеджер автозагрузки Windows",
+        "startup_subtitle": "Программы, системные службы и задачи планировщика, запускающиеся при старте Windows. Отключайте лишнее для ускорения системы.",
+        "startup_filter_all": "Все",
+        "startup_filter_registry": "Реестр",
+        "startup_filter_folders": "Папка автозапуска",
+        "startup_filter_tasks": "Планировщик задач",
+        "startup_count_summary": "Всего: {total} • Включено: {enabled} • Отключено: {disabled}",
+        "startup_status_enabled": "Включено",
+        "startup_status_disabled": "Отключено",
+        "startup_btn_open_folder": "Открыть папку с файлом",
+        "startup_btn_delete": "Удалить",
+        "startup_confirm_delete": "Вы действительно хотите удалить запись «{name}» из автозагрузки?",
+        "startup_search_placeholder": "Поиск по автозагрузке (название, команда, издатель)...",
+        "startup_empty_list": "Записей автозагрузки не найдено.",
+        "startup_refresh": "Обновить список",
     },
 
     "en": {
@@ -176,11 +201,13 @@ STRINGS: dict[Language, dict[str, str]] = {
         "cat_vpn_network": "VPN & Network",
         "cat_gpu_drivers": "GPU & Drivers",
         "cat_office": "Office & Docs",
+        "cat_runtimes": "Libraries & Runtimes",
 
         # Tabs & Tweaks
         "tab_apps": "Apps",
         "tab_tweaks": "Tweaks & Features",
         "tab_metro": "Metro Apps",
+        "tab_startup": "Startup",
         "metro_title": "Built-in Windows Metro / UWP Apps",
         "metro_subtitle": "Pre-installed system applications. Uninstall unwanted software and restore apps in a single click.",
         "metro_status_installed": "Installed",
@@ -303,6 +330,29 @@ STRINGS: dict[Language, dict[str, str]] = {
         "btn_open_store": "🛍️ Microsoft Store",
         "winget_installing": "Installing Winget...",
         "winget_install_success": "Winget installed successfully!",
+
+        # Tray and Autostart settings
+        "settings_autostart_label": "Start ZiablWinSetup on Windows startup",
+        "settings_autostart_desc": "Application starts automatically with Windows and minimizes to system tray",
+        "settings_tray_close_label": "Minimize to tray on close",
+        "settings_tray_close_desc": "Clicking the window close button minimizes to system tray instead of exiting",
+
+        # Startup Manager
+        "startup_title": "Windows Startup Manager",
+        "startup_subtitle": "Applications, background services, and scheduled tasks that launch on Windows boot. Disable unnecessary items to accelerate system startup.",
+        "startup_filter_all": "All",
+        "startup_filter_registry": "Registry",
+        "startup_filter_folders": "Startup Folder",
+        "startup_filter_tasks": "Task Scheduler",
+        "startup_count_summary": "Total: {total} • Enabled: {enabled} • Disabled: {disabled}",
+        "startup_status_enabled": "Enabled",
+        "startup_status_disabled": "Disabled",
+        "startup_btn_open_folder": "Open file folder",
+        "startup_btn_delete": "Delete",
+        "startup_confirm_delete": "Are you sure you want to remove '{name}' from Windows startup?",
+        "startup_search_placeholder": "Search startup items (app, command, publisher)...",
+        "startup_empty_list": "No startup items found.",
+        "startup_refresh": "Refresh List",
     },
 }
 
@@ -319,6 +369,7 @@ CATEGORY_NAMES: dict[Language, dict[str, str]] = {
         "vpn_network": "VPN и сеть",
         "gaming": "Игры и загрузки",
         "office": "Офис и документы",
+        "runtimes": "Библиотеки и Runtimes",
     },
     "en": {
         "all": "All",
@@ -331,6 +382,7 @@ CATEGORY_NAMES: dict[Language, dict[str, str]] = {
         "vpn_network": "VPN & Network",
         "gaming": "Gaming & Downloads",
         "office": "Office & Docs",
+        "runtimes": "Libraries & Runtimes",
     },
 }
 

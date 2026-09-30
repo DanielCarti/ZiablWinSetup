@@ -37,10 +37,15 @@ def main():
             "Некоторые установщики могут потребовать UAC-подтверждение."
         )
 
+    # Запуск в скрытом режиме трея при автозапуске Windows
+    start_in_tray = "--tray" in sys.argv or "--minimized" in sys.argv
+    if start_in_tray:
+        logger.info("Запуск приложения в фоновом режиме (в системном трее)...")
+
     # Запускаем современный аппаратный GUI (Edge WebView2)
     try:
         from app.gui_webview import run_app
-        run_app()
+        run_app(start_in_tray=start_in_tray)
     except Exception as e:
         logger.error(f"Критическая ошибка запуска GUI: {e}", exc_info=True)
         try:

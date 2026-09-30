@@ -28,26 +28,28 @@
   <img src="assets/screenshots/header_tabs.png" alt="Навигация по разделам" width="500" />
 </p>
 
-Интерфейс разделен на три ключевые рабочие зоны:
-1. **[Приложения]** — обширный каталог из 58 актуальных программ и утилит с пакетной загрузкой и тихой установкой.
+Интерфейс разделен на четыре ключевые рабочие зоны:
+1. **[Приложения]** — обширный каталог из 71 актуальной программы, утилиты и библиотеки runtimes с пакетной загрузкой и тихой установкой.
 2. **[Твики и фичи]** — моментальная оптимизация Windows, ускорение SSD, удаление встроенной рекламы и возврат классического меню.
 3. **[Metro приложения]** — встроенный деблоатер предустановленных UWP-приложений Windows с возможностью удаления и восстановления в один клик.
+4. **[Автозагрузка]** — продвинутый менеджер автозапуска приложений уровня CCleaner и Autoruns (реестр, папки автозапуска, планировщик задач).
 
 ---
 
 ## ✨ Ключевые возможности
 
-### 📦 1. Богатый каталог софта (58 приложений)
-Все программы распределены по 9 удобным категориям с мгновенным поиском и фильтрацией:
+### 📦 1. Богатый каталог софта (71 приложение)
+Все программы распределены по 10 удобным категориям с мгновенным поиском и фильтрацией:
 
 * 🌐 **Браузеры**: Google Chrome, Opera GX, Mozilla Firefox, Brave, Dolphin{anty}
-* 🎬 **Медиа**: VLC Media Player, K-Lite Codec Pack Full, Picasa 3, OBS Studio, Adobe Photoshop, Adobe Premiere Pro
-* 🔧 **Системные утилиты**: 7-Zip, WinRAR, Everything, Total Commander, EarTrumpet, CPU-Z, HWiNFO, ShareX, PowerToys, CrystalDiskInfo, CrystalDiskMark, OCCT, Uninstall Tool, Unlocker, Unchecky
+* 🎬 **Медиа**: VLC Media Player, K-Lite Codec Pack Full, Picasa 3, OBS Studio, Adobe Photoshop, Adobe Premiere Pro, NVIDIA Broadcast
+* 🔧 **Системные утилиты**: 7-Zip, WinRAR, Everything, Total Commander, EarTrumpet, CPU-Z, HWiNFO, ShareX, PowerToys, CrystalDiskInfo, CrystalDiskMark, OCCT, Uninstall Tool, Unlocker, Unchecky, HitmanPro
+* 📚 **Библиотеки и Runtimes**: DirectX End-User Runtimes (June 2010), Visual C++ Runtimes All-in-One, Visual C++ 2015-2022 (x64/x86), .NET Desktop Runtime 8.0/9.0/6.0, .NET Framework 4.8.1, .NET Framework 3.5
 * 💬 **Связь и мессенджеры**: Telegram Desktop, Discord, Claude Desktop, ChatGPT, Todoist
 * 💻 **Разработка**: Visual Studio Code, PyCharm Community, Sublime Text, Notepad++, Git, Python 3, Eclipse Temurin JDK 21, Open Code Interpreter, Claude Code
 * 🖥️ **GPU и драйверы**: NVIDIA App, AMD Software: Adrenalin, GPU-Z, FurMark, Driver Booster
 * 🔒 **VPN и сеть**: AmneziaVPN, Zapret (обход блокировок Discord & YouTube), YogaDNS, TeleProxy, Opera Proxy, AnyDesk
-* 🎮 **Игры и загрузки**: Steam, qBittorrent, BitTorrent, Dropbox
+* 🎮 **Игры и загрузки**: Steam, Roblox, TLauncher (Minecraft), qBittorrent, BitTorrent, Dropbox
 * 📑 **Офис и документы**: Obsidian, LibreOffice, OpenOffice
 
 **Особенности менеджера загрузок:**
@@ -112,7 +114,27 @@
 
 ---
 
-### 🎨 5. Дизайн и эргономика
+### 🚀 5. Менеджер автозагрузки Windows («Автозагрузка»)
+Продвинутый инструмент управления автозапуском, находящий скрытые элементы, которые часто не видит стандартный Диспетчер задач:
+- **Глубокое сканирование всех источников**:
+  - Системный и пользовательский реестр: `HKCU\Run`, `HKCU\RunOnce`, `HKLM\Run`, `HKLM\RunOnce`, `WOW6432Node` (32-битные приложения).
+  - Папки «Автозагрузка»: `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup` и `%PROGRAMDATA%\...`.
+  - Запланированные задачи Windows: авторизационные триггеры в Планировщике задач (`Task Scheduler`).
+- **Безопасное включение и отключение**: интеграция с системным механизмом Windows `StartupApproved` (сохраняет пути и команды без риска их потери).
+- **Определение издателя**: автоматическое чтение метаданных Win32 VersionInfo и определение официального разработчика.
+- **Действия в один клик**: моментальный переход к файлу в Проводнике Windows (`explorer.exe /select`) и полное удаление лишних записей.
+
+---
+
+### 🪟 6. Системный трей и автозапуск приложения
+- **Миниатюрная иконка в трее**: аккуратная иконка с возможностью быстро свернуть/развернуть окно кликом.
+- **Контекстное меню трея**: открытие окна, запуск проверки обновлений софта, переключение автозапуска и чистый выход.
+- **Сворачивание при закрытии**: фоновая работа без загромождения Панели задач.
+- **Автозапуск с Windows**: удобный переключатель в настройках для тихого старта в трее при загрузке системы (`--tray`).
+
+---
+
+### 🎨 7. Дизайн и эргономика
 - **Windows 11 Fluent Design**: полупрозрачность Mica, гарнитура Segoe UI Variable, стилизованные чекбоксы и кнопки.
 - **Поддержка тем**: переключение между тёмной и светлой темами оформления.
 - **Мгновенный перевод интерфейса (RU / EN)**: бесшовное переключение языка на лету без перезапуска.
