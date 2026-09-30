@@ -26,6 +26,8 @@ _DEFAULT_SETTINGS = {
     "extract_mode": "exe_dir",
     "minimize_to_tray_on_close": True,
     "autostart_with_windows": False,
+    "auto_check_app_updates": True,
+    "skipped_app_version": "",
 }
 
 

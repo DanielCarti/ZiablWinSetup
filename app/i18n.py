@@ -180,6 +180,22 @@ STRINGS: dict[Language, dict[str, str]] = {
         "startup_search_placeholder": "Поиск по автозагрузке (название, команда, издатель)...",
         "startup_empty_list": "Записей автозагрузки не найдено.",
         "startup_refresh": "Обновить список",
+
+        # Автопоиск и установка обновлений ZiablWinSetup (Self-Updater)
+        "self_update_modal_title": "🎉 Доступно обновление ZiablWinSetup!",
+        "self_update_modal_desc": "Вышла новая версия приложения. Рекомендуется обновиться для получения новых функций, каталога и улучшений стабильности.",
+        "self_update_current_ver": "Текущая версия",
+        "self_update_new_ver": "Новая версия",
+        "self_update_btn_install": "⚡ Обновить и перезапустить",
+        "self_update_btn_later": "Напомнить позже",
+        "self_update_btn_skip": "Пропустить эту версию",
+        "self_update_btn_github": "Открыть на GitHub",
+        "self_update_downloading": "Скачивание обновления...",
+        "self_update_restarting": "Обновление готово! Перезапуск приложения...",
+        "self_update_no_updates": "У вас установлена самая последняя версия ZiablWinSetup ({version})",
+        "self_update_checking": "Проверка обновлений ZiablWinSetup...",
+        "settings_auto_check_app_updates": "Автопоиск обновлений программы при запуске",
+        "btn_check_app_update": "Проверить обновление ZiablWinSetup",
     },
 
     "en": {
@@ -353,6 +369,22 @@ STRINGS: dict[Language, dict[str, str]] = {
         "startup_search_placeholder": "Search startup items (app, command, publisher)...",
         "startup_empty_list": "No startup items found.",
         "startup_refresh": "Refresh List",
+
+        # ZiablWinSetup Self-Updater
+        "self_update_modal_title": "🎉 ZiablWinSetup Update Available!",
+        "self_update_modal_desc": "A new version of ZiablWinSetup is ready. Updating is recommended for new features, catalog additions, and bug fixes.",
+        "self_update_current_ver": "Current version",
+        "self_update_new_ver": "New version",
+        "self_update_btn_install": "⚡ Update & Restart",
+        "self_update_btn_later": "Remind Later",
+        "self_update_btn_skip": "Skip this version",
+        "self_update_btn_github": "View on GitHub",
+        "self_update_downloading": "Downloading update...",
+        "self_update_restarting": "Update ready! Restarting application...",
+        "self_update_no_updates": "You are using the latest version of ZiablWinSetup ({version})",
+        "self_update_checking": "Checking for ZiablWinSetup updates...",
+        "settings_auto_check_app_updates": "Auto-check for app updates on startup",
+        "btn_check_app_update": "Check for ZiablWinSetup Update",
     },
 }
 

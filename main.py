@@ -25,6 +25,13 @@ def main():
     # Настраиваем логирование
     logger = setup_logging()
 
+    # Очистка временных файлов от предыдущих самообновлений (*.old, *.bak)
+    try:
+        from app.self_updater import cleanup_old_files
+        cleanup_old_files()
+    except Exception as e:
+        logger.debug(f"Cleanup old update files error: {e}")
+
     logger.info("=" * 50)
     logger.info("ZiablWinSetup запускается...")
     logger.info(f"Python {sys.version}")

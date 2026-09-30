@@ -94,6 +94,14 @@ class SystemTrayManager:
         except Exception as e:
             logger.error(f"Ошибка скрытия окна в трей: {e}")
 
+    def notify(self, message: str, title: str = "ZiablWinSetup"):
+        """Показывает системное уведомление от иконки в трее."""
+        if self._icon:
+            try:
+                self._icon.notify(message, title)
+            except Exception as e:
+                logger.debug(f"Tray notify error: {e}")
+
     def toggle_window(self):
         """Переключает видимость окна (клик по иконке трея)."""
         if self._is_visible:
@@ -109,7 +117,10 @@ class SystemTrayManager:
         self.show_window()
         if self._window:
             try:
-                self._window.evaluate_js("if (window.triggerCheckUpdates) window.triggerCheckUpdates();")
+                self._window.evaluate_js(
+                    "if (window.checkAppUpdateManual) { window.checkAppUpdateManual(); } "
+                    "if (window.triggerCheckUpdates) { window.triggerCheckUpdates(); }"
+                )
             except Exception as e:
                 logger.warning(f"Ошибка запуска проверки обновлений из трея: {e}")
 

@@ -46,6 +46,8 @@ from app.updater import check_updates_sync
 from app.utils import check_winget, get_winget_version, is_admin, install_winget, open_winget_store
 from app.autostart import is_app_autostart_enabled, set_app_autostart
 from app.startup_manager import StartupManager
+from app.version import __version__, GITHUB_REPO
+from app.self_updater import check_for_app_update, download_and_apply_update
 
 logger = logging.getLogger("WinSetup")
 
@@ -183,6 +185,8 @@ class AppBridge:
             "winget_version": winget_ver,
             "is_admin": admin,
             "extract_path": str(self._extract_path),
+            "app_version": __version__,
+            "repo_url": f"https://github.com/{GITHUB_REPO}",
         }
 
         # Сбор элементов автозагрузки Windows и статуса автозапуска приложения
@@ -210,6 +214,8 @@ class AppBridge:
             "settings": settings,
             "startup_items": startup_items,
             "app_autostart_enabled": app_autostart,
+            "app_version": __version__,
+            "repo_url": f"https://github.com/{GITHUB_REPO}",
         }
         self._app_data = data
         return data
@@ -989,4 +995,95 @@ class AppBridge:
         except Exception as e:
             logger.error(f"Error setting minimize_to_tray_on_close: {e}")
             return {"success": False, "error": str(e)}
+
+    # ==========================================
+    # Автопоиск и установка обновлений ZiablWinSetup (Self-Updater)
+    # ==========================================
+
+    def check_self_update(self, manual: bool = False):
+        """
+        Проверяет наличие новой версии ZiablWinSetup на GitHub Releases.
+        manual=True при нажатии пользователем кнопки 'Проверить обновление'.
+        """
+        def worker():
+            if manual:
+                self.call_js("onLog", "🔍 Проверка наличия новой версии ZiablWinSetup...")
+
+            settings = load_settings()
+            # Если автоматическая проверка и пользователь отключил её в настройках
+            if not manual and not settings.get("auto_check_app_updates", True):
+                logger.debug("Автопоиск обновлений приложения отключен в настройках.")
+                return
+
+            res = check_for_app_update(current_version=__version__)
+            if res.get("update_available"):
+                skipped = settings.get("skipped_app_version", "")
+                if not manual and skipped == res.get("latest_version"):
+                    logger.debug(f"Версия v{skipped} была ранее пропущена пользователем.")
+                    return
+
+                self.call_js("onLog", f"🎉 Найдено обновление ZiablWinSetup: v{res['latest_version']}!")
+                self.call_js("onAppUpdateFound", res)
+
+                # Уведомление в системном трее, если окно скрыто
+                if self._tray_manager and hasattr(self._tray_manager, "notify"):
+                    self._tray_manager.notify(
+                        f"Вышла новая версия v{res['latest_version']}! Кликните, чтобы обновиться.",
+                        "Обновление ZiablWinSetup"
+                    )
+            else:
+                if manual:
+                    self.call_js("onAppUpdateNotFound", res)
+                    msg = i18n.t("self_update_no_updates", version=__version__)
+                    self.call_js("onLog", f"✨ {msg}")
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def apply_self_update(self, download_url: str):
+        """Скачивает новую версию ZiablWinSetup и производит бесшовный перезапуск."""
+        def worker():
+            self.call_js("onLog", "🚀 Запуск скачивания и установки обновления ZiablWinSetup...")
+
+            def progress_cb(pct: int, text: str):
+                self.call_js("onSelfUpdateProgress", pct, text)
+                self.call_js("onLog", f"📦 Обновление ZiablWinSetup: {text}")
+
+            def exit_cb():
+                time.sleep(0.5)
+                self.quit_app()
+
+            success, msg = download_and_apply_update(
+                download_url=download_url,
+                progress_callback=progress_cb,
+                exit_callback=exit_cb,
+            )
+            if not success:
+                self.call_js("onSelfUpdateError", msg)
+                self.call_js("onLog", f"❌ Ошибка обновления ZiablWinSetup: {msg}")
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def skip_app_version(self, version_str: str) -> dict[str, Any]:
+        """Сохраняет версию приложения, которую пользователь решил пропустить."""
+        try:
+            settings = load_settings()
+            settings["skipped_app_version"] = version_str
+            save_settings(settings)
+            self.call_js("onLog", f"Версия v{version_str} добавлена в пропущенные.")
+            return {"success": True}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def set_auto_check_app_updates(self, enabled: bool) -> dict[str, Any]:
+        """Включает/выключает автопроверку обновлений приложения при старте."""
+        try:
+            settings = load_settings()
+            settings["auto_check_app_updates"] = enabled
+            save_settings(settings)
+            status = "включен" if enabled else "отключен"
+            self.call_js("onLog", f"⚙️ Автопоиск обновлений программы {status}.")
+            return {"success": True, "enabled": enabled}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
 
