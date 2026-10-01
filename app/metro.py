@@ -33,6 +33,7 @@ class MetroAppDef:
             "name": self.name if lang != "en" else self.name_en,
             "description": self.description if lang != "en" else self.description_en,
             "icon": self.icon,
+            "icon_path": f"icons/metro/{self.id}.svg",
             "store_id": self.store_id,
             "can_remove": self.can_remove,
             "installed": installed,

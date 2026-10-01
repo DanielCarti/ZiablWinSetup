@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <defs>
+    <linearGradient id="dn8" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#512BD4"/>
+      <stop offset="100%" stop-color="#2B0C8C"/>
+    </linearGradient>
+  </defs>
+  <rect width="48" height="48" rx="10" fill="url(#dn8)"/>
+  <circle cx="14" cy="28" r="3" fill="#ffffff"/>
+  <text x="26" y="29" font-size="14" font-weight="bold" fill="#ffffff" font-family="sans-serif">.NET</text>
+  <text x="24" y="42" font-size="8" font-weight="bold" fill="#4ade80" text-anchor="middle" font-family="sans-serif">v8.0</text>
+</svg>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <defs>
+    <linearGradient id="peopbg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0078D4"/>
+      <stop offset="100%" stop-color="#004E8C"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="32" height="32" rx="8" fill="url(#peopbg)"/>
+  <circle cx="24" cy="19" r="5" fill="#ffffff"/>
+  <path d="M14 34c0-4.4 4.5-8 10-8s10 3.6 10 8z" fill="#ffffff"/>
+</svg>

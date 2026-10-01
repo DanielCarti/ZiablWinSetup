@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <defs>
+    <linearGradient id="musbg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF5722"/>
+      <stop offset="100%" stop-color="#BF360C"/>
+    </linearGradient>
+  </defs>
+  <circle cx="24" cy="24" r="16" fill="url(#musbg)"/>
+  <path d="M21 16v13.5c-.8-.3-1.8-.5-2.8-.2-2 .5-3.2 2.2-2.7 3.8.5 1.6 2.5 2.5 4.5 2 1.7-.4 2.8-1.7 2.8-3.1V21l8-2.2v7.7c-.8-.3-1.8-.5-2.8-.2-2 .5-3.2 2.2-2.7 3.8.5 1.6 2.5 2.5 4.5 2 1.7-.4 2.8-1.7 2.8-3.1V14l-11.6 2z" fill="#ffffff"/>
+</svg>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <defs>
+    <linearGradient id="dn35" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#546E7A"/>
+      <stop offset="100%" stop-color="#263238"/>
+    </linearGradient>
+  </defs>
+  <rect width="48" height="48" rx="10" fill="url(#dn35)"/>
+  <text x="24" y="24" font-size="11" font-weight="bold" fill="#ffffff" text-anchor="middle" font-family="sans-serif">.NET</text>
+  <text x="24" y="36" font-size="9" font-weight="bold" fill="#CFD8DC" text-anchor="middle" font-family="sans-serif">3.5</text>
+</svg>

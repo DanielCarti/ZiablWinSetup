@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <defs>
+    <linearGradient id="solbg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E88E5"/>
+      <stop offset="100%" stop-color="#0D47A1"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="32" height="32" rx="8" fill="url(#solbg)"/>
+  <rect x="12" y="13" width="15" height="22" rx="3" fill="#ffffff" stroke="#BBDEFB"/>
+  <rect x="21" y="13" width="15" height="22" rx="3" fill="#ffffff" stroke="#BBDEFB"/>
+  <path d="M17 19l2.5 3.5-2.5 3.5-2.5-3.5z" fill="#E53935"/>
+  <path d="M28.5 22c-.8-1.5-2.5-2-2.5-2s-1.7.5-2.5 2c-.8 1.5.3 3 2.5 3s3.3-1.5 2.5-3z" fill="#1E88E5"/>
+</svg>

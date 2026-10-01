@@ -1337,6 +1337,12 @@
       justify-content: center;
     }
 
+    .metro-tile-img {
+      width: 28px;
+      height: 28px;
+      object-fit: contain;
+    }
+
     .metro-tile-info {
       flex: 1;
       min-width: 0;
@@ -1520,6 +1526,11 @@
       justify-content: center;
       font-size: 18px;
       flex-shrink: 0;
+    }
+    .startup-item-img {
+      width: 24px;
+      height: 24px;
+      object-fit: contain;
     }
     .startup-info-box {
       flex: 1;
@@ -2137,13 +2148,18 @@
 
       <!-- Filters & Search Toolbar -->
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
-        <div class="startup-filter-chips" style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <div class="startup-filter-chips" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
           <button class="filter-chip active" id="chipStartupAll" onclick="setStartupFilter('all')">Все (<span id="countStartupAll">0</span>)</button>
+          <button class="filter-chip" id="chipStartupEnabled" onclick="setStartupFilter('enabled')" style="border-left: 2px solid #22c55e;">🟢 Включено (<span id="countStartupEnabled">0</span>)</button>
+          <button class="filter-chip" id="chipStartupDisabled" onclick="setStartupFilter('disabled')" style="border-left: 2px solid #ef4444;">⚪ Отключено (<span id="countStartupDisabled">0</span>)</button>
           <button class="filter-chip" id="chipStartupRegistry" onclick="setStartupFilter('registry')">Реестр (<span id="countStartupRegistry">0</span>)</button>
           <button class="filter-chip" id="chipStartupFolder" onclick="setStartupFilter('folder')">Папка (<span id="countStartupFolder">0</span>)</button>
           <button class="filter-chip" id="chipStartupTask" onclick="setStartupFilter('task')">Планировщик (<span id="countStartupTask">0</span>)</button>
+          <button class="filter-chip" id="btnStartupSort" onclick="cycleStartupSort()" style="margin-left: 6px; border: 1px solid var(--border-subtle); display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.04);" title="Переключить сортировку списка автозагрузки">
+            <span>↕️ Сортировка:</span> <strong id="lblStartupSort" style="color: var(--accent);">Сначала вкл.</strong>
+          </button>
         </div>
-        <div class="search-box" style="width: 280px;">
+        <div class="search-box" style="width: 260px;">
           <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
           <input type="text" id="startupSearchInput" placeholder="Поиск по имени или пути..." oninput="onStartupSearch()">
         </div>
@@ -2164,14 +2180,16 @@
       </div>
     </div>
 
-    <div class="footer-progress-row">
-      <div class="log-toggle" onclick="toggleLog()">
-        <span id="logArrow">▶</span> <span id="logLabel">Журнал событий</span>
+    <div class="footer-progress-row" style="flex-direction: column; align-items: stretch; gap: 8px;">
+      <div class="overall-bar" style="width: 100%; height: 6px; border-radius: 3px; background: #2a2a2a; overflow: hidden;">
+        <div class="overall-fill" id="overallProgressFill" style="width: 0%; height: 100%; transition: width 0.25s;"></div>
       </div>
-      <div class="overall-bar">
-        <div class="overall-fill" id="overallProgressFill"></div>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="log-toggle" onclick="toggleLog()">
+          <span id="logArrow">▶</span> <span id="logLabel">Журнал событий</span>
+        </div>
+        <div class="overall-status" id="overallStatusText" style="text-align: right; min-width: unset;">Готов к работе</div>
       </div>
-      <div class="overall-status" id="overallStatusText">Готов к работе</div>
     </div>
 
     <div id="logBox"></div>
@@ -2273,10 +2291,74 @@
     let isRescanning = false;
     let toastTimer = null;
     let startupItems = [];
-    let startupFilter = 'all'; // 'all' | 'registry' | 'folder' | 'task'
+    let startupFilter = 'all'; // 'all' | 'enabled' | 'disabled' | 'registry' | 'folder' | 'task'
+    let startupSortMode = 'enabled_first'; // 'enabled_first' | 'disabled_first' | 'name_asc'
     let startupSearchQuery = '';
     let currentAppUpdateInfo = null;
     let isSelfUpdating = false;
+
+    // Алиасы для глобального умного поиска (русские названия, сленг, транслит)
+    const APP_SEARCH_ALIASES = {
+      'discord': ['дискорд', 'дс', 'диск', 'общалка', 'голосовой чат', 'войс'],
+      'telegram': ['телеграм', 'телега', 'тг', 'мессенджер', 'tg'],
+      'steam': ['стим', 'игры', 'магазин игр', 'valve', 'гейминг'],
+      'epicgames': ['эпик', 'эпик геймс', 'epic', 'egs', 'фортнайт', 'лаунчер'],
+      'chrome': ['хром', 'гугл хром', 'гугл', 'браузер', 'google'],
+      'firefox': ['файрфокс', 'лиса', 'мозилла', 'браузер', 'огнелис', 'mozilla', 'ff'],
+      'yandex_browser': ['яндекс', 'яндекс браузер', 'яша', 'браузер', 'yandex'],
+      'edge': ['эдж', 'майкрософт эдж', 'edge', 'браузер', 'microsoft'],
+      'opera': ['опера', 'браузер'],
+      'opera_gx': ['опера гх', 'гейминг браузер', 'opera gx', 'гх'],
+      'brave': ['брейв', 'браузер', 'храбрый'],
+      'vlc': ['влц', 'плеер', 'проигрыватель', 'видеоплеер', 'видео', 'конусный'],
+      'mpc_hc': ['мпс', 'медиа плеер', 'mpc', 'классик плеер', 'фильмы'],
+      'potplayer': ['потплеер', 'плеер', 'видеоплеер', 'кодеки'],
+      'aimp': ['аимп', 'музыка', 'аудиоплеер', 'песни'],
+      'spotify': ['спотифай', 'спотик', 'музыка', 'треки'],
+      'foobar2000': ['фубар', 'музыка', 'аудио', 'lossless', 'flac'],
+      '7zip': ['7зип', 'севен зип', 'архиватор', 'архив', 'zip', 'rar', '7z', 'зип'],
+      'winrar': ['винрар', 'рар', 'архиватор', 'архив', 'rar'],
+      'notepadpp': ['ноутпад', 'блокнот', 'редактор', 'notepad++', 'нотпад'],
+      'vscode': ['вскод', 'вс код', 'код', 'редактор кода', 'visual studio code', 'программирование'],
+      'sublime_text': ['саблайм', 'редактор', 'текст', 'sublime'],
+      'obs': ['обс', 'стрим', 'запись экрана', 'стриминг', 'obs studio', 'захват'],
+      'sharex': ['шарех', 'скриншот', 'снимок экрана', 'скрины', 'screen'],
+      'lightshot': ['лайтшот', 'скриншот', 'ножницы', 'скрин'],
+      'flameshot': ['флеймшот', 'скриншот'],
+      'anydesk': ['анидеск', 'энидеск', 'удаленный доступ', 'удаленка', 'управление пк'],
+      'teamviewer': ['тимвивер', 'тимвьюер', 'удаленка', 'тв', 'удаленный доступ'],
+      'rustdesk': ['растдеск', 'удаленный доступ', 'rust'],
+      'qbittorrent': ['торрент', 'кьюбит', 'кубит', 'скачать торрент', 'qbit', 'качалка'],
+      'transmission': ['трансмишн', 'торрент'],
+      'everything': ['эврисинг', 'поиск файлов', 'быстрый поиск', 'поисковик'],
+      'powertoys': ['павертойс', 'повертойс', 'утилиты виндовс', 'майкрософт', 'power toys'],
+      'geek_uninstaller': ['гик', 'деинсталлятор', 'удаление программ', 'geek uninstaller'],
+      'revouninstaller': ['рево', 'удаление программ', 'деинсталлятор', 'revo'],
+      'hwinfo': ['хвинфо', 'железо', 'температуры', 'датчики', 'мониторинг', 'hw info'],
+      'cpu_z': ['цпу з', 'процессор', 'характеристики', 'cpu', 'проц'],
+      'gpu_z': ['гпу з', 'видеокарта', 'видюха', 'gpu', 'графика'],
+      'crystaldiskinfo': ['смарт', 'диск', 'здоровье диска', 'ссд', 'hdd', 'ssd', 'смарт'],
+      'crystaldiskmark': ['тест диска', 'скорость ссд', 'бенчмарк', 'дискмарк'],
+      'furmark': ['фурмарк', 'бублик', 'стресс тест', 'тест видеокарты'],
+      'aida64': ['аида', 'аида64', 'диагностика пк', 'стресс тест'],
+      'git': ['гит', 'контроль версий', 'scm', 'репозиторий'],
+      'python': ['питон', 'пайтон', 'программирование', 'разработка'],
+      'nodejs': ['нода', 'ноде', 'js', 'javascript'],
+      'docker': ['докер', 'контейнеры'],
+      'roblox': ['роблокс', 'робуксы', 'игры', 'роблокс плеер', 'roblox player'],
+      'tlauncher': ['тлаунчер', 'майнкрафт', 'майн', 'minecraft', 'тлавунчер', 'крафт'],
+      'hitmanpro': ['хитман', 'хитманпро', 'антивирус', 'малварь', 'сканер', 'вирусы', 'лечение'],
+      'nvidiabroadcast': ['нвидиа броадкаст', 'шумоподавление', 'микрофон', 'nvidia broadcast', 'камера'],
+      'directx': ['директикс', 'дайрект', 'игры', 'dx', 'directx 9', 'библиотеки игр'],
+      'vcredist_aio': ['вижуал с++', 'с++', 'вцредист', 'библиотеки', 'visual c++', 'vcredist', 'all in one'],
+      'vcredist_2015_2022_x64': ['с++', 'visual c++', 'vcredist 64', 'вцредист 64'],
+      'vcredist_2015_2022_x86': ['с++', 'visual c++', 'vcredist 32', 'вцредист 32'],
+      'dotnet_desktop_8': ['дотнет 8', '.net 8', 'фреймворк 8', 'dotnet 8'],
+      'dotnet_desktop_9': ['дотнет 9', '.net 9', 'фреймворк 9', 'dotnet 9'],
+      'dotnet_desktop_6': ['дотнет 6', '.net 6', 'фреймворк 6', 'dotnet 6'],
+      'dotnet_framework_481': ['дотнет 4.8.1', '.net framework 4.8', 'фреймворк 4.8', 'dotnet 4.8'],
+      'dotnet_framework_35': ['дотнет 3.5', '.net framework 3.5', 'фреймворк 3.5', 'dotnet 3.5']
+    };
 
     // Splitter resize logic
     const splitter = document.getElementById('splitter');
@@ -2751,7 +2833,27 @@
 
     function onSearch() {
       searchQuery = document.getElementById('searchInput').value.trim().toLowerCase();
+      if (searchQuery && currentMainTab !== 'apps') {
+        switchMainTab('apps');
+      }
       renderCards();
+    }
+
+    function matchesAppSearch(app, q) {
+      if (!q) return true;
+      const name = (app.name || '').toLowerCase();
+      const id = (app.id || '').toLowerCase();
+      const descRu = (app.description || '').toLowerCase();
+      const descEn = (app.description_en || '').toLowerCase();
+      const winget = (app.winget_id || '').toLowerCase();
+      if (name.includes(q) || id.includes(q) || descRu.includes(q) || descEn.includes(q) || winget.includes(q)) {
+        return true;
+      }
+      const aliases = APP_SEARCH_ALIASES[app.id];
+      if (aliases && aliases.length > 0) {
+        return aliases.some(alias => alias.includes(q) || q.includes(alias));
+      }
+      return false;
     }
 
 
@@ -2838,20 +2940,18 @@
 
       const filtered = appData.apps.filter(app => {
         if (activeCategory === 'installed') {
-          return appData.installed_apps && appData.installed_apps[app.id];
+          if (!appData.installed_apps || !appData.installed_apps[app.id]) return false;
+          return matchesAppSearch(app, searchQuery);
         }
         if (activeCategory === 'updates_available') {
-          return Boolean(availableUpdates && availableUpdates[app.id]);
+          if (!availableUpdates || !availableUpdates[app.id]) return false;
+          return matchesAppSearch(app, searchQuery);
+        }
+        // При непустом поисковом запросе ищем глобально по всем приложениям каталога
+        if (searchQuery) {
+          return matchesAppSearch(app, searchQuery);
         }
         if (activeCategory !== 'all' && app.category !== activeCategory) return false;
-        if (searchQuery) {
-          const name = app.name.toLowerCase();
-          const descRu = (app.description || '').toLowerCase();
-          const descEn = (app.description_en || '').toLowerCase();
-          if (!name.includes(searchQuery) && !descRu.includes(searchQuery) && !descEn.includes(searchQuery)) {
-            return false;
-          }
-        }
         return true;
       });
 
@@ -3648,7 +3748,10 @@
                 <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
               </div>
             </label>
-            <div class="metro-tile-icon">${app.icon || '📦'}</div>
+            <div class="metro-tile-icon">
+              <img class="metro-tile-img" src="icons/metro/${app.id}.svg" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+              <span style="display:none;">${app.icon || '📦'}</span>
+            </div>
             <div class="metro-tile-info">
               <div class="metro-tile-title">${app.name}</div>
               <div class="metro-tile-desc" title="${app.description}">${app.description}</div>
@@ -3823,6 +3926,10 @@
       startupFilter = filter;
       const cAll = document.getElementById('chipStartupAll');
       if (cAll) cAll.classList.toggle('active', filter === 'all');
+      const cEn = document.getElementById('chipStartupEnabled');
+      if (cEn) cEn.classList.toggle('active', filter === 'enabled');
+      const cDis = document.getElementById('chipStartupDisabled');
+      if (cDis) cDis.classList.toggle('active', filter === 'disabled');
       const cReg = document.getElementById('chipStartupRegistry');
       if (cReg) cReg.classList.toggle('active', filter === 'registry');
       const cFld = document.getElementById('chipStartupFolder');
@@ -3830,6 +3937,30 @@
       const cTsk = document.getElementById('chipStartupTask');
       if (cTsk) cTsk.classList.toggle('active', filter === 'task');
       renderStartup();
+    }
+
+    function cycleStartupSort() {
+      if (startupSortMode === 'enabled_first') {
+        startupSortMode = 'disabled_first';
+      } else if (startupSortMode === 'disabled_first') {
+        startupSortMode = 'name_asc';
+      } else {
+        startupSortMode = 'enabled_first';
+      }
+      updateStartupSortLabel();
+      renderStartup();
+    }
+
+    function updateStartupSortLabel() {
+      const lbl = document.getElementById('lblStartupSort');
+      if (!lbl) return;
+      if (startupSortMode === 'enabled_first') {
+        lbl.textContent = 'Сначала вкл.';
+      } else if (startupSortMode === 'disabled_first') {
+        lbl.textContent = 'Сначала откл.';
+      } else {
+        lbl.textContent = 'По имени А-Я';
+      }
     }
 
     function onStartupSearch() {
@@ -3863,15 +3994,20 @@
       if (!container) return;
       const s = appData.strings || {};
 
+      const totalCount = startupItems.length;
+      const enabledCount = startupItems.filter(i => i.enabled).length;
+      const disabledCount = totalCount - enabledCount;
       const regCount = startupItems.filter(i => i.source_type && i.source_type.startsWith('registry')).length;
       const fldCount = startupItems.filter(i => i.source_type === 'startup_folder').length;
       const tskCount = startupItems.filter(i => i.source_type === 'scheduled_task').length;
-      const totalCount = startupItems.length;
-      const enabledCount = startupItems.filter(i => i.enabled).length;
 
       // Update counters
       const cAll = document.getElementById('countStartupAll');
       if (cAll) cAll.textContent = totalCount;
+      const cEn = document.getElementById('countStartupEnabled');
+      if (cEn) cEn.textContent = enabledCount;
+      const cDis = document.getElementById('countStartupDisabled');
+      if (cDis) cDis.textContent = disabledCount;
       const cReg = document.getElementById('countStartupRegistry');
       if (cReg) cReg.textContent = regCount;
       const cFld = document.getElementById('countStartupFolder');
@@ -3885,7 +4021,11 @@
       }
 
       let filtered = startupItems;
-      if (startupFilter === 'registry') {
+      if (startupFilter === 'enabled') {
+        filtered = filtered.filter(i => i.enabled);
+      } else if (startupFilter === 'disabled') {
+        filtered = filtered.filter(i => !i.enabled);
+      } else if (startupFilter === 'registry') {
         filtered = filtered.filter(i => i.source_type && i.source_type.startsWith('registry'));
       } else if (startupFilter === 'folder') {
         filtered = filtered.filter(i => i.source_type === 'startup_folder');
@@ -3902,6 +4042,16 @@
           return name.includes(startupSearchQuery) || pub.includes(startupSearchQuery) || cmd.includes(startupSearchQuery) || loc.includes(startupSearchQuery);
         });
       }
+
+      // Сортировка: сначала включенные / сначала отключенные / по алфавиту
+      filtered = [...filtered].sort((a, b) => {
+        if (startupSortMode === 'enabled_first') {
+          if (a.enabled !== b.enabled) return a.enabled ? -1 : 1;
+        } else if (startupSortMode === 'disabled_first') {
+          if (a.enabled !== b.enabled) return a.enabled ? 1 : -1;
+        }
+        return (a.name || '').localeCompare(b.name || '', 'ru', { sensitivity: 'base' });
+      });
 
       container.innerHTML = '';
       if (filtered.length === 0) {
@@ -3924,7 +4074,11 @@
           badgeClass = 'badge-source-task';
         }
 
-        const iconEmoji = item.source_type === 'scheduled_task' ? '⏰' : (item.source_type === 'startup_folder' ? '📁' : '⚡');
+        const fallbackEmoji = item.source_type === 'scheduled_task' ? '⏰' : (item.source_type === 'startup_folder' ? '📁' : '⚡');
+        const iconHtml = item.icon_data
+          ? `<img class="startup-item-img" src="${item.icon_data}" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';"><span style="display:none;">${fallbackEmoji}</span>`
+          : `<span>${fallbackEmoji}</span>`;
+
         const publisherHtml = item.publisher ? `<span class="startup-item-publisher" title="Издатель: ${item.publisher}">🏢 ${item.publisher}</span>` : '';
         const commandText = item.command || item.location || '';
 
@@ -3936,7 +4090,7 @@
                 <span class="switch-slider"></span>
               </label>
             </div>
-            <div class="startup-icon-box">${iconEmoji}</div>
+            <div class="startup-icon-box">${iconHtml}</div>
             <div class="startup-info-box">
               <div class="startup-item-name-row">
                 <span class="startup-item-name" title="${item.name}">${item.name}</span>
@@ -3972,12 +4126,21 @@
           const res = await window.pywebview.api.toggle_startup_item(itemId, enable);
           if (res && res.success) {
             item.enabled = enable;
-            const card = document.getElementById(`startup_${itemId}`);
-            if (card) card.classList.toggle('is-disabled', !enable);
+            const enabledCount = startupItems.filter(i => i.enabled).length;
+            const disabledCount = startupItems.length - enabledCount;
+            const cEn = document.getElementById('countStartupEnabled');
+            if (cEn) cEn.textContent = enabledCount;
+            const cDis = document.getElementById('countStartupDisabled');
+            if (cDis) cDis.textContent = disabledCount;
             const badge = document.getElementById('startupCounterBadge');
             if (badge) {
-              const enabledCount = startupItems.filter(i => i.enabled).length;
               badge.textContent = `Всего: ${startupItems.length} (Включено: ${enabledCount})`;
+            }
+            if (startupFilter === 'enabled' || startupFilter === 'disabled') {
+              renderStartup();
+            } else {
+              const card = document.getElementById(`startup_${itemId}`);
+              if (card) card.classList.toggle('is-disabled', !enable);
             }
             showToast(res.message, 'success', 2000);
           } else {
@@ -4207,6 +4370,10 @@
         if (banner) banner.style.display = 'none';
         if (qaAll) qaAll.style.display = 'none';
         if (qaSel) qaSel.style.display = 'none';
+        const fill = document.getElementById('overallProgressFill');
+        if (fill) fill.style.width = '100%';
+        const statusTxt = document.getElementById('overallStatusText');
+        if (statusTxt) statusTxt.textContent = 'Готово: все программы обновлены (100%)';
       }
       renderCards();
     };

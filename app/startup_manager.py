@@ -8,6 +8,7 @@ ZiablWinSetup — Менеджер автозагрузки Windows.
 5. Автоматическое извлечение издателя (Publisher) через Win32 VersionInfo.
 """
 
+import base64
 import csv
 import ctypes
 from ctypes import wintypes
@@ -221,7 +222,149 @@ def _resolve_shortcut_target(lnk_path: Path) -> str:
             return target
     except Exception:
         pass
-    return str(lnk_path)
+_ICON_CACHE: dict[str, str] = {}
+
+
+def extract_file_icon_base64(filepath: str) -> str:
+    """
+    Извлекает оригинальную иконку Windows приложения в формате PNG Base64 Data URL.
+    Поддерживает исполняемые файлы (.exe), библиотеки (.dll) и ярлыки (.lnk).
+    """
+    if not filepath:
+        return ""
+    if filepath in _ICON_CACHE:
+        return _ICON_CACHE[filepath]
+    if not os.path.exists(filepath):
+        _ICON_CACHE[filepath] = ""
+        return ""
+
+    try:
+        from PIL import Image
+
+        class ICONINFO(ctypes.Structure):
+            _fields_ = [
+                ("fIcon", wintypes.BOOL),
+                ("xHotspot", wintypes.DWORD),
+                ("yHotspot", wintypes.DWORD),
+                ("hbmMask", wintypes.HBITMAP),
+                ("hbmColor", wintypes.HBITMAP),
+            ]
+
+        class BITMAPINFOHEADER(ctypes.Structure):
+            _fields_ = [
+                ("biSize", wintypes.DWORD),
+                ("biWidth", wintypes.LONG),
+                ("biHeight", wintypes.LONG),
+                ("biPlanes", wintypes.WORD),
+                ("biBitCount", wintypes.WORD),
+                ("biCompression", wintypes.DWORD),
+                ("biSizeImage", wintypes.DWORD),
+                ("biXPelsPerMeter", wintypes.LONG),
+                ("biYPelsPerMeter", wintypes.LONG),
+                ("biClrUsed", wintypes.DWORD),
+                ("biClrImportant", wintypes.DWORD),
+            ]
+
+        class SHFILEINFOW(ctypes.Structure):
+            _fields_ = [
+                ("hIcon", wintypes.HICON),
+                ("iIcon", ctypes.c_int),
+                ("dwAttributes", wintypes.DWORD),
+                ("szDisplayName", wintypes.WCHAR * 260),
+                ("szTypeName", wintypes.WCHAR * 80),
+            ]
+
+        user32 = ctypes.windll.user32
+        gdi32 = ctypes.windll.gdi32
+        shell32 = ctypes.windll.shell32
+
+        user32.GetIconInfo.argtypes = [wintypes.HICON, ctypes.POINTER(ICONINFO)]
+        user32.GetIconInfo.restype = wintypes.BOOL
+        user32.DestroyIcon.argtypes = [wintypes.HICON]
+        user32.DestroyIcon.restype = wintypes.BOOL
+        gdi32.DeleteObject.argtypes = [wintypes.HGDIOBJ]
+        gdi32.DeleteObject.restype = wintypes.BOOL
+        user32.ReleaseDC.argtypes = [wintypes.HWND, wintypes.HDC]
+        user32.ReleaseDC.restype = wintypes.BOOL
+        gdi32.DeleteDC.argtypes = [wintypes.HDC]
+        gdi32.DeleteDC.restype = wintypes.BOOL
+        gdi32.GetDIBits.argtypes = [
+            wintypes.HDC,
+            wintypes.HBITMAP,
+            wintypes.UINT,
+            wintypes.UINT,
+            ctypes.c_void_p,
+            ctypes.POINTER(BITMAPINFOHEADER),
+            wintypes.UINT,
+        ]
+        gdi32.GetDIBits.restype = wintypes.BOOL
+
+        sfi = SHFILEINFOW()
+        SHGFI_ICON = 0x000000100
+        SHGFI_LARGEICON = 0x000000000
+        res = shell32.SHGetFileInfoW(
+            filepath, 0, ctypes.byref(sfi), ctypes.sizeof(SHFILEINFOW), SHGFI_ICON | SHGFI_LARGEICON
+        )
+        if not res or not sfi.hIcon:
+            _ICON_CACHE[filepath] = ""
+            return ""
+
+        hicon = sfi.hIcon
+        icon_info = ICONINFO()
+        if not user32.GetIconInfo(hicon, ctypes.byref(icon_info)):
+            user32.DestroyIcon(hicon)
+            _ICON_CACHE[filepath] = ""
+            return ""
+
+        hdc = user32.GetDC(0)
+        hmemdc = gdi32.CreateCompatibleDC(hdc)
+        bmi = BITMAPINFOHEADER()
+        bmi.biSize = ctypes.sizeof(BITMAPINFOHEADER)
+
+        gdi32.GetDIBits(hmemdc, icon_info.hbmColor, 0, 0, None, ctypes.byref(bmi), 0)
+        w = bmi.biWidth
+        h = abs(bmi.biHeight)
+        if w <= 0 or h <= 0:
+            gdi32.DeleteDC(hmemdc)
+            user32.ReleaseDC(0, hdc)
+            if icon_info.hbmColor:
+                gdi32.DeleteObject(icon_info.hbmColor)
+            if icon_info.hbmMask:
+                gdi32.DeleteObject(icon_info.hbmMask)
+            user32.DestroyIcon(hicon)
+            _ICON_CACHE[filepath] = ""
+            return ""
+
+        bmi.biHeight = -h
+        bmi.biBitCount = 32
+        bmi.biCompression = 0
+        buf_size = w * h * 4
+        buf = (ctypes.c_ubyte * buf_size)()
+        gdi32.GetDIBits(hmemdc, icon_info.hbmColor, 0, h, buf, ctypes.byref(bmi), 0)
+
+        gdi32.DeleteDC(hmemdc)
+        user32.ReleaseDC(0, hdc)
+        if icon_info.hbmColor:
+            gdi32.DeleteObject(icon_info.hbmColor)
+        if icon_info.hbmMask:
+            gdi32.DeleteObject(icon_info.hbmMask)
+        user32.DestroyIcon(hicon)
+
+        img = Image.frombuffer("RGBA", (w, h), bytes(buf), "raw", "BGRA", 0, 1)
+        extrema = img.getextrema()
+        if len(extrema) >= 4 and extrema[3] == (0, 0):
+            r, g, b, _ = img.split()
+            img = Image.merge("RGBA", (r, g, b, Image.new("L", (w, h), 255)))
+
+        out = io.BytesIO()
+        img.save(out, format="PNG")
+        b64 = "data:image/png;base64," + base64.b64encode(out.getvalue()).decode("ascii")
+        _ICON_CACHE[filepath] = b64
+        return b64
+    except Exception as e:
+        logger.debug(f"Error extracting icon for {filepath}: {e}")
+        _ICON_CACHE[filepath] = ""
+        return ""
 
 
 class StartupManager:
@@ -254,6 +397,8 @@ class StartupManager:
                             item_id = f"{loc['root_name']}_{loc['sub_key']}_{name}"
                             clean_id = hashlib.md5(item_id.encode("utf-8")).hexdigest()[:12]
 
+                            icon_data = extract_file_icon_base64(exe_path)
+
                             items.append({
                                 "id": clean_id,
                                 "name": name,
@@ -271,6 +416,7 @@ class StartupManager:
                                 "enabled": enabled,
                                 "can_toggle": bool(loc["approved_sub_key"]),
                                 "can_delete": True,
+                                "icon_data": icon_data,
                             })
                         except OSError:
                             break
@@ -305,6 +451,8 @@ class StartupManager:
                     item_id = f"folder_{folder_path}_{item_name}"
                     clean_id = hashlib.md5(item_id.encode("utf-8")).hexdigest()[:12]
 
+                    icon_data = extract_file_icon_base64(str(file_entry)) or extract_file_icon_base64(exe_path)
+
                     items.append({
                         "id": clean_id,
                         "name": file_entry.stem,
@@ -322,6 +470,7 @@ class StartupManager:
                         "enabled": enabled,
                         "can_toggle": True,
                         "can_delete": True,
+                        "icon_data": icon_data,
                     })
             except Exception as e:
                 logger.warning(f"Ошибка сканирования папки автозапуска {folder_path}: {e}")
@@ -364,6 +513,8 @@ class StartupManager:
                         item_id = f"schtask_{task_name}"
                         clean_id = hashlib.md5(item_id.encode("utf-8")).hexdigest()[:12]
 
+                        icon_data = extract_file_icon_base64(exe_path)
+
                         items.append({
                             "id": clean_id,
                             "name": clean_name,
@@ -381,6 +532,7 @@ class StartupManager:
                             "enabled": enabled,
                             "can_toggle": True,
                             "can_delete": True,
+                            "icon_data": icon_data,
                         })
         except Exception as e:
             logger.warning(f"Ошибка чтения задач планировщика: {e}")

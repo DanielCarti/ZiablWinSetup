@@ -787,7 +787,7 @@ class AppBridge:
             self.call_js("onAppProgress", app_id, 90, "⚙️ Запуск установщика...")
             self.call_js("onLog", f"⚙️ Установка новой версии {app.name}...")
 
-            inst_res = self._installer.run(app, Path(d_res.installer_path), silent=False)
+            inst_res = self._installer.run(app, Path(d_res.installer_path), silent=silent)
             if inst_res.success:
                 self.call_js("onAppProgress", app_id, 100, "Готово!")
                 self.call_js("onAppStatus", app_id, "done", "")
@@ -816,7 +816,15 @@ class AppBridge:
     def upgrade_app(self, app_id: str):
         """Обновляет приложение в отдельном фоновом потоке."""
         def worker():
-            self._do_upgrade_sync(app_id)
+            app = self._catalog_map.get(app_id)
+            app_name = app.name if app else app_id
+            self.call_js("onOverallProgress", 0, 1, f"Обновление {app_name}...")
+            success = self._do_upgrade_sync(app_id, silent=True)
+            if success:
+                self.call_js("onUpdateCompleted", app_id)
+                self.call_js("onOverallProgress", 1, 1, f"Готово: {app_name} успешно обновлён (100%)")
+            else:
+                self.call_js("onOverallProgress", 0, 1, f"Ошибка обновления {app_name}")
         threading.Thread(target=worker, daemon=True).start()
 
     def upgrade_all(self, app_ids: list[str], is_bulk: bool = True):
@@ -845,7 +853,7 @@ class AppBridge:
                 total = len(target_ids)
                 if total == 0:
                     self.call_js("onLog", "ℹ️ Нет доступных приложений для обновления.")
-                    self.call_js("onOverallProgress", 0, 1, "Готово")
+                    self.call_js("onOverallProgress", 1, 1, "Готово: все программы обновлены (100%)")
                     self.call_js("onUpdateAllDone")
                     return
 
@@ -856,11 +864,11 @@ class AppBridge:
                     app = self._catalog_map.get(aid)
                     app_name = app.name if app else aid
                     self.call_js("onOverallProgress", idx, total, f"Обновление {app_name} ({idx + 1}/{total})")
-                    if self._do_upgrade_sync(aid):
+                    if self._do_upgrade_sync(aid, silent=True):
                         success_count += 1
                     self.call_js("onOverallProgress", idx + 1, total, f"Завершено {idx + 1}/{total}")
 
-                self.call_js("onOverallProgress", total, total, f"Готово: {success_count}/{total}")
+                self.call_js("onOverallProgress", total, total, f"Готово: {success_count}/{total} обновлено (100%)")
                 self.call_js("onLog", f"✨ Обновление завершено: {success_count}/{total} успешно обновлено.")
                 self.call_js("onUpdateAllDone")
             finally:
