@@ -442,7 +442,7 @@ def _build_catalog() -> list[AppEntry]:
             winget_id="Git.Git",
             github_repo="git-for-windows/git",
             github_asset_pattern="*64-bit.exe",
-            silent_args=["/VERYSILENT", "/NORESTART"],
+            silent_args=["/VERYSILENT", "/NORESTART", "/CLOSEAPPLICATIONS", "/RESTARTAPPLICATIONS"],
             recommended=True,
         ),
         AppEntry(
