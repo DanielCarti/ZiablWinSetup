@@ -9,6 +9,7 @@ import shutil
 import subprocess
 import sys
 import threading
+import time
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -268,7 +269,7 @@ class Installer:
         except Exception:
             pass
 
-    def run(self, app: AppEntry, installer_path: Path, silent: bool = False, as_admin: bool = False) -> InstallResult:
+    def run(self, app: AppEntry, installer_path: Path, silent: bool = False, as_admin: bool = False, version: str = "") -> InstallResult:
         """
         Запускает установщик.
 
@@ -277,6 +278,7 @@ class Installer:
             installer_path: Путь к скачанному установщику
             silent: True для тихой установки, False для интерактивной
             as_admin: True для принудительного запуска с правами администратора (UAC)
+            version: Версия приложения (для сохранения в метаданных портативных программ)
         """
         if self.is_app_cancelled(app.id):
             return InstallResult(app=app, success=False, error="Отменено", skipped=True, cancelled=True)
@@ -291,13 +293,13 @@ class Installer:
 
         try:
             if ext == ".zip":
-                return self._handle_zip(app, installer_path)
+                return self._handle_zip(app, installer_path, version=version)
             elif ext == ".msi":
                 return self._run_msi(app, installer_path, silent, as_admin=as_admin)
             elif ext in (".msix", ".msixbundle", ".appx", ".appxbundle"):
                 return self._run_msix(app, installer_path)
             elif app.installer_type == "portable" or self.is_portable_executable(app, installer_path):
-                return self._handle_portable(app, installer_path, launch=True)
+                return self._handle_portable(app, installer_path, launch=(not silent), version=version)
             else:
                 # .exe и всё остальное
                 return self._run_exe(app, installer_path, silent, as_admin=as_admin)
@@ -519,7 +521,60 @@ class Installer:
         except Exception as e:
             return InstallResult(app=app, success=False, error=str(e))
 
-    def _handle_zip(self, app: AppEntry, path: Path) -> InstallResult:
+    @staticmethod
+    def _terminate_app_processes(app: AppEntry, dest_exe: Path | None = None, src_path: Path | None = None, dest_dir: Path | None = None):
+        """
+        Принудительно закрывает запущенные процессы приложения перед обновлением или заменой файлов,
+        предотвращая ошибку WinError 32 (файл заблокирован другим процессом).
+        """
+        names_to_kill = set()
+        if dest_exe:
+            names_to_kill.add(dest_exe.name)
+            names_to_kill.add(f"{dest_exe.stem}.exe")
+        if src_path:
+            names_to_kill.add(src_path.name)
+            names_to_kill.add(f"{src_path.stem}.exe")
+        names_to_kill.add(f"{app.name}.exe")
+        names_to_kill.add(f"{app.id}.exe")
+
+        # Дополнительные известные имена исполняемых файлов для портативных утилит
+        known_aliases = {
+            "tgwsproxy": ["tg-ws-proxy.exe", "tg_ws_proxy.exe", "tg-ws-proxy-windows.exe", "winws.exe"],
+            "gpuz": ["GPU-Z.exe", "TechPowerUp GPU-Z.exe"],
+            "operaproxy": ["opera-proxy.exe", "opera-proxy-windows-amd64.exe", "Opera Proxy (Alexey71).exe"],
+            "zapret": ["winws.exe", "zapret.exe", "blockcheck.exe"],
+        }
+        for alias in known_aliases.get(app.id, []):
+            names_to_kill.add(alias)
+
+        for proc_name in names_to_kill:
+            if not proc_name.lower().endswith(".exe"):
+                proc_name += ".exe"
+            try:
+                subprocess.run(
+                    ["taskkill", "/F", "/T", "/IM", proc_name],
+                    capture_output=True,
+                    creationflags=subprocess.CREATE_NO_WINDOW
+                )
+            except Exception:
+                pass
+
+        if dest_dir and dest_dir.exists():
+            for exe in dest_dir.glob("*.exe"):
+                if not exe.name.endswith(".old"):
+                    try:
+                        subprocess.run(
+                            ["taskkill", "/F", "/T", "/IM", exe.name],
+                            capture_output=True,
+                            creationflags=subprocess.CREATE_NO_WINDOW
+                        )
+                    except Exception:
+                        pass
+
+        # Небольшая пауза, чтобы Windows освободила дескрипторы файлов
+        time.sleep(0.25)
+
+    def _handle_zip(self, app: AppEntry, path: Path, version: str = "") -> InstallResult:
         """Распаковывает ZIP-архив в настраиваемый путь (по умолчанию — рабочий стол)."""
         try:
             # Имя папки = имя архива без расширения
@@ -527,12 +582,20 @@ class Installer:
             extract_dir = self.extract_path / folder_name
             extract_dir.mkdir(parents=True, exist_ok=True)
 
+            self._terminate_app_processes(app, dest_dir=extract_dir)
+
             logger.info(f"Extracting {path.name} to {extract_dir}")
 
             with zipfile.ZipFile(path, "r") as zf:
                 zf.extractall(extract_dir)
 
             logger.info(f"Extracted {app.name} to {extract_dir}")
+
+            if version:
+                try:
+                    (extract_dir / ".version").write_text(version.strip(), encoding="utf-8")
+                except Exception:
+                    pass
 
             # Ищем исполняемые файлы или батники для создания ярлыка на рабочем столе
             bat_files = list(extract_dir.rglob("*.bat")) + list(extract_dir.rglob("*.cmd"))
@@ -610,20 +673,74 @@ class Installer:
 
         return True
 
-    def _handle_portable(self, app: AppEntry, path: Path, launch: bool = True) -> InstallResult:
+    def _handle_portable(self, app: AppEntry, path: Path, launch: bool = True, version: str = "") -> InstallResult:
         """
         Обрабатывает запуск и размещение портативной программы:
-        1. Копирует .exe в директорию пользователя (extract_path / app.name).
-        2. Создает ярлык на Рабочем столе.
-        3. Запускает утилиту в фоне БЕЗ блокировки окна WinSetup.
+        1. Завершает активные процессы утилиты в диспетчере задач, если они запущены.
+        2. Копирует .exe в директорию пользователя (extract_path / app.name).
+        3. Сохраняет файл версии .version для отслеживания обновлений.
+        4. Создает или обновляет ярлык на Рабочем столе.
+        5. При необходимости (если launch=True) запускает новую версию.
         """
         try:
             dest_dir = self.extract_path / app.name
             dest_dir.mkdir(parents=True, exist_ok=True)
             dest_exe = dest_dir / f"{app.name}.exe"
 
+            logger.info(f"Terminating running instances of portable app {app.name} before copy")
+            self._terminate_app_processes(app, dest_exe=dest_exe, src_path=path, dest_dir=dest_dir)
+
             logger.info(f"Placing portable app {app.name} to {dest_exe}")
-            shutil.copy2(path, dest_exe)
+
+            copied = False
+            last_err = None
+            for attempt in range(5):
+                try:
+                    # Удаляем старые .old файлы
+                    for old_f in dest_dir.glob("*.old"):
+                        try:
+                            old_f.unlink()
+                        except Exception:
+                            pass
+
+                    shutil.copy2(path, dest_exe)
+                    copied = True
+                    break
+                except PermissionError as pe:
+                    last_err = pe
+                    logger.warning(f"File {dest_exe} locked on attempt {attempt + 1}, killing processes by path...")
+                    try:
+                        escaped_path = str(dest_exe).replace("'", "''")
+                        ps_cmd = f"Get-CimInstance Win32_Process | Where-Object {{ $_.ExecutablePath -eq '{escaped_path}' }} | ForEach-Object {{ Stop-Process -Id $_.ProcessId -Force }}"
+                        subprocess.run(
+                            ["powershell", "-NoProfile", "-NonInteractive", "-Command", ps_cmd],
+                            capture_output=True,
+                            creationflags=subprocess.CREATE_NO_WINDOW
+                        )
+                    except Exception:
+                        pass
+                    time.sleep(0.3)
+                except Exception as e:
+                    last_err = e
+                    time.sleep(0.2)
+
+            if not copied:
+                # Fallback: переименование заблокированного файла в .old с последующим копированием
+                try:
+                    old_path = dest_dir / f"{app.name}.{int(time.time())}.old"
+                    dest_exe.rename(old_path)
+                    shutil.copy2(path, dest_exe)
+                    copied = True
+                except Exception:
+                    if last_err:
+                        raise last_err
+
+            # Сохраняем версию в .version для детектора и апдейтера
+            if version:
+                try:
+                    (dest_dir / ".version").write_text(version.strip(), encoding="utf-8")
+                except Exception as ve:
+                    logger.debug(f"Could not write .version for {app.name}: {ve}")
 
             shortcut = create_desktop_shortcut(
                 dest_exe,
@@ -633,19 +750,21 @@ class Installer:
             shortcut_msg = f" (Ярлык: {shortcut.name})" if shortcut else ""
 
             if launch:
-                creationflags = 0
-                if hasattr(subprocess, "DETACHED_PROCESS") and hasattr(subprocess, "CREATE_NEW_PROCESS_GROUP"):
-                    creationflags = subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
                 try:
-                    subprocess.Popen(
-                        [str(dest_exe)],
-                        cwd=str(dest_dir),
-                        creationflags=creationflags,
-                        close_fds=True,
-                    )
-                    logger.info(f"Launched portable app {app.name}")
-                except Exception as e:
-                    logger.warning(f"Could not launch {dest_exe}: {e}")
+                    os.startfile(str(dest_exe))
+                    logger.info(f"Launched portable app {app.name} via os.startfile")
+                except Exception:
+                    try:
+                        creationflags = subprocess.CREATE_NEW_CONSOLE if hasattr(subprocess, "CREATE_NEW_CONSOLE") else 0
+                        subprocess.Popen(
+                            [str(dest_exe)],
+                            cwd=str(dest_dir),
+                            creationflags=creationflags,
+                            close_fds=True,
+                        )
+                        logger.info(f"Launched portable app {app.name} via Popen")
+                    except Exception as e:
+                        logger.warning(f"Could not launch {dest_exe}: {e}")
 
             return InstallResult(
                 app=app,
@@ -655,4 +774,5 @@ class Installer:
         except Exception as e:
             logger.error(f"Error handling portable app {app.name}: {e}")
             return InstallResult(app=app, success=False, error=str(e))
+
 

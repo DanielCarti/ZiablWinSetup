@@ -477,30 +477,48 @@ def detect_installed_apps() -> dict[str, dict[str, Any]]:
                     desktop / f"{app.name}.exe",
                 ]
 
+                # Проверка сохранённого файла версии
+                ver_file = exe_dir / app.name / ".version"
+                saved_ver = ""
+                if ver_file.exists():
+                    try:
+                        saved_ver = ver_file.read_text(encoding="utf-8").strip()
+                    except Exception:
+                        pass
+
+                found_path = None
                 for sc in desktop_shortcuts:
                     if sc.exists():
-                        match_info = {
-                            "installed": True,
-                            "name": app.name,
-                            "version": "Portable",
-                            "uninstall_cmd": "",
-                            "quiet_uninstall": "",
-                            "path": str(sc),
-                        }
+                        found_path = str(sc)
                         break
 
-                if not match_info:
+                if not found_path:
                     for pp in portable_paths:
                         if pp.exists():
-                            match_info = {
-                                "installed": True,
-                                "name": app.name,
-                                "version": "Portable",
-                                "uninstall_cmd": "",
-                                "quiet_uninstall": "",
-                                "path": str(pp),
-                            }
+                            found_path = str(pp)
                             break
+
+                if found_path:
+                    from app.utils import get_file_version
+                    det_ver = saved_ver
+                    if not det_ver:
+                        for pp in portable_paths:
+                            if pp.exists():
+                                pe_v = get_file_version(pp)
+                                if pe_v and pe_v != "0.0":
+                                    det_ver = pe_v
+                                    break
+                    if not det_ver:
+                        det_ver = "Portable"
+
+                    match_info = {
+                        "installed": True,
+                        "name": app.name,
+                        "version": det_ver,
+                        "uninstall_cmd": "",
+                        "quiet_uninstall": "",
+                        "path": found_path,
+                    }
             except Exception:
                 pass
 

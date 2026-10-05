@@ -625,6 +625,13 @@ class AppBridge:
         # 1. Проверяем в папке распаковки пользователя
         portable_exe = self._extract_path / app.name / f"{app.name}.exe"
         if not portable_exe.exists():
+            app_folder = self._extract_path / app.name
+            if app_folder.is_dir():
+                for f in app_folder.glob("*.exe"):
+                    if not f.name.endswith(".old"):
+                        portable_exe = f
+                        break
+        if not portable_exe.exists():
             portable_exe = self._extract_path / f"{app.name}.exe"
 
         # 2. Если файл есть в скачанных
@@ -633,7 +640,13 @@ class AppBridge:
             if dres.installer_path and Path(dres.installer_path).exists():
                 portable_exe = Path(dres.installer_path)
 
-        # 3. Ищем ярлык на рабочем столе
+        # 3. Ищем путь из обнаруженных установленных приложений
+        if not portable_exe.exists() and self._installed_apps and app_id in self._installed_apps:
+            det_path = self._installed_apps[app_id].get("path")
+            if det_path and Path(det_path).exists():
+                portable_exe = Path(det_path)
+
+        # 4. Ищем ярлык на рабочем столе
         if not portable_exe.exists():
             desktop = get_desktop_path()
             for lnk in (desktop / f"{app.name}.lnk", desktop / f"{app.id}.lnk", desktop / "GPU-Z.lnk", desktop / "TechPowerUp GPU-Z.lnk"):
@@ -647,18 +660,20 @@ class AppBridge:
 
         if portable_exe.exists():
             try:
-                creationflags = 0
-                if hasattr(subprocess, "DETACHED_PROCESS") and hasattr(subprocess, "CREATE_NEW_PROCESS_GROUP"):
-                    creationflags = subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
-                subprocess.Popen(
-                    [str(portable_exe)],
-                    cwd=str(portable_exe.parent),
-                    creationflags=creationflags,
-                    close_fds=True,
-                )
+                os.startfile(str(portable_exe))
                 self.call_js("onLog", f"🚀 {app.name} запущен.")
             except Exception as e:
-                self.call_js("onLog", f"❌ Ошибка запуска {app.name}: {e}")
+                try:
+                    creationflags = subprocess.CREATE_NEW_CONSOLE if hasattr(subprocess, "CREATE_NEW_CONSOLE") else 0
+                    subprocess.Popen(
+                        [str(portable_exe)],
+                        cwd=str(portable_exe.parent),
+                        creationflags=creationflags,
+                        close_fds=True,
+                    )
+                    self.call_js("onLog", f"🚀 {app.name} запущен.")
+                except Exception as e2:
+                    self.call_js("onLog", f"❌ Ошибка запуска {app.name}: {e2}")
         else:
             try:
                 os.startfile(app.name)
@@ -743,6 +758,7 @@ class AppBridge:
             self.call_js("onUpdateCheckStart")
             installed_map = detect_installed_apps()
             updates = check_updates_sync(installed_map)
+            self._available_updates = updates
             self.call_js("onInstalledAppsDetected", installed_map)
             self.call_js("onUpdatesChecked", updates)
 
@@ -788,8 +804,15 @@ class AppBridge:
             self.call_js("onAppProgress", app_id, 90, "⚙️ Запуск установщика...")
             self.call_js("onLog", f"⚙️ Установка новой версии {app.name}...")
 
-            inst_res = self._installer.run(app, Path(d_res.installer_path), silent=silent)
+            target_version = ""
+            if hasattr(self, "_available_updates") and self._available_updates:
+                target_version = self._available_updates.get(app_id, {}).get("available_version", "")
+
+            inst_res = self._installer.run(app, Path(d_res.installer_path), silent=silent, version=target_version)
             if inst_res.success:
+                if self._installed_apps and app_id in self._installed_apps:
+                    if target_version:
+                        self._installed_apps[app_id]["version"] = target_version
                 self.call_js("onAppProgress", app_id, 100, "Готово!")
                 self.call_js("onAppStatus", app_id, "done", "")
                 self.call_js("onLog", f"✅ {app.name} успешно обновлён!")

@@ -294,3 +294,39 @@ def open_folder(path: Path):
         os.startfile(str(path))
     except Exception:
         pass
+
+
+def get_file_version(filepath: str | Path) -> str | None:
+    """Извлекает версию исполняемого файла PE из ресурсов VersionInfo (Windows)."""
+    try:
+        from ctypes import wintypes
+        path_str = str(filepath)
+        size = ctypes.windll.version.GetFileVersionInfoSizeW(path_str, None)
+        if not size:
+            return None
+        res = ctypes.create_string_buffer(size)
+        if not ctypes.windll.version.GetFileVersionInfoW(path_str, None, size, res):
+            return None
+        uLen = wintypes.UINT()
+        lpBuffer = ctypes.c_void_p()
+        if ctypes.windll.version.VerQueryValueW(res, "\\", ctypes.byref(lpBuffer), ctypes.byref(uLen)):
+            class VS_FIXEDFILEINFO(ctypes.Structure):
+                _fields_ = [
+                    ("dwSignature", wintypes.DWORD),
+                    ("dwStrucVersion", wintypes.DWORD),
+                    ("dwFileVersionMS", wintypes.DWORD),
+                    ("dwFileVersionLS", wintypes.DWORD),
+                ]
+            ffi = VS_FIXEDFILEINFO.from_address(lpBuffer.value)
+            major = ffi.dwFileVersionMS >> 16
+            minor = ffi.dwFileVersionMS & 0xFFFF
+            build = ffi.dwFileVersionLS >> 16
+            patch = ffi.dwFileVersionLS & 0xFFFF
+            if patch != 0:
+                return f"{major}.{minor}.{build}.{patch}"
+            elif build != 0:
+                return f"{major}.{minor}.{build}"
+            return f"{major}.{minor}"
+    except Exception:
+        pass
+    return None
