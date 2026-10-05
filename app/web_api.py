@@ -747,7 +747,7 @@ class AppBridge:
 
         threading.Thread(target=worker, daemon=True).start()
 
-    def _do_upgrade_sync(self, app_id: str) -> bool:
+    def _do_upgrade_sync(self, app_id: str, silent: bool = True) -> bool:
         """Синхронное обновление одного приложения с потоковым выводом в реальном времени."""
         app = self._catalog_map.get(app_id)
         if not app:
@@ -805,7 +805,7 @@ class AppBridge:
                 self.call_js("onLog", f"❌ Ошибка установки обновления {app.name}: {inst_res.error}")
                 return False
         except Exception as e:
-            logger.error(f"Error upgrading {app.name}: {e}")
+            logger.error(f"Error upgrading {app.name}: {e}", exc_info=True)
             self.call_js("onAppProgress", app_id, 0, "")
             self.call_js("onAppStatus", app_id, "idle", "")
             self.call_js("onLog", f"❌ Ошибка обновления {app.name}: {e}")
@@ -819,11 +819,20 @@ class AppBridge:
             app = self._catalog_map.get(app_id)
             app_name = app.name if app else app_id
             self.call_js("onOverallProgress", 0, 1, f"Обновление {app_name}...")
-            success = self._do_upgrade_sync(app_id, silent=True)
-            if success:
-                self.call_js("onUpdateCompleted", app_id)
-                self.call_js("onOverallProgress", 1, 1, f"Готово: {app_name} успешно обновлён (100%)")
-            else:
+            try:
+                success = self._do_upgrade_sync(app_id, silent=True)
+                if success:
+                    self.call_js("onUpdateCompleted", app_id)
+                    self.call_js("onOverallProgress", 1, 1, f"Готово: {app_name} успешно обновлён (100%)")
+                else:
+                    self.call_js("onAppStatus", app_id, "idle", "")
+                    self.call_js("onAppProgress", app_id, 0, "")
+                    self.call_js("onOverallProgress", 0, 1, f"Ошибка обновления {app_name}")
+            except Exception as e:
+                logger.error(f"Fatal error in upgrade_app worker for {app_name}: {e}", exc_info=True)
+                self.call_js("onAppStatus", app_id, "idle", "")
+                self.call_js("onAppProgress", app_id, 0, "")
+                self.call_js("onLog", f"❌ Ошибка обновления {app_name}: {e}")
                 self.call_js("onOverallProgress", 0, 1, f"Ошибка обновления {app_name}")
         threading.Thread(target=worker, daemon=True).start()
 
@@ -864,12 +873,26 @@ class AppBridge:
                     app = self._catalog_map.get(aid)
                     app_name = app.name if app else aid
                     self.call_js("onOverallProgress", idx, total, f"Обновление {app_name} ({idx + 1}/{total})")
-                    if self._do_upgrade_sync(aid, silent=True):
-                        success_count += 1
+                    try:
+                        if self._do_upgrade_sync(aid, silent=True):
+                            success_count += 1
+                        else:
+                            self.call_js("onAppStatus", aid, "idle", "")
+                            self.call_js("onAppProgress", aid, 0, "")
+                    except Exception as loop_err:
+                        logger.error(f"Error updating {app_name} in loop: {loop_err}", exc_info=True)
+                        self.call_js("onAppStatus", aid, "idle", "")
+                        self.call_js("onAppProgress", aid, 0, "")
+                        self.call_js("onLog", f"❌ Ошибка обновления {app_name}: {loop_err}")
                     self.call_js("onOverallProgress", idx + 1, total, f"Завершено {idx + 1}/{total}")
 
                 self.call_js("onOverallProgress", total, total, f"Готово: {success_count}/{total} обновлено (100%)")
                 self.call_js("onLog", f"✨ Обновление завершено: {success_count}/{total} успешно обновлено.")
+                self.call_js("onUpdateAllDone")
+            except Exception as e:
+                logger.error(f"Fatal error in upgrade_all worker: {e}", exc_info=True)
+                self.call_js("onLog", f"❌ Критическая ошибка массового обновления: {e}")
+                self.call_js("onOverallProgress", 0, 1, "Ошибка массового обновления")
                 self.call_js("onUpdateAllDone")
             finally:
                 self._is_upgrading_bulk = False

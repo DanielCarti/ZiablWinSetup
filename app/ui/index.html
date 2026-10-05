@@ -2052,7 +2052,7 @@
           <span class="qa-label" id="lblExclusionsBtn">Исключения автообновления</span>
         </button>
 
-        <div style="margin-top: 10px; font-size: 10px; color: var(--text-dim); text-align: center; opacity: 0.8;" id="sidebarAppVerDisplay">ZiablWinSetup v1.3.0</div>
+        <div style="margin-top: 10px; font-size: 10px; color: var(--text-dim); text-align: center; opacity: 0.8;" id="sidebarAppVerDisplay">ZiablWinSetup v1.3.1</div>
       </div>
     </aside>
 
@@ -2227,7 +2227,7 @@
       <div class="self-update-ver-banner">
         <div class="ver-pill">
           <div class="ver-label" id="lblSelfUpdateCurrent">Текущая версия</div>
-          <div class="ver-value" id="selfUpdateCurrentVer">v1.3.0</div>
+          <div class="ver-value" id="selfUpdateCurrentVer">v1.3.1</div>
         </div>
         <div class="ver-arrow">→</div>
         <div class="ver-pill ver-new">
@@ -4378,6 +4378,21 @@
       renderCards();
     };
 
+    window.onUpdateAllDone = function() {
+      if (appData && appData.apps) {
+        appData.apps.forEach(app => {
+          if (appStatuses[app.id] && appStatuses[app.id].status === 'installing') {
+            if (availableUpdates && availableUpdates[app.id]) {
+              appStatuses[app.id] = { status: 'idle', progress: 0, detail: '' };
+            } else {
+              appStatuses[app.id] = { status: 'done', progress: 100, detail: '' };
+            }
+          }
+        });
+      }
+      renderCards();
+    };
+
     function handleUpgradeAll() {
       const allIds = Object.keys(availableUpdates);
       const ignoredSet = new Set(appData.ignored_updates || []);
@@ -4449,7 +4464,7 @@
       currentAppUpdateInfo = updateInfo;
 
       const curElem = document.getElementById('selfUpdateCurrentVer');
-      if (curElem) curElem.textContent = 'v' + (updateInfo.current_version || '1.3.0');
+      if (curElem) curElem.textContent = 'v' + (updateInfo.current_version || '1.3.1');
 
       const newElem = document.getElementById('selfUpdateNewVer');
       if (newElem) newElem.textContent = 'v' + (updateInfo.latest_version || '');
@@ -4602,7 +4617,7 @@
     };
 
     window.onAppUpdateNotFound = function(info) {
-      const cur = (info && info.current_version) ? ('v' + info.current_version) : 'v1.3.0';
+      const cur = (info && info.current_version) ? ('v' + info.current_version) : 'v1.3.1';
       const s = appData.strings || {};
       const tpl = s.self_update_no_updates || 'У вас установлена самая последняя версия ZiablWinSetup ({version})';
       showToast(tpl.replace('{version}', cur), 'success', 3500);
