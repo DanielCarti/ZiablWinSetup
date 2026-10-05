@@ -1,14 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
   <defs>
-    <linearGradient id="pl" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0078D4"/>
-      <stop offset="100%" stop-color="#00B4F0"/>
+    <linearGradient id="phn1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284C7"/>
+      <stop offset="100%" stop-color="#0369A1"/>
     </linearGradient>
   </defs>
-  <rect x="6" y="16" width="24" height="16" rx="2" fill="#607D8B"/>
-  <rect x="8" y="18" width="20" height="12" fill="#ffffff" opacity="0.9"/>
-  <rect x="4" y="32" width="28" height="2.5" rx="1" fill="#455A64"/>
-  <rect x="26" y="12" width="16" height="26" rx="3" fill="url(#pl)"/>
-  <rect x="28" y="16" width="12" height="18" rx="1" fill="#ffffff" opacity="0.9"/>
-  <circle cx="34" cy="36" r="1" fill="#ffffff"/>
+  <rect x="18" y="20" width="38" height="26" rx="4" fill="#E2E8F0" stroke="#94A3B8" stroke-width="2"/>
+  <rect x="22" y="24" width="30" height="18" rx="2" fill="#38BDF8" opacity="0.5"/>
+  <rect x="12" y="46" width="50" height="4" rx="2" fill="#64748B"/>
+  <rect x="8" y="24" width="18" height="30" rx="4" fill="url(#phn1)" stroke="#FFFFFF" stroke-width="1.5"/>
+  <rect x="11" y="28" width="12" height="20" rx="2" fill="#FFFFFF" opacity="0.9"/>
+  <circle cx="17" cy="50" r="1.5" fill="#FFFFFF"/>
 </svg>

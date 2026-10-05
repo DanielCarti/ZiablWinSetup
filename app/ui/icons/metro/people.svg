@@ -1,11 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
   <defs>
-    <linearGradient id="peopbg" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="ppl1" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#0078D4"/>
       <stop offset="100%" stop-color="#004E8C"/>
     </linearGradient>
+    <linearGradient id="ppl2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2B88D8"/>
+      <stop offset="100%" stop-color="#0063B1"/>
+    </linearGradient>
+    <linearGradient id="ppl3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#50E6FF"/>
+      <stop offset="100%" stop-color="#0099BC"/>
+    </linearGradient>
   </defs>
-  <rect x="8" y="8" width="32" height="32" rx="8" fill="url(#peopbg)"/>
-  <circle cx="24" cy="19" r="5" fill="#ffffff"/>
-  <path d="M14 34c0-4.4 4.5-8 10-8s10 3.6 10 8z" fill="#ffffff"/>
+  <circle cx="42" cy="22" r="7" fill="url(#ppl2)"/>
+  <path d="M33 46 C33 39 37 35 44 35 C51 35 55 39 55 46 Z" fill="url(#ppl2)"/>
+  <circle cx="24" cy="24" r="9" fill="url(#ppl3)"/>
+  <path d="M11 52 C11 43 17 38 26 38 C35 38 41 43 41 52 Z" fill="url(#ppl1)"/>
 </svg>

@@ -2944,7 +2944,8 @@
           return matchesAppSearch(app, searchQuery);
         }
         if (activeCategory === 'updates_available') {
-          if (!availableUpdates || !availableUpdates[app.id]) return false;
+          const isDoneInSession = appStatuses[app.id] && (appStatuses[app.id].status === 'done' || appStatuses[app.id].status === 'extracted');
+          if (!availableUpdates || (!availableUpdates[app.id] && !isDoneInSession)) return false;
           return matchesAppSearch(app, searchQuery);
         }
         // При непустом поисковом запросе ищем глобально по всем приложениям каталога
@@ -3109,15 +3110,13 @@
           </div>
         `;
       } else if (st.status === 'done' || st.status === 'extracted') {
-        if (app.installer_type === 'portable') {
-          return `
-            <div style="display: flex; gap: 6px; align-items: center;">
-              <button class="btn-action btn-primary" onclick="launchApp('${app.id}')" title="${s.btn_launch || 'Запустить'}">🚀 ${s.btn_launch || 'Запустить'}</button>
-              <button class="btn-action btn-outline" onclick="openAppFolder('${app.id}')" title="Открыть папку" style="padding: 0 9px; height: 32px;">📁</button>
-            </div>
-          `;
-        }
-        return `<button class="btn-action btn-success btn-disabled" disabled>✅ ${s.status_done || 'Готово!'}</button>`;
+        return `
+          <div style="display: flex; gap: 6px; align-items: center;">
+            <span style="font-size: 11px; padding: 4px 8px; border-radius: 4px; background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-weight: 600; white-space: nowrap;">✅ ${s.status_done || 'Готово!'}</span>
+            <button class="btn-action btn-primary" onclick="launchApp('${app.id}')" title="${s.btn_launch || 'Запустить'}">🚀 ${s.btn_launch || 'Запустить'}</button>
+            <button class="btn-action btn-outline" onclick="openAppFolder('${app.id}')" title="Открыть папку" style="padding: 0 9px; height: 32px;">📁</button>
+          </div>
+        `;
       } else if (st.status === 'error') {
         // Если ошибка и файл уже был скачан — предлагаем Установить (Админ)
         if (st.has_file) {
@@ -3750,7 +3749,7 @@
               </div>
             </label>
             <div class="metro-tile-icon">
-              <img class="metro-tile-img" src="icons/metro/${app.id}.svg" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+              <img class="metro-tile-img" src="${app.icon_data || `icons/metro/${app.id}.svg`}" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
               <span style="display:none;">${app.icon || '📦'}</span>
             </div>
             <div class="metro-tile-info">
@@ -4306,6 +4305,16 @@
 
       availableUpdates = updates || {};
       const count = Object.keys(availableUpdates).length;
+
+      // Сбрасываем завершённые статусы 'done'/'extracted', чтобы обновлённые приложения
+      // возвращались в нормальное установленное состояние и пропадали из списка обновлений
+      if (appData && appData.apps) {
+        appData.apps.forEach(app => {
+          if (appStatuses[app.id] && (appStatuses[app.id].status === 'done' || appStatuses[app.id].status === 'extracted')) {
+            delete appStatuses[app.id];
+          }
+        });
+      }
 
       if (count > 0) {
         if (badge) { badge.textContent = count; badge.style.display = 'inline-flex'; }

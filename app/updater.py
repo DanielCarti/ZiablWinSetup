@@ -135,7 +135,14 @@ def check_updates_sync(installed: dict[str, dict[str, Any]] | None = None) -> di
         logger.error(f"Winget upgrade check error: {e}")
 
     # 2. GitHub checks for installed apps
-    github_apps = [app for app in catalog if app.github_repo and app.id in installed]
+    # Для программ с winget_id источником правды является winget, чтобы не возникало рассинхрона
+    # (например, когда разработчик Obsidian выложил тег 1.13.8 на GitHub, но в манифестах winget доступна только 1.13.7).
+    # GitHub проверяется только для утилит без winget_id (например, Zapret, TG WS Proxy, Opera Proxy)
+    # либо если проверка winget завершилась ошибкой.
+    github_apps = [
+        app for app in catalog
+        if app.github_repo and app.id in installed and (not app.winget_id or not winget_upgrades)
+    ]
     if github_apps:
         with ThreadPoolExecutor(max_workers=4) as executor:
             future_to_app = {

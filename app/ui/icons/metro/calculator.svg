@@ -1,19 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
   <defs>
-    <linearGradient id="calcbg" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="calc1" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#0078D4"/>
       <stop offset="100%" stop-color="#004E8C"/>
     </linearGradient>
   </defs>
-  <rect x="10" y="8" width="28" height="32" rx="6" fill="url(#calcbg)"/>
-  <rect x="14" y="12" width="20" height="7" rx="2" fill="#E1F5FE"/>
-  <circle cx="17" cy="24" r="2" fill="#ffffff" opacity="0.9"/>
-  <circle cx="24" cy="24" r="2" fill="#ffffff" opacity="0.9"/>
-  <circle cx="31" cy="24" r="2" fill="#FFB74D"/>
-  <circle cx="17" cy="30" r="2" fill="#ffffff" opacity="0.9"/>
-  <circle cx="24" cy="30" r="2" fill="#ffffff" opacity="0.9"/>
-  <circle cx="31" cy="30" r="2" fill="#FFB74D"/>
-  <circle cx="17" cy="36" r="2" fill="#ffffff" opacity="0.9"/>
-  <circle cx="24" cy="36" r="2" fill="#ffffff" opacity="0.9"/>
-  <circle cx="31" cy="36" r="2" fill="#4CAF50"/>
+  <rect x="10" y="8" width="44" height="48" rx="10" fill="url(#calc1)"/>
+  <rect x="16" y="14" width="32" height="12" rx="3" fill="#FFFFFF" opacity="0.9"/>
+  <rect x="16" y="30" width="7" height="6" rx="2" fill="#FFFFFF" opacity="0.6"/>
+  <rect x="25" y="30" width="7" height="6" rx="2" fill="#FFFFFF" opacity="0.6"/>
+  <rect x="34" y="30" width="7" height="6" rx="2" fill="#FFFFFF" opacity="0.6"/>
+  <rect x="43" y="30" width="5" height="6" rx="2" fill="#F59E0B"/>
+  <rect x="16" y="38" width="7" height="6" rx="2" fill="#FFFFFF" opacity="0.6"/>
+  <rect x="25" y="38" width="7" height="6" rx="2" fill="#FFFFFF" opacity="0.6"/>
+  <rect x="34" y="38" width="7" height="6" rx="2" fill="#FFFFFF" opacity="0.6"/>
+  <rect x="43" y="38" width="5" height="14" rx="2" fill="#10B981"/>
+  <rect x="16" y="46" width="16" height="6" rx="2" fill="#FFFFFF" opacity="0.6"/>
+  <rect x="34" y="46" width="7" height="6" rx="2" fill="#FFFFFF" opacity="0.6"/>
 </svg>

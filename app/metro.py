@@ -3,8 +3,11 @@ ZiablWinSetup — Модуль управления встроенными Metro
 Предоставляет удаление в один клик и восстановление встроенных приложений Windows 10/11.
 """
 
+import base64
 import fnmatch
+import glob
 import json
+import logging
 import os
 import subprocess
 import sys
@@ -12,7 +15,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+logger = logging.getLogger("WinSetup")
 NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
+_METRO_ICON_CACHE: dict[str, str] = {}
 
 
 @dataclass
@@ -27,13 +32,14 @@ class MetroAppDef:
     store_id: str
     can_remove: bool = True
 
-    def to_dict(self, installed: bool, lang: str = "ru") -> dict[str, Any]:
+    def to_dict(self, installed: bool, lang: str = "ru", icon_data: str = "") -> dict[str, Any]:
         return {
             "id": self.id,
             "name": self.name if lang != "en" else self.name_en,
             "description": self.description if lang != "en" else self.description_en,
             "icon": self.icon,
             "icon_path": f"icons/metro/{self.id}.svg",
+            "icon_data": icon_data,
             "store_id": self.store_id,
             "can_remove": self.can_remove,
             "installed": installed,
@@ -254,32 +260,116 @@ METRO_APPS: list[MetroAppDef] = [
 ]
 
 
-def _get_installed_package_names() -> set[str]:
-    """Возвращает список всех зарегистрированных для текущего пользователя Appx пакетов."""
+def extract_appx_icon(install_dir: str) -> str:
+    """Извлекает оригинальную иконку Appx/UWP пакета в формате base64 Data URL."""
+    if not install_dir or not os.path.isdir(install_dir):
+        return ""
+    if install_dir in _METRO_ICON_CACHE:
+        return _METRO_ICON_CACHE[install_dir]
+    manifest_path = os.path.join(install_dir, "AppxManifest.xml")
+    if not os.path.isfile(manifest_path):
+        _METRO_ICON_CACHE[install_dir] = ""
+        return ""
+    try:
+        import xml.etree.ElementTree as ET
+        tree = ET.parse(manifest_path)
+        root = tree.getroot()
+        logo_refs = []
+        for elem in root.iter():
+            tag = elem.tag.split("}")[-1]
+            if tag in ("VisualElements", "DefaultTile"):
+                for attr in ("Square44x44Logo", "Square150x150Logo", "SmallLogo", "Logo"):
+                    if attr in elem.attrib:
+                        logo_refs.append(elem.attrib[attr])
+            elif tag in ("Logo", "Square44x44Logo", "Square150x150Logo"):
+                if elem.text:
+                    logo_refs.append(elem.text.strip())
+
+        candidates = []
+        for ref in logo_refs:
+            ref_path = os.path.join(install_dir, ref.replace("/", "\\"))
+            base, ext = os.path.splitext(ref_path)
+            patterns = [
+                ref_path,
+                f"{base}.scale-200{ext or '.png'}",
+                f"{base}.scale-150{ext or '.png'}",
+                f"{base}.scale-100{ext or '.png'}",
+                f"{base}.targetsize-48{ext or '.png'}",
+                f"{base}.targetsize-256{ext or '.png'}",
+                f"{base}*{ext or '.png'}",
+            ]
+            for p in patterns:
+                for f in glob.glob(p):
+                    if os.path.isfile(f) and "contrast-" not in f:
+                        candidates.append(f)
+
+        if not candidates:
+            assets_dir = os.path.join(install_dir, "Assets")
+            if os.path.isdir(assets_dir):
+                for f in os.listdir(assets_dir):
+                    f_lower = f.lower()
+                    if ("logo" in f_lower or "icon" in f_lower) and f_lower.endswith(".png") and "contrast-" not in f_lower:
+                        candidates.append(os.path.join(assets_dir, f))
+
+        best = None
+        for c in candidates:
+            if "scale-200" in c or "targetsize-48" in c:
+                best = c
+                break
+        if not best and candidates:
+            best = candidates[0]
+
+        if best and os.path.isfile(best):
+            with open(best, "rb") as fp:
+                b64 = "data:image/png;base64," + base64.b64encode(fp.read()).decode("ascii")
+                _METRO_ICON_CACHE[install_dir] = b64
+                return b64
+    except Exception as e:
+        logger.debug(f"Error extracting Appx icon from {install_dir}: {e}")
+
+    _METRO_ICON_CACHE[install_dir] = ""
+    return ""
+
+
+def _get_installed_packages_map() -> dict[str, str]:
+    """Возвращает словарь {package_name: install_location} для установленных пакетов."""
     try:
         cmd = ["powershell", "-NoProfile", "-NonInteractive", "-Command",
-               "Get-AppxPackage | Select-Object -ExpandProperty Name"]
+               "Get-AppxPackage | Select-Object Name, InstallLocation | ConvertTo-Json -Compress"]
         res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="ignore", creationflags=NO_WINDOW)
-        names = {line.strip() for line in res.stdout.splitlines() if line.strip()}
-        return names
+        if res.stdout.strip():
+            data = json.loads(res.stdout)
+            if isinstance(data, dict):
+                data = [data]
+            return {p["Name"]: p.get("InstallLocation", "") for p in data if p.get("Name")}
     except Exception:
-        return set()
+        pass
+    return {}
+
+
+def _get_installed_package_names() -> set[str]:
+    """Возвращает список всех зарегистрированных для текущего пользователя Appx пакетов."""
+    return set(_get_installed_packages_map().keys())
 
 
 def get_all_metro_apps(lang: str = "ru") -> list[dict[str, Any]]:
-    """Возвращает список всех Metro-приложений с актуальным статусом установки."""
-    installed_names = _get_installed_package_names()
+    """Возвращает список всех Metro-приложений с актуальным статусом установки и иконками."""
+    pkg_map = _get_installed_packages_map()
     result = []
     for app in METRO_APPS:
         is_inst = False
+        install_loc = ""
         for pat in app.package_patterns:
-            for pkg in installed_names:
+            for pkg, loc in pkg_map.items():
                 if fnmatch.fnmatch(pkg.lower(), pat.lower()):
                     is_inst = True
+                    install_loc = loc
                     break
             if is_inst:
                 break
-        result.append(app.to_dict(installed=is_inst, lang=lang))
+
+        icon_data = extract_appx_icon(install_loc) if (is_inst and install_loc) else ""
+        result.append(app.to_dict(installed=is_inst, lang=lang, icon_data=icon_data))
     return result
 
 

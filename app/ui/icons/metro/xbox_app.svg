@@ -1,4 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
-  <rect x="8" y="8" width="32" height="32" rx="8" fill="#107C10"/>
-  <path d="M16 14.5c2.3-1.2 5-1.9 8-1.9s5.7.7 8 1.9c-2.3 2.5-5.3 6.6-6.6 8.5-1.3-1.9-4.3-6-6.6-8.5zm-5 4.8c1.3 2 4.6 7 6.6 9.8-1.8 1.8-6.1 5.4-8 6.7 1.2-5 2.1-9 1.4-16.5zm26 0c-.7 7.5.2 11.5 1.4 16.5-1.9-1.3-6.2-4.9-8-6.7 2-2.8 5.3-7.8 6.6-9.8z" fill="#ffffff"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="xbx1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#107C10"/>
+      <stop offset="100%" stop-color="#0B530B"/>
+    </linearGradient>
+    <linearGradient id="xbx2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#E2E8F0"/>
+    </linearGradient>
+  </defs>
+  <circle cx="32" cy="32" r="26" fill="url(#xbx1)"/>
+  <path d="M23 15 C26 13 29 12 32 12 C35 12 38 13 41 15 C39 19 36 25 32 31 C28 25 25 19 23 15 Z" fill="url(#xbx2)"/>
+  <path d="M16 22 C13 26 12 29 12 33 C12 39 15 45 20 48 C21 44 24 37 28 32 C23 27 18 24 16 22 Z" fill="url(#xbx2)"/>
+  <path d="M48 22 C51 26 52 29 52 33 C52 39 49 45 44 48 C43 44 40 37 36 32 C41 27 46 24 48 22 Z" fill="url(#xbx2)"/>
 </svg>

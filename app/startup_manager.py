@@ -38,9 +38,20 @@ REG_RUN_LOCATIONS = [
         "root": winreg.HKEY_CURRENT_USER,
         "root_name": "HKCU",
         "sub_key": r"Software\Microsoft\Windows\CurrentVersion\RunOnce",
+        "active_sub_key": r"Software\Microsoft\Windows\CurrentVersion\RunOnce",
         "approved_sub_key": None,
         "source_type": "registry_user",
         "label": "Реестр (HKCU RunOnce)",
+    },
+    {
+        "root": winreg.HKEY_CURRENT_USER,
+        "root_name": "HKCU",
+        "sub_key": r"Software\Microsoft\Windows\CurrentVersion\RunOnce_Disabled",
+        "active_sub_key": r"Software\Microsoft\Windows\CurrentVersion\RunOnce",
+        "approved_sub_key": None,
+        "source_type": "registry_user",
+        "label": "Реестр (HKCU RunOnce, откл.)",
+        "is_disabled": True,
     },
     {
         "root": winreg.HKEY_LOCAL_MACHINE,
@@ -54,9 +65,20 @@ REG_RUN_LOCATIONS = [
         "root": winreg.HKEY_LOCAL_MACHINE,
         "root_name": "HKLM",
         "sub_key": r"Software\Microsoft\Windows\CurrentVersion\RunOnce",
+        "active_sub_key": r"Software\Microsoft\Windows\CurrentVersion\RunOnce",
         "approved_sub_key": None,
         "source_type": "registry_machine",
         "label": "Реестр (HKLM RunOnce)",
+    },
+    {
+        "root": winreg.HKEY_LOCAL_MACHINE,
+        "root_name": "HKLM",
+        "sub_key": r"Software\Microsoft\Windows\CurrentVersion\RunOnce_Disabled",
+        "active_sub_key": r"Software\Microsoft\Windows\CurrentVersion\RunOnce",
+        "approved_sub_key": None,
+        "source_type": "registry_machine",
+        "label": "Реестр (HKLM RunOnce, откл.)",
+        "is_disabled": True,
     },
     {
         "root": winreg.HKEY_LOCAL_MACHINE,
@@ -65,6 +87,25 @@ REG_RUN_LOCATIONS = [
         "approved_sub_key": r"Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run32",
         "source_type": "registry_machine",
         "label": "Реестр (HKLM 32-bit Run)",
+    },
+    {
+        "root": winreg.HKEY_LOCAL_MACHINE,
+        "root_name": "HKLM",
+        "sub_key": r"Software\WOW6432Node\Microsoft\Windows\CurrentVersion\RunOnce",
+        "active_sub_key": r"Software\WOW6432Node\Microsoft\Windows\CurrentVersion\RunOnce",
+        "approved_sub_key": None,
+        "source_type": "registry_machine",
+        "label": "Реестр (HKLM 32-bit RunOnce)",
+    },
+    {
+        "root": winreg.HKEY_LOCAL_MACHINE,
+        "root_name": "HKLM",
+        "sub_key": r"Software\WOW6432Node\Microsoft\Windows\CurrentVersion\RunOnce_Disabled",
+        "active_sub_key": r"Software\WOW6432Node\Microsoft\Windows\CurrentVersion\RunOnce",
+        "approved_sub_key": None,
+        "source_type": "registry_machine",
+        "label": "Реестр (HKLM 32-bit RunOnce, откл.)",
+        "is_disabled": True,
     },
 ]
 
@@ -189,19 +230,74 @@ def _is_approved_enabled(root_hkey, approved_key_path: str | None, item_name: st
     return True
 
 
+def _run_elevated_ps(ps_command: str) -> bool:
+    """Выполняет команду PowerShell с повышением прав через Windows UAC диалог."""
+    try:
+        from app.installer import run_with_elevation
+        code = run_with_elevation(
+            "powershell.exe",
+            ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", ps_command]
+        )
+        return code == 0
+    except PermissionError:
+        logger.info("UAC запрос отменён пользователем.")
+        return False
+    except Exception as e:
+        logger.warning(f"Ошибка выполнения команды с повышением прав: {e}")
+        return False
+
+
 def _set_approved_status(root_hkey, approved_key_path: str, item_name: str, enable: bool) -> bool:
-    """Записывает статус включено/отключено в системный ключ StartupApproved."""
+    """Записывает статус включено/отключено в системный ключ StartupApproved с UAC-повышением при необходимости."""
     if not approved_key_path:
         return False
     try:
-        # Создаем ключ, если его еще нет
+        # Пытаемся напрямую
         with winreg.CreateKeyEx(root_hkey, approved_key_path, 0, winreg.KEY_SET_VALUE | winreg.KEY_READ) as key:
-            # 0x02 = Включено, 0x03 = Отключено (12 байт стандартная структура Windows)
             byte_status = b"\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" if enable else b"\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
             winreg.SetValueEx(key, item_name, 0, winreg.REG_BINARY, byte_status)
         return True
+    except PermissionError:
+        # Недостаточно прав (например HKLM без прав администратора) -> UAC
+        root_str = "HKLM" if root_hkey == winreg.HKEY_LOCAL_MACHINE else "HKCU"
+        ps_bytes = "0x02,0,0,0,0,0,0,0,0,0,0,0" if enable else "0x03,0,0,0,0,0,0,0,0,0,0,0"
+        escaped_item = item_name.replace("'", "''")
+        ps_cmd = (
+            f"New-Item -Path '{root_str}:\\{approved_key_path}' -Force -ErrorAction SilentlyContinue; "
+            f"Set-ItemProperty -Path '{root_str}:\\{approved_key_path}' -Name '{escaped_item}' "
+            f"-Value ([byte[]]({ps_bytes})) -Type Binary -Force"
+        )
+        return _run_elevated_ps(ps_cmd)
     except Exception as e:
         logger.error(f"Ошибка записи в StartupApproved ({approved_key_path}, {item_name}): {e}")
+        return False
+
+
+def _move_reg_value(root_hkey, src_sub_key: str, dst_sub_key: str, val_name: str) -> bool:
+    """
+    Перемещает параметр реестра между разделами (например, RunOnce <-> RunOnce_Disabled).
+    При необходимости запрашивает права администратора через UAC.
+    """
+    try:
+        with winreg.OpenKey(root_hkey, src_sub_key, 0, winreg.KEY_READ) as src_k:
+            val_data, val_type = winreg.QueryValueEx(src_k, val_name)
+        with winreg.CreateKeyEx(root_hkey, dst_sub_key, 0, winreg.KEY_SET_VALUE) as dst_k:
+            winreg.SetValueEx(dst_k, val_name, 0, val_type, val_data)
+        with winreg.OpenKey(root_hkey, src_sub_key, 0, winreg.KEY_SET_VALUE) as src_k:
+            winreg.DeleteValue(src_k, val_name)
+        return True
+    except PermissionError:
+        root_str = "HKLM" if root_hkey == winreg.HKEY_LOCAL_MACHINE else "HKCU"
+        escaped_val = val_name.replace("'", "''")
+        ps_cmd = (
+            f"New-Item -Path '{root_str}:\\{dst_sub_key}' -Force -ErrorAction SilentlyContinue; "
+            f"$v = (Get-ItemProperty -Path '{root_str}:\\{src_sub_key}' -Name '{escaped_val}' -ErrorAction Stop).'{escaped_val}'; "
+            f"Set-ItemProperty -Path '{root_str}:\\{dst_sub_key}' -Name '{escaped_val}' -Value $v -Force; "
+            f"Remove-ItemProperty -Path '{root_str}:\\{src_sub_key}' -Name '{escaped_val}' -Force"
+        )
+        return _run_elevated_ps(ps_cmd)
+    except Exception as e:
+        logger.error(f"Ошибка перемещения значения реестра {val_name}: {e}")
         return False
 
 
@@ -387,14 +483,19 @@ class StartupManager:
                             if not name:
                                 continue
 
-                            enabled = _is_approved_enabled(loc["root"], loc["approved_sub_key"], name)
+                            if loc.get("is_disabled"):
+                                enabled = False
+                            else:
+                                enabled = _is_approved_enabled(loc["root"], loc["approved_sub_key"], name)
+
                             exe_path = extract_executable_path(cmd)
                             file_exists = bool(exe_path and os.path.exists(exe_path))
                             pub = get_file_publisher(exe_path)
                             desc = get_file_description(exe_path)
 
-                            # Уникальный ID для API
-                            item_id = f"{loc['root_name']}_{loc['sub_key']}_{name}"
+                            # Уникальный ID для API (используем active_sub_key для стабильного ID при переключении)
+                            active_sub = loc.get("active_sub_key", loc["sub_key"])
+                            item_id = f"{loc['root_name']}_{active_sub}_{name}"
                             clean_id = hashlib.md5(item_id.encode("utf-8")).hexdigest()[:12]
 
                             icon_data = extract_file_icon_base64(exe_path)
@@ -411,10 +512,12 @@ class StartupManager:
                                 "source_type": loc["source_type"],
                                 "source_label": loc["label"],
                                 "location": f"{loc['root_name']}\\{loc['sub_key']}",
+                                "sub_key": loc["sub_key"],
+                                "active_sub_key": active_sub,
                                 "approved_key": loc["approved_sub_key"],
                                 "root_hkey_name": loc["root_name"],
                                 "enabled": enabled,
-                                "can_toggle": bool(loc["approved_sub_key"]),
+                                "can_toggle": True,
                                 "can_delete": True,
                                 "icon_data": icon_data,
                             })
@@ -561,6 +664,23 @@ class StartupManager:
                     state_str = "включен" if enable else "отключен"
                     return True, f"Автозапуск «{target['name']}» успешно {state_str}."
                 return False, f"Не удалось обновить статус в StartupApproved для {target['name']}."
+            else:
+                # Ветки без StartupApproved (например RunOnce): перемещаем значение между активной веткой и _Disabled
+                active_sub = target.get("active_sub_key") or target.get("sub_key", "").replace("_Disabled", "")
+                if not active_sub:
+                    loc_str = target.get("location", "")
+                    active_sub = loc_str.split("\\", 1)[1] if "\\" in loc_str else loc_str
+                    active_sub = active_sub.replace("_Disabled", "")
+                disabled_sub = f"{active_sub}_Disabled"
+
+                src_sub = disabled_sub if enable else active_sub
+                dst_sub = active_sub if enable else disabled_sub
+
+                ok = _move_reg_value(root_hkey, src_sub, dst_sub, target["raw_name"])
+                if ok:
+                    state_str = "включен" if enable else "отключен"
+                    return True, f"Автозапуск «{target['name']}» успешно {state_str}."
+                return False, f"Не удалось изменить состояние для «{target['name']}»."
 
         # Планировщик задач (Task Scheduler)
         if source_type == "scheduled_task":
@@ -575,6 +695,15 @@ class StartupManager:
             if res.returncode == 0:
                 state_str = "включена" if enable else "отключена"
                 return True, f"Задача «{target['name']}» успешно {state_str}."
+
+            # Попытка с повышением прав через UAC
+            err_output = (res.stderr or "") + " " + (res.stdout or "")
+            if any(w in err_output.lower() for w in ["доступ", "denied", "администр", "privilege"]):
+                ps_cmd = f"schtasks /change /tn '{task_name}' {action_flag}"
+                if _run_elevated_ps(ps_cmd):
+                    state_str = "включена" if enable else "отключена"
+                    return True, f"Задача «{target['name']}» успешно {state_str}."
+
             return False, f"Ошибка schtasks: {res.stderr.strip() or res.stdout.strip()}"
 
         return False, "Неподдерживаемый тип элемента для переключения."
@@ -594,23 +723,35 @@ class StartupManager:
             loc_str = target.get("location", "")
             root_name = target.get("root_hkey_name", "HKCU")
             root_hkey = winreg.HKEY_LOCAL_MACHINE if root_name == "HKLM" else winreg.HKEY_CURRENT_USER
-            sub_key = loc_str.split("\\", 1)[1] if "\\" in loc_str else loc_str
+            sub_key = target.get("sub_key") or (loc_str.split("\\", 1)[1] if "\\" in loc_str else loc_str)
 
             try:
                 with winreg.OpenKey(root_hkey, sub_key, 0, winreg.KEY_SET_VALUE) as key:
                     winreg.DeleteValue(key, target["raw_name"])
-
-                # Также удаляем из StartupApproved если есть
-                approved_key = target.get("approved_key")
-                if approved_key:
-                    try:
-                        with winreg.OpenKey(root_hkey, approved_key, 0, winreg.KEY_SET_VALUE) as app_key:
-                            winreg.DeleteValue(app_key, target["raw_name"])
-                    except Exception:
-                        pass
-                return True, f"Запись «{target['name']}» успешно удалена из реестра."
+            except PermissionError:
+                root_str = "HKLM" if root_hkey == winreg.HKEY_LOCAL_MACHINE else "HKCU"
+                escaped_item = target["raw_name"].replace("'", "''")
+                ps_cmd = f"Remove-ItemProperty -Path '{root_str}:\\{sub_key}' -Name '{escaped_item}' -Force -ErrorAction SilentlyContinue"
+                if not _run_elevated_ps(ps_cmd):
+                    return False, f"Не удалось удалить запись из реестра (требуются права администратора)."
             except Exception as e:
                 return False, f"Не удалось удалить запись из реестра: {e}"
+
+            # Также удаляем из StartupApproved если есть
+            approved_key = target.get("approved_key")
+            if approved_key:
+                try:
+                    with winreg.OpenKey(root_hkey, approved_key, 0, winreg.KEY_SET_VALUE) as app_key:
+                        winreg.DeleteValue(app_key, target["raw_name"])
+                except PermissionError:
+                    root_str = "HKLM" if root_hkey == winreg.HKEY_LOCAL_MACHINE else "HKCU"
+                    escaped_item = target["raw_name"].replace("'", "''")
+                    ps_cmd = f"Remove-ItemProperty -Path '{root_str}:\\{approved_key}' -Name '{escaped_item}' -Force -ErrorAction SilentlyContinue"
+                    _run_elevated_ps(ps_cmd)
+                except Exception:
+                    pass
+
+            return True, f"Запись «{target['name']}» успешно удалена из реестра."
 
         # Папка автозапуска
         if source_type == "startup_folder":
@@ -634,6 +775,13 @@ class StartupManager:
             )
             if res.returncode == 0:
                 return True, f"Задача «{target['name']}» успешно удалена из планировщика."
+
+            err_output = (res.stderr or "") + " " + (res.stdout or "")
+            if any(w in err_output.lower() for w in ["доступ", "denied", "администр", "privilege"]):
+                ps_cmd = f"schtasks /delete /tn '{task_name}' /f"
+                if _run_elevated_ps(ps_cmd):
+                    return True, f"Задача «{target['name']}» успешно удалена из планировщика."
+
             return False, f"Ошибка удаления задачи: {res.stderr.strip() or res.stdout.strip()}"
 
         return False, "Неподдерживаемый тип записи для удаления."

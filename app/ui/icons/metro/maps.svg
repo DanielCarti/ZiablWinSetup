@@ -1,12 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
   <defs>
-    <linearGradient id="pin" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#F44336"/>
-      <stop offset="100%" stop-color="#C62828"/>
+    <linearGradient id="mapPin" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#EF4444"/>
+      <stop offset="100%" stop-color="#B91C1C"/>
     </linearGradient>
   </defs>
-  <rect x="8" y="8" width="32" height="32" rx="6" fill="#EEEEEE"/>
-  <path d="M8 14l11-4 10 4 11-4v24l-11 4-10-4-11 4z" fill="#C8E6C9"/>
-  <path d="M19 10v24M29 14v24" stroke="#81C784" stroke-width="2" stroke-dasharray="2 2"/>
-  <path d="M24 12c-3.3 0-6 2.7-6 6 0 4.5 6 12 6 12s6-7.5 6-12c0-3.3-2.7-6-6-6zm0 8.5c-1.4 0-2.5-1.1-2.5-2.5s1.1-2.5 2.5-2.5 2.5 1.1 2.5 2.5-1.1 2.5-2.5 2.5z" fill="url(#pin)"/>
+  <polygon points="8,16 24,10 24,50 8,56" fill="#93C5FD"/>
+  <polygon points="24,10 40,16 40,56 24,50" fill="#60A5FA"/>
+  <polygon points="40,16 56,10 56,50 40,56" fill="#3B82F6"/>
+  <path d="M32 18 C27 18 24 22 24 26 C24 33 32 42 32 42 C32 42 40 33 40 26 C40 22 37 18 32 18 Z" fill="url(#mapPin)"/>
+  <circle cx="32" cy="26" r="3.5" fill="#FFFFFF"/>
 </svg>

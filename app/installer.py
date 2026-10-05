@@ -315,6 +315,11 @@ class Installer:
 
         args = app.silent_args if (silent and app.silent_args) else []
 
+        # Перед установкой/обновлением завершаем активные процессы программы,
+        # чтобы установщик не завершился ошибкой блокировки (например, OBS Studio obs64.exe)
+        if silent:
+            self._terminate_app_processes(app, src_path=path)
+
         def register_handle(h):
             with self._lock:
                 self._active_handles[app.id] = h
@@ -411,6 +416,7 @@ class Installer:
         args = ["/i", str(path)]
         if silent:
             args.extend(["/quiet", "/norestart"])
+            self._terminate_app_processes(app, src_path=path)
 
         def register_handle(h):
             with self._lock:
@@ -537,12 +543,29 @@ class Installer:
         names_to_kill.add(f"{app.name}.exe")
         names_to_kill.add(f"{app.id}.exe")
 
-        # Дополнительные известные имена исполняемых файлов для портативных утилит
+        # Дополнительные известные имена исполняемых файлов для портативных утилит и программ
         known_aliases = {
             "tgwsproxy": ["tg-ws-proxy.exe", "tg_ws_proxy.exe", "tg-ws-proxy-windows.exe", "winws.exe"],
             "gpuz": ["GPU-Z.exe", "TechPowerUp GPU-Z.exe"],
             "operaproxy": ["opera-proxy.exe", "opera-proxy-windows-amd64.exe", "Opera Proxy (Alexey71).exe"],
             "zapret": ["winws.exe", "zapret.exe", "blockcheck.exe"],
+            "obs": ["obs64.exe", "obs32.exe", "obs.exe"],
+            "obs-studio": ["obs64.exe", "obs32.exe", "obs.exe"],
+            "obsidian": ["Obsidian.exe"],
+            "telegram": ["Telegram.exe"],
+            "discord": ["Discord.exe", "DiscordCanary.exe", "DiscordPTB.exe"],
+            "steam": ["steam.exe", "steamwebhelper.exe"],
+            "vscode": ["Code.exe"],
+            "vlc": ["vlc.exe"],
+            "git": ["git.exe", "git-bash.exe", "bash.exe"],
+            "todoist": ["Todoist.exe"],
+            "chrome": ["chrome.exe"],
+            "firefox": ["firefox.exe"],
+            "edge": ["msedge.exe"],
+            "qbittorrent": ["qbittorrent.exe"],
+            "7zip": ["7zFM.exe", "7zG.exe", "7z.exe"],
+            "notepadplusplus": ["notepad++.exe"],
+            "sharex": ["ShareX.exe"],
         }
         for alias in known_aliases.get(app.id, []):
             names_to_kill.add(alias)

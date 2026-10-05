@@ -1,11 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
   <defs>
-    <linearGradient id="clipbg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#8E24AA"/>
-      <stop offset="50%" stop-color="#E91E63"/>
-      <stop offset="100%" stop-color="#FF5722"/>
+    <linearGradient id="clipG1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366F1"/>
+      <stop offset="50%" stop-color="#A855F7"/>
+      <stop offset="100%" stop-color="#EC4899"/>
     </linearGradient>
+    <linearGradient id="clipG2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#6366F1"/>
+    </linearGradient>
+    <filter id="clip-sh" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+    </filter>
   </defs>
-  <rect x="8" y="8" width="32" height="32" rx="10" fill="url(#clipbg)"/>
-  <path d="M18 16l14 8-14 8z" fill="#ffffff"/>
+  <rect x="6" y="6" width="52" height="52" rx="16" fill="url(#clipG1)" filter="url(#clip-sh)"/>
+  <path d="M24 18 C20 18 17 21 17 25 L17 39 C17 43 20 46 24 46 L40 46 C44 46 47 43 47 39 L47 25 C47 21 44 18 40 18 Z" fill="none" stroke="#FFFFFF" stroke-width="3.5" opacity="0.2"/>
+  <polygon points="27,22 43,32 27,42" fill="#FFFFFF" filter="url(#clip-sh)"/>
+  <circle cx="43" cy="22" r="3.5" fill="#FDE047"/>
 </svg>

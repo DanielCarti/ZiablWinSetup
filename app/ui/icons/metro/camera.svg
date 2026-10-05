@@ -1,17 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
   <defs>
-    <linearGradient id="cam" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#2B579A"/>
-      <stop offset="100%" stop-color="#1E395B"/>
+    <linearGradient id="cam1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#1D4ED8"/>
     </linearGradient>
-    <linearGradient id="lens" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#00BCF2"/>
-      <stop offset="100%" stop-color="#0078D4"/>
+    <linearGradient id="camLens" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#0284C7"/>
     </linearGradient>
   </defs>
-  <rect x="6" y="12" width="36" height="26" rx="6" fill="url(#cam)"/>
-  <path d="M17 12l2-4h10l2 4z" fill="#1E395B"/>
-  <circle cx="24" cy="25" r="8" fill="#112233"/>
-  <circle cx="24" cy="25" r="6" fill="url(#lens)"/>
-  <circle cx="26" cy="23" r="2" fill="#ffffff" opacity="0.7"/>
+  <rect x="8" y="16" width="48" height="36" rx="10" fill="url(#cam1)"/>
+  <path d="M24 16 L27 11 C28 10 30 10 31 10 L37 10 C38 10 40 10 41 11 L44 16 Z" fill="#1D4ED8"/>
+  <circle cx="32" cy="34" r="12" fill="#0F172A"/>
+  <circle cx="32" cy="34" r="8" fill="url(#camLens)"/>
+  <circle cx="48" cy="22" r="2.5" fill="#FDE047"/>
 </svg>

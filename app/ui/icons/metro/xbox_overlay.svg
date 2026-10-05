@@ -1,4 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
-  <circle cx="24" cy="24" r="18" fill="#107C10"/>
-  <path d="M16 14.5c2.3-1.2 5-1.9 8-1.9s5.7.7 8 1.9c-2.3 2.5-5.3 6.6-6.6 8.5-1.3-1.9-4.3-6-6.6-8.5zm-5 4.8c1.3 2 4.6 7 6.6 9.8-1.8 1.8-6.1 5.4-8 6.7 1.2-5 2.1-9 1.4-16.5zm26 0c-.7 7.5.2 11.5 1.4 16.5-1.9-1.3-6.2-4.9-8-6.7 2-2.8 5.3-7.8 6.6-9.8z" fill="#ffffff"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="xov1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1F2937"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+    <linearGradient id="xov2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22C55E"/>
+      <stop offset="100%" stop-color="#15803D"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="12" width="48" height="40" rx="12" fill="url(#xov1)" stroke="#374151" stroke-width="2"/>
+  <path d="M20 25 C25 25 28 28 32 28 C36 28 39 25 44 25 C48 25 50 28 49 34 L47 43 C46 47 43 49 39 47 L36 44 C34 42 30 42 28 44 L25 47 C21 49 18 47 17 43 L15 34 C14 28 16 25 20 25 Z" fill="none" stroke="url(#xov2)" stroke-width="3" stroke-linejoin="round"/>
+  <circle cx="32" cy="35" r="3.5" fill="#22C55E"/>
+  <circle cx="42" cy="32" r="2" fill="#FDE047"/>
+  <circle cx="45" cy="35" r="2" fill="#EF4444"/>
 </svg>
