@@ -3384,6 +3384,9 @@
 
     window.onAppProgress = function(appId, percent, text) {
       const current = appStatuses[appId] || {};
+      if (current.status === 'idle' || current.status === 'done' || current.status === 'extracted') {
+        if (percent === 0) return;
+      }
       appStatuses[appId] = {
         ...current,
         status: (current.status === 'installing' ? 'installing' : 'downloading'),
@@ -4349,12 +4352,19 @@
       }
     };
 
-    window.onUpdateCompleted = function(appId) {
+    window.onUpdateCompleted = function(appId, newVersion) {
       if (availableUpdates[appId]) {
         delete availableUpdates[appId];
       }
+      selectedApps.delete(appId);
       if (!appData.installed_apps) appData.installed_apps = {};
-      appData.installed_apps[appId] = { installed: true };
+      const current = appData.installed_apps[appId] || {};
+      appData.installed_apps[appId] = {
+        ...current,
+        installed: true,
+        version: newVersion || (availableUpdates && availableUpdates[appId] ? availableUpdates[appId].available_version : current.version) || ''
+      };
+      appStatuses[appId] = { status: 'done', progress: 100, detail: '' };
 
       const count = Object.keys(availableUpdates).length;
       if (count === 0 && activeCategory === 'updates_available') {
@@ -4386,21 +4396,27 @@
         if (statusTxt) statusTxt.textContent = 'Готово: все программы обновлены (100%)';
       }
       renderCards();
+      updateFooter();
     };
 
     window.onUpdateAllDone = function() {
       if (appData && appData.apps) {
         appData.apps.forEach(app => {
-          if (appStatuses[app.id] && appStatuses[app.id].status === 'installing') {
-            if (availableUpdates && availableUpdates[app.id]) {
-              appStatuses[app.id] = { status: 'idle', progress: 0, detail: '' };
-            } else {
-              appStatuses[app.id] = { status: 'done', progress: 100, detail: '' };
+          if (appStatuses[app.id]) {
+            const st = appStatuses[app.id].status;
+            if (st === 'installing' || st === 'downloading') {
+              if (availableUpdates && availableUpdates[app.id]) {
+                appStatuses[app.id] = { status: 'idle', progress: 0, detail: '' };
+              } else {
+                appStatuses[app.id] = { status: 'done', progress: 100, detail: '' };
+              }
             }
           }
         });
       }
+      selectedApps = new Set([...selectedApps].filter(id => Boolean(availableUpdates[id])));
       renderCards();
+      updateFooter();
     };
 
     function handleUpgradeAll() {

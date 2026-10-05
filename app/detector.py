@@ -460,9 +460,11 @@ def detect_installed_apps() -> dict[str, dict[str, Any]]:
         # 4. Fallback: проверка portable-приложений и ярлыков на Рабочем столе
         if not match_info and (app.installer_type == "portable" or app.id in ("gpuz", "tgwsproxy", "operaproxy", "zapret")):
             try:
-                from app.installer import get_desktop_path, get_exe_dir
+                from app.installer import get_desktop_path, get_exe_dir, _resolve_extract_path
+                from app.settings import load_settings
                 desktop = get_desktop_path()
                 exe_dir = get_exe_dir()
+                extract_path = _resolve_extract_path(load_settings())
 
                 desktop_shortcuts = [
                     desktop / f"{app.name}.lnk",
@@ -471,6 +473,8 @@ def detect_installed_apps() -> dict[str, dict[str, Any]]:
                     desktop / "TechPowerUp GPU-Z.lnk",
                 ]
                 portable_paths = [
+                    extract_path / app.name / f"{app.name}.exe",
+                    extract_path / f"{app.name}.exe",
                     exe_dir / app.name / f"{app.name}.exe",
                     exe_dir / f"{app.name}.exe",
                     exe_dir / "Portable" / app.name / f"{app.name}.exe",
@@ -478,13 +482,42 @@ def detect_installed_apps() -> dict[str, dict[str, Any]]:
                 ]
 
                 # Проверка сохранённого файла версии
-                ver_file = exe_dir / app.name / ".version"
+                ver_candidates = [
+                    extract_path / app.name / ".version",
+                    exe_dir / app.name / ".version",
+                    desktop / app.name / ".version",
+                    desktop / f"{app.name}.version",
+                ]
                 saved_ver = ""
-                if ver_file.exists():
-                    try:
-                        saved_ver = ver_file.read_text(encoding="utf-8").strip()
-                    except Exception:
-                        pass
+                for vf in ver_candidates:
+                    if vf.exists():
+                        try:
+                            saved_ver = vf.read_text(encoding="utf-8").strip()
+                            if saved_ver:
+                                break
+                        except Exception:
+                            pass
+
+                # Для Zapret и подобных утилит ищем версию в папках архивов
+                if not saved_ver and app.id in ("zapret", "operaproxy", "tgwsproxy"):
+                    for base_dir in (extract_path, desktop, exe_dir):
+                        if base_dir and base_dir.exists():
+                            for sub in base_dir.glob(f"{app.id}*"):
+                                if sub.is_dir():
+                                    zv_file = sub / ".version"
+                                    if zv_file.exists():
+                                        try:
+                                            saved_ver = zv_file.read_text(encoding="utf-8").strip()
+                                        except Exception:
+                                            pass
+                                    if not saved_ver:
+                                        m_v = re.search(r"\b(\d+\.\d+(?:\.\d+)?)\b", sub.name)
+                                        if m_v:
+                                            saved_ver = m_v.group(1)
+                                    if saved_ver:
+                                        break
+                        if saved_ver:
+                            break
 
                 found_path = None
                 for sc in desktop_shortcuts:

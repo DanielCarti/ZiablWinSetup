@@ -43,6 +43,40 @@ def _get_github_latest_version(repo: str) -> str | None:
     return None
 
 
+def parse_version_tuple(ver_str: str) -> tuple[int, ...]:
+    """Преобразует строку версии в кортеж чисел ('1.11.0' -> (1, 11))."""
+    if not ver_str:
+        return ()
+    cleaned = ver_str.lstrip("vV").strip()
+    parts = re.findall(r"\d+", cleaned)
+    if not parts:
+        return ()
+    nums = [int(p) for p in parts]
+    while len(nums) > 1 and nums[-1] == 0:
+        nums.pop()
+    return tuple(nums)
+
+
+def is_newer_version(latest_ver: str, current_ver: str) -> bool:
+    """
+    Проверяет, является ли latest_ver строго новее current_ver.
+    Игнорирует ложные несовпадения (1.11 vs 1.11.0) и строки 'Portable'/'Unknown'.
+    """
+    if not latest_ver or not current_ver:
+        return False
+    clean_curr = current_ver.strip().lower()
+    if clean_curr in ("portable", "unknown", "installed"):
+        return False
+    t_latest = parse_version_tuple(latest_ver)
+    t_current = parse_version_tuple(current_ver)
+    if not t_latest or not t_current:
+        return False
+    max_len = max(len(t_latest), len(t_current))
+    l_padded = t_latest + (0,) * (max_len - len(t_latest))
+    c_padded = t_current + (0,) * (max_len - len(t_current))
+    return l_padded > c_padded
+
+
 def parse_winget_upgrade_output(output: str) -> dict[str, dict]:
     """
     Парсит вывод 'winget upgrade'.
@@ -154,8 +188,7 @@ def check_updates_sync(installed: dict[str, dict[str, Any]] | None = None) -> di
                 latest_ver = future.result()
                 if latest_ver:
                     curr_ver = installed[app.id].get("version", "")
-                    curr_clean = curr_ver.lstrip("v").strip()
-                    if curr_clean and curr_clean != latest_ver:
+                    if curr_ver and is_newer_version(latest_ver, curr_ver):
                         results[app.id] = {
                             "app_id": app.id,
                             "name": app.name,

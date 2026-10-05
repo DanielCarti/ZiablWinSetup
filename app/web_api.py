@@ -88,6 +88,8 @@ class AppBridge:
         self._active_installs = 0
         self._is_upgrading_bulk = False
         self._active_upgrades = 0
+        self._installed_apps: dict[str, dict[str, Any]] = {}
+        self._available_updates: dict[str, dict[str, Any]] = {}
         self._app_data: dict[str, Any] | None = None
         self._tray_manager: Any = None
         self._is_quitting = False
@@ -176,6 +178,7 @@ class AppBridge:
         ]
         recommended_ids = [a.id if hasattr(a, "id") else a for a in get_recommended()]
         installed_map = detect_installed_apps()
+        self._installed_apps = installed_map
         ignored_update_ids = settings.get("ignored_update_apps", ["photoshop", "premiere"])
 
         self._extract_path = _resolve_extract_path(settings)
@@ -757,6 +760,7 @@ class AppBridge:
         def worker():
             self.call_js("onUpdateCheckStart")
             installed_map = detect_installed_apps()
+            self._installed_apps = installed_map
             updates = check_updates_sync(installed_map)
             self._available_updates = updates
             self.call_js("onInstalledAppsDetected", installed_map)
@@ -771,6 +775,7 @@ class AppBridge:
             return False
 
         if not app.winget_id and not app.github_repo and not app.direct_url:
+            self.call_js("onAppProgress", app_id, 0, "")
             self.call_js("onAppStatus", app_id, "idle", "")
             self.call_js("onLog", f"ℹ️ Для {app.name} обновление выполняется вручную.")
             return False
@@ -810,13 +815,15 @@ class AppBridge:
 
             inst_res = self._installer.run(app, Path(d_res.installer_path), silent=silent, version=target_version)
             if inst_res.success:
-                if self._installed_apps and app_id in self._installed_apps:
+                if hasattr(self, "_installed_apps") and self._installed_apps is not None:
+                    if app_id not in self._installed_apps:
+                        self._installed_apps[app_id] = {"installed": True, "name": app.name}
                     if target_version:
                         self._installed_apps[app_id]["version"] = target_version
                 self.call_js("onAppProgress", app_id, 100, "Готово!")
                 self.call_js("onAppStatus", app_id, "done", "")
                 self.call_js("onLog", f"✅ {app.name} успешно обновлён!")
-                self.call_js("onUpdateCompleted", app_id)
+                self.call_js("onUpdateCompleted", app_id, target_version)
                 return True
             elif inst_res.cancelled or self._installer.is_app_cancelled(app_id):
                 self.call_js("onAppProgress", app_id, 0, "")
@@ -901,12 +908,12 @@ class AppBridge:
                         if self._do_upgrade_sync(aid, silent=True):
                             success_count += 1
                         else:
-                            self.call_js("onAppStatus", aid, "idle", "")
                             self.call_js("onAppProgress", aid, 0, "")
+                            self.call_js("onAppStatus", aid, "idle", "")
                     except Exception as loop_err:
                         logger.error(f"Error updating {app_name} in loop: {loop_err}", exc_info=True)
-                        self.call_js("onAppStatus", aid, "idle", "")
                         self.call_js("onAppProgress", aid, 0, "")
+                        self.call_js("onAppStatus", aid, "idle", "")
                         self.call_js("onLog", f"❌ Ошибка обновления {app_name}: {loop_err}")
                     self.call_js("onOverallProgress", idx + 1, total, f"Завершено {idx + 1}/{total}")
 
