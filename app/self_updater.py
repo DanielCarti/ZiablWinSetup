@@ -143,7 +143,8 @@ def download_and_apply_update(
     temp_dir = Path(tempfile.gettempdir())
     timestamp = int(time.time())
     new_exe_path = temp_dir / f"ZiablWinSetup_new_{timestamp}.exe"
-    updater_cmd_path = temp_dir / f"ziabl_update_{timestamp}.cmd"
+    updater_ps1_path = temp_dir / f"ziabl_update_{timestamp}.ps1"
+    updater_vbs_path = temp_dir / f"ziabl_update_{timestamp}.vbs"
 
     try:
         logger.info(f"Скачивание обновления из {download_url} в {new_exe_path}...")
@@ -195,57 +196,106 @@ def download_and_apply_update(
 
         current_pid = os.getpid()
 
-        # Формируем надежный Windows cmd-скрипт обновления:
-        # 1. Ждет завершения текущего процесса (по PID)
-        # 2. Безопасно переименовывает старый EXE в .old (разблокировка NTFS)
-        # 3. Перемещает/копирует новый EXE на место целевого
-        # 4. Запускает обновленный EXE
-        # 5. Очищает временные файлы и удаляет сам cmd-скрипт
-        target_name = target_exe.name
-        cmd_content = f"""@echo off
-chcp 65001 >nul
-set "PID={current_pid}"
-set "NEW_EXE={new_exe_path}"
-set "TARGET_EXE={target_exe}"
-set "TARGET_NAME={target_name}"
+        # Формируем абсолютно бесшумный автономный PowerShell-скрипт обновления:
+        # 1. Ждет чистого завершения текущего процесса (по PID)
+        # 2. Безопасно перемещает старый EXE в .old (разблокировка NTFS без дескрипторных конфликтов)
+        # 3. Копирует новый EXE на место целевого с повторными попытками
+        # 4. Запускает обновленный EXE в его рабочей директории
+        # 5. Очищает временные файлы
+        new_exe_ps = str(new_exe_path).replace("'", "''")
+        target_exe_ps = str(target_exe).replace("'", "''")
+        vbs_ps = str(updater_vbs_path).replace("'", "''")
+        ps1_ps = str(updater_ps1_path).replace("'", "''")
+        ps1_vbs = str(updater_ps1_path).replace('"', '""')
 
-:wait_loop
-tasklist /fi "PID eq %PID%" 2>nul | find "%PID%" >nul
-if not errorlevel 1 (
-    timeout /t 1 /nobreak >nul
-    goto wait_loop
-)
+        ps_content = f"""$ErrorActionPreference = 'SilentlyContinue'
 
-timeout /t 1 /nobreak >nul
+# 1. Ожидаем завершения предыдущего процесса
+$targetPid = {current_pid}
+$timeout = [DateTime]::UtcNow.AddSeconds(25)
+while ((Get-Process -Id $targetPid -ErrorAction SilentlyContinue) -and ([DateTime]::UtcNow -lt $timeout)) {{
+    Start-Sleep -Milliseconds 250
+}}
+Start-Sleep -Milliseconds 400
 
-if exist "%TARGET_EXE%.old" del /f /q "%TARGET_EXE%.old" 2>nul
-if exist "%TARGET_EXE%" ren "%TARGET_EXE%" "%TARGET_NAME%.old" 2>nul
+# 2. Безопасная замена исполняемого файла с повторными попытками
+$newExe = '{new_exe_ps}'
+$targetExe = '{target_exe_ps}'
+$targetOld = "$targetExe.old"
+$replaced = $false
 
-copy /y "%NEW_EXE%" "%TARGET_EXE%" >nul
-if errorlevel 1 (
-    move /y "%NEW_EXE%" "%TARGET_EXE%" >nul
-)
+for ($i = 0; $i -lt 30; $i++) {{
+    try {{
+        if (Test-Path -LiteralPath $targetOld) {{
+            Remove-Item -LiteralPath $targetOld -Force -ErrorAction SilentlyContinue
+        }}
+        if (Test-Path -LiteralPath $targetExe) {{
+            Move-Item -LiteralPath $targetExe -Destination $targetOld -Force -ErrorAction Stop
+        }}
+        Copy-Item -LiteralPath $newExe -Destination $targetExe -Force -ErrorAction Stop
+        $replaced = $true
+        break
+    }} catch {{
+        Start-Sleep -Milliseconds 300
+    }}
+}}
 
-del /f /q "%NEW_EXE%" 2>nul
-del /f /q "%TARGET_EXE%.old" 2>nul
+# 3. Перезапуск обновленного приложения
+if ($replaced -and (Test-Path -LiteralPath $targetExe)) {{
+    $workDir = Split-Path -Parent $targetExe
+    Start-Process -FilePath $targetExe -WorkingDirectory $workDir
+}}
 
-start "" "%TARGET_EXE%"
-(goto) 2>nul & del "%~f0"
+# 4. Очистка временных файлов
+Start-Sleep -Seconds 1
+Remove-Item -LiteralPath $newExe -Force -ErrorAction SilentlyContinue
+Remove-Item -LiteralPath $targetOld -Force -ErrorAction SilentlyContinue
+Remove-Item -LiteralPath '{vbs_ps}' -Force -ErrorAction SilentlyContinue
+Remove-Item -LiteralPath '{ps1_ps}' -Force -ErrorAction SilentlyContinue
 """
-        updater_cmd_path.write_text(cmd_content, encoding="utf-8")
-        logger.info(f"Создан автономный скрипт обновления: {updater_cmd_path}")
+        updater_ps1_path.write_text(ps_content, encoding="utf-8")
+
+        vbs_content = f'Set objShell = CreateObject("WScript.Shell")\nobjShell.Run "powershell.exe -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File ""{ps1_vbs}""", 0, False\n'
+        updater_vbs_path.write_text(vbs_content, encoding="ascii")
+        logger.info(f"Созданы автономные скрипты обновления: {updater_ps1_path}, {updater_vbs_path}")
 
         if progress_callback:
             progress_callback(100, "Перезапуск приложения...")
 
-        # Запускаем открепленный процесс cmd.exe
-        subprocess.Popen(
-            ["cmd.exe", "/c", str(updater_cmd_path)],
-            creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW,
-            close_fds=True,
-        )
+        # Запускаем открепленный процесс обновления.
+        # wscript.exe является GUI-подсистемой (IMAGE_SUBSYSTEM_WINDOWS_GUI),
+        # поэтому Windows принципиально не создает консольных окон cmd/find.exe.
+        launched = False
+        try:
+            subprocess.Popen(
+                ["wscript.exe", "//B", "//Nologo", str(updater_vbs_path)],
+                creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW,
+                close_fds=True,
+            )
+            launched = True
+            logger.info("Открепленный процесс обновления запущен через wscript.exe")
+        except Exception as ex:
+            logger.warning(f"Не удалось запустить через wscript ({ex}), резервный запуск powershell.exe...")
 
-        logger.info("Открепленный процесс обновления запущен. Завершение работы текущего процесса...")
+        if not launched:
+            subprocess.Popen(
+                [
+                    "powershell.exe",
+                    "-NoProfile",
+                    "-NonInteractive",
+                    "-WindowStyle",
+                    "Hidden",
+                    "-ExecutionPolicy",
+                    "Bypass",
+                    "-File",
+                    str(updater_ps1_path),
+                ],
+                creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW,
+                close_fds=True,
+            )
+            logger.info("Открепленный процесс обновления запущен через powershell.exe")
+
+        logger.info("Процесс обновления запущен. Завершение работы текущего процесса...")
 
         if exit_callback:
             try:
@@ -260,8 +310,10 @@ start "" "%TARGET_EXE%"
         try:
             if new_exe_path.exists():
                 new_exe_path.unlink(missing_ok=True)
-            if updater_cmd_path.exists():
-                updater_cmd_path.unlink(missing_ok=True)
+            if updater_ps1_path.exists():
+                updater_ps1_path.unlink(missing_ok=True)
+            if updater_vbs_path.exists():
+                updater_vbs_path.unlink(missing_ok=True)
         except Exception:
             pass
         return False, f"Ошибка обновления: {e}"
