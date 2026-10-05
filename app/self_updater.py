@@ -201,11 +201,13 @@ def download_and_apply_update(
         # 3. Перемещает/копирует новый EXE на место целевого
         # 4. Запускает обновленный EXE
         # 5. Очищает временные файлы и удаляет сам cmd-скрипт
+        target_name = target_exe.name
         cmd_content = f"""@echo off
 chcp 65001 >nul
 set "PID={current_pid}"
 set "NEW_EXE={new_exe_path}"
 set "TARGET_EXE={target_exe}"
+set "TARGET_NAME={target_name}"
 
 :wait_loop
 tasklist /fi "PID eq %PID%" 2>nul | find "%PID%" >nul
@@ -217,7 +219,7 @@ if not errorlevel 1 (
 timeout /t 1 /nobreak >nul
 
 if exist "%TARGET_EXE%.old" del /f /q "%TARGET_EXE%.old" 2>nul
-ren "%TARGET_EXE%" "%~nx3.old" 2>nul
+if exist "%TARGET_EXE%" ren "%TARGET_EXE%" "%TARGET_NAME%.old" 2>nul
 
 copy /y "%NEW_EXE%" "%TARGET_EXE%" >nul
 if errorlevel 1 (
@@ -246,7 +248,10 @@ start "" "%TARGET_EXE%"
         logger.info("Открепленный процесс обновления запущен. Завершение работы текущего процесса...")
 
         if exit_callback:
-            exit_callback()
+            try:
+                exit_callback()
+            except Exception as ex:
+                logger.warning(f"Error executing exit_callback: {ex}")
 
         return True, "Обновление готово. Приложение перезапускается..."
 

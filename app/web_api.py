@@ -9,6 +9,7 @@ import os
 import re
 import subprocess
 import threading
+import time
 import webbrowser
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -1080,8 +1081,15 @@ class AppBridge:
                 self.call_js("onLog", f"📦 Обновление ZiablWinSetup: {text}")
 
             def exit_cb():
-                time.sleep(0.5)
-                self.quit_app()
+                try:
+                    time.sleep(0.5)
+                    self.quit_app()
+                except Exception as e:
+                    logger.debug(f"Error in exit_cb: {e}")
+                def force_exit():
+                    time.sleep(1.0)
+                    os._exit(0)
+                threading.Thread(target=force_exit, daemon=True).start()
 
             success, msg = download_and_apply_update(
                 download_url=download_url,

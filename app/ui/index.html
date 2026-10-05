@@ -4549,6 +4549,9 @@
       const progArea = document.getElementById('selfUpdateProgressArea');
       if (progArea) progArea.style.display = 'block';
 
+      const bar = document.getElementById('selfUpdateProgressBar');
+      if (bar) bar.style.background = 'linear-gradient(90deg, #38bdf8, #22c55e)';
+
       const statusText = document.getElementById('selfUpdateStatusText');
       if (statusText) statusText.textContent = appData.strings?.self_update_downloading || 'Скачивание обновления...';
 
@@ -4643,6 +4646,9 @@
       isSelfUpdating = false;
       const statusText = document.getElementById('selfUpdateStatusText');
       if (statusText) statusText.textContent = 'Ошибка при обновлении';
+
+      const bar = document.getElementById('selfUpdateProgressBar');
+      if (bar) bar.style.background = '#ef4444';
 
       const btnInst = document.getElementById('btnSelfUpdateInstall');
       if (btnInst) {
