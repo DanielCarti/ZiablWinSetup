@@ -40,7 +40,15 @@ def is_newer_version(latest_ver: str, current_ver: str = __version__) -> bool:
 def cleanup_old_files():
     """Удаляет временные файлы .old и .bak, оставшиеся после предыдущего обновления."""
     try:
-        exe_dir = Path(sys.executable).resolve().parent
+        exe_path = Path(sys.executable).resolve()
+        exe_dir = exe_path.parent
+        specific_old = exe_path.with_name(f"{exe_path.name}.old")
+        if specific_old.exists():
+            try:
+                specific_old.unlink(missing_ok=True)
+                logger.info(f"Удален старый файл обновления: {specific_old}")
+            except Exception:
+                pass
         for old_file in exe_dir.glob("*.old"):
             try:
                 old_file.unlink(missing_ok=True)
@@ -210,13 +218,30 @@ def download_and_apply_update(
 
         ps_content = f"""$ErrorActionPreference = 'SilentlyContinue'
 
-# 1. Ожидаем завершения предыдущего процесса
+# 1. Ожидаем чистого и полного завершения ВСЕХ процессов старого приложения (и дочернего Python, и родительского PyInstaller bootloader)
 $targetPid = {current_pid}
-$timeout = [DateTime]::UtcNow.AddSeconds(25)
+$targetPath = '{target_exe_ps}'
+$targetStem = [System.IO.Path]::GetFileNameWithoutExtension($targetPath)
+$timeout = [DateTime]::UtcNow.AddSeconds(30)
+
+# Сначала ждем прямой PID вызывающего процесса
 while ((Get-Process -Id $targetPid -ErrorAction SilentlyContinue) -and ([DateTime]::UtcNow -lt $timeout)) {{
     Start-Sleep -Milliseconds 250
 }}
-Start-Sleep -Milliseconds 400
+
+# Затем ждем завершения родительского bootloader и любых сопутствующих процессов данного exe
+while ([DateTime]::UtcNow -lt $timeout) {{
+    $procs = Get-Process -Name $targetStem -ErrorAction SilentlyContinue | Where-Object {{
+        try {{ $_.Path -eq $targetPath }} catch {{ $true }}
+    }}
+    if (-not $procs) {{
+        break
+    }}
+    Start-Sleep -Milliseconds 300
+}}
+
+# Пауза для окончательного освобождения файловых дескрипторов Windows и очистки каталога _MEI
+Start-Sleep -Milliseconds 1200
 
 # 2. Безопасная замена исполняемого файла с повторными попытками
 $newExe = '{new_exe_ps}'
@@ -240,6 +265,9 @@ for ($i = 0; $i -lt 30; $i++) {{
     }}
 }}
 
+# Небольшая пауза для завершения записи на диск NTFS перед стартом
+Start-Sleep -Milliseconds 600
+
 # 3. Перезапуск обновленного приложения
 if ($replaced -and (Test-Path -LiteralPath $targetExe)) {{
     $workDir = Split-Path -Parent $targetExe
@@ -247,7 +275,7 @@ if ($replaced -and (Test-Path -LiteralPath $targetExe)) {{
 }}
 
 # 4. Очистка временных файлов
-Start-Sleep -Seconds 1
+Start-Sleep -Seconds 2
 Remove-Item -LiteralPath $newExe -Force -ErrorAction SilentlyContinue
 Remove-Item -LiteralPath $targetOld -Force -ErrorAction SilentlyContinue
 Remove-Item -LiteralPath '{vbs_ps}' -Force -ErrorAction SilentlyContinue
