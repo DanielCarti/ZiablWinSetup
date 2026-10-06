@@ -126,7 +126,35 @@ def check_for_app_update(current_version: str = __version__) -> dict[str, Any]:
         }
 
     except Exception as e:
-        logger.warning(f"Не удалось проверить обновления приложения на GitHub: {e}")
+        logger.warning(f"Не удалось проверить обновления приложения через GitHub API: {e}. Пробуем веб-страницы...")
+        try:
+            web_url = f"https://github.com/{GITHUB_REPO}/releases"
+            web_req = urllib.request.Request(web_url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+            with urllib.request.urlopen(web_req, timeout=7) as web_resp:
+                web_html = web_resp.read().decode("utf-8", errors="ignore")
+            tags = re.findall(rf"/{GITHUB_REPO}/releases/tag/([^\" >]+)", web_html)
+            if tags:
+                tag_name = tags[0].strip()
+                latest_ver = tag_name.lstrip("vV").strip()
+                download_url = f"https://github.com/{GITHUB_REPO}/releases/download/{tag_name}/ZiablWinSetup.exe"
+                has_update = is_newer_version(latest_ver, current_version)
+                logger.info(f"Веб-проверка: версия v{latest_ver}, обновление доступно: {has_update}")
+                return {
+                    "success": True,
+                    "update_available": has_update,
+                    "current_version": current_version,
+                    "latest_version": latest_ver,
+                    "tag_name": tag_name,
+                    "release_title": f"ZiablWinSetup v{latest_ver}",
+                    "release_notes": "Обновление стабильности и компонентов программы.",
+                    "download_url": download_url,
+                    "file_size": 0,
+                    "published_at": "",
+                    "html_url": f"https://github.com/{GITHUB_REPO}/releases/tag/{tag_name}",
+                }
+        except Exception as web_ex:
+            logger.warning(f"Веб-проверка релизов также завершилась с ошибкой: {web_ex}")
+
         return {
             "success": False,
             "update_available": False,
