@@ -85,9 +85,15 @@ def run_app(start_in_tray: bool = False):
     bridge.set_tray_manager(tray_manager)
     tray_manager.start()
 
+    # Подключаем SingleInstanceGuard к функции активации окна
+    from app.single_instance import single_instance_guard
+    single_instance_guard.set_activate_callback(tray_manager.show_window)
+    single_instance_guard.start_pipe_server()
+
     def on_closing():
         if bridge.is_quitting():
             tray_manager.stop()
+            single_instance_guard.cleanup()
             return True
 
         settings = load_settings()
@@ -116,18 +122,23 @@ def run_app(start_in_tray: bool = False):
                 logger.error(f"Error in on_closing confirmation dialog: {e}")
 
         tray_manager.stop()
+        single_instance_guard.cleanup()
         return True
 
     def on_closed():
         tray_manager.stop()
+        single_instance_guard.cleanup()
 
     window.events.closing += on_closing
     window.events.closed += on_closed
 
     # Запуск с движком EdgeChromium (DirectX GPU) с сохраненным кэшем
-    webview.start(
-        debug=False,
-        storage_path=str(cache_dir),
-        private_mode=False,
-        http_server=False,
-    )
+    try:
+        webview.start(
+            debug=False,
+            storage_path=str(cache_dir),
+            private_mode=False,
+            http_server=False,
+        )
+    finally:
+        single_instance_guard.cleanup()

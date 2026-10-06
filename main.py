@@ -22,6 +22,11 @@ from app.utils import setup_logging, is_admin
 
 
 def main():
+    # Проверка единственного экземпляра приложения (Single Instance Guard)
+    from app.single_instance import single_instance_guard
+    if not single_instance_guard.check_and_acquire():
+        sys.exit(0)
+
     # Настраиваем логирование
     logger = setup_logging()
 
