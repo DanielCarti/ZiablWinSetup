@@ -293,11 +293,14 @@ for ($i = 0; $i -lt 30; $i++) {{
     }}
 }}
 
-# Небольшая пауза для завершения записи на диск NTFS перед стартом
-Start-Sleep -Milliseconds 600
-
 # 3. Перезапуск обновленного приложения
 if ($replaced -and (Test-Path -LiteralPath $targetExe)) {{
+    # Снимаем метку Zone.Identifier (Mark-of-the-Web), чтобы Windows Defender и SmartScreen не блокировали чтение архива PyInstaller
+    Unblock-File -LiteralPath $targetExe -ErrorAction SilentlyContinue
+
+    # Пауза для окончательной фиксации на диске NTFS и антивирусного сканирования
+    Start-Sleep -Milliseconds 1200
+
     $workDir = Split-Path -Parent $targetExe
     Start-Process -FilePath $targetExe -WorkingDirectory $workDir
 }}
