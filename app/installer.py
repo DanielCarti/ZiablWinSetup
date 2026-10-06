@@ -123,6 +123,79 @@ def create_desktop_shortcut(
         return None
 
 
+def get_locking_processes(file_paths: list[Path | str]) -> list[str]:
+    """
+    Использует Windows Restart Manager API для быстрого определения процессов,
+    блокирующих указанные файлы (например, obs-virtualcam-module64.dll).
+    """
+    try:
+        import ctypes
+        from ctypes import wintypes
+        rm = ctypes.WinDLL("rstrtmgr", use_last_error=True)
+    except Exception:
+        return []
+
+    CCH_RM_SESSION_KEY = 32
+    CCH_RM_MAX_APP_NAME = 255
+    CCH_RM_MAX_SVC_NAME = 63
+
+    class RM_UNIQUE_PROCESS(ctypes.Structure):
+        _fields_ = [("dwProcessId", wintypes.DWORD), ("ProcessStartTime", wintypes.FILETIME)]
+
+    class RM_PROCESS_INFO(ctypes.Structure):
+        _fields_ = [
+            ("Process", RM_UNIQUE_PROCESS),
+            ("strAppName", wintypes.WCHAR * (CCH_RM_MAX_APP_NAME + 1)),
+            ("strServiceShortName", wintypes.WCHAR * (CCH_RM_MAX_SVC_NAME + 1)),
+            ("ApplicationType", wintypes.UINT),
+            ("AppStatus", wintypes.ULONG),
+            ("TSSessionId", wintypes.DWORD),
+            ("bRestartable", wintypes.BOOL)
+        ]
+
+    existing = [str(Path(p).resolve()) for p in file_paths if Path(p).exists()]
+    if not existing:
+        return []
+
+    session_handle = wintypes.DWORD()
+    session_key = (wintypes.WCHAR * (CCH_RM_SESSION_KEY + 1))()
+
+    res = rm.RmStartSession(ctypes.byref(session_handle), 0, session_key)
+    if res != 0:
+        return []
+
+    try:
+        arr = (wintypes.LPCWSTR * len(existing))(*existing)
+        res = rm.RmRegisterResources(session_handle, len(existing), arr, 0, None, 0, None)
+        if res != 0:
+            return []
+
+        pnProcInfoNeeded = wintypes.UINT(0)
+        pnProcInfo = wintypes.UINT(0)
+        pRebootReasons = wintypes.DWORD(0)
+
+        rm.RmGetList(session_handle, ctypes.byref(pnProcInfoNeeded), ctypes.byref(pnProcInfo), None, ctypes.byref(pRebootReasons))
+        if pnProcInfoNeeded.value > 0:
+            pnProcInfo.value = pnProcInfoNeeded.value
+            proc_info_array = (RM_PROCESS_INFO * pnProcInfo.value)()
+            res = rm.RmGetList(session_handle, ctypes.byref(pnProcInfoNeeded), ctypes.byref(pnProcInfo), proc_info_array, ctypes.byref(pRebootReasons))
+            if res == 0:
+                names = []
+                for i in range(pnProcInfo.value):
+                    name = proc_info_array[i].strAppName
+                    if name and name not in names:
+                        names.append(name)
+                return names
+    except Exception:
+        pass
+    finally:
+        try:
+            rm.RmEndSession(session_handle)
+        except Exception:
+            pass
+    return []
+
+
 def run_with_elevation(
     file_path: str | Path,
     args: list[str] | None = None,
@@ -308,6 +381,39 @@ class Installer:
             logger.error(f"Error installing {app.name}: {e}")
             return InstallResult(app=app, success=False, error=str(e))
 
+    def _format_installer_error(self, app: AppEntry, code: int, installer_path: Path | None = None) -> str:
+        """Расшифровывает коды возврата установщиков в понятные пользователю сообщения."""
+        if code == 6:
+            # Код 6 характерен для NSIS/OBS Studio: packageInUseByApplication
+            files_to_check = []
+            if app.id in ("obs", "obs-studio"):
+                files_to_check = [
+                    Path(r"C:\Program Files\obs-studio\data\obs-plugins\win-dshow\obs-virtualcam-module64.dll"),
+                    Path(r"C:\Program Files\obs-studio\data\obs-plugins\win-dshow\obs-virtualcam-module32.dll"),
+                    Path(r"C:\Program Files\obs-studio\data\obs-plugins\win-capture\graphics-hook64.dll"),
+                    Path(r"C:\Program Files\obs-studio\bin\64bit\obs64.exe"),
+                ]
+            locking = get_locking_processes(files_to_check) if files_to_check else []
+            if locking:
+                procs_str = ", ".join(locking)
+                return f"Файлы программы (виртуальная камера) заняты: {procs_str} (Код 6). Закройте эти программы и повторите попытку."
+            return "Файлы программы (виртуальная камера или хуки захвата) заняты другим приложением, например Chrome или Discord (Код 6). Закройте их перед обновлением."
+
+        elif code == 1618:
+            return "Уже выполняется другая установка Windows Installer (msiexec). Дождитесь её окончания (Код 1618)."
+        elif code == 1603:
+            return "Ошибка Windows Installer (Код 1603): файлы заблокированы или недостаточно прав."
+        elif code == 1602:
+            return "Установка отменена пользователем (Код 1602)."
+        elif code == 1223:
+            return "Установка отменена в окне контроля учетных записей (UAC)."
+        elif code == 5:
+            return "Отказано в доступе (Код 5). Запустите программу от имени администратора или проверьте антивирус."
+        elif code in (1, 2):
+            return f"Установщик прерван или сообщил об ошибке (Код {code})."
+        else:
+            return f"Код: {code}"
+
     def _run_exe(self, app: AppEntry, path: Path, silent: bool, as_admin: bool = False) -> InstallResult:
         """Запускает .exe установщик."""
         if self.is_app_cancelled(app.id):
@@ -337,7 +443,10 @@ class Installer:
                 elif code in CANCEL_CODES:
                     return InstallResult(app=app, success=False, cancelled=True, error="Установка отменена пользователем")
                 else:
-                    return InstallResult(app=app, success=True, error=f"Код: {code}")
+                    return InstallResult(
+                        app=app, success=False, cancelled=False,
+                        error=self._format_installer_error(app, code, path)
+                    )
             except PermissionError:
                 return InstallResult(app=app, success=False, cancelled=True, error="Установка отменена в окне UAC")
             except Exception as e:
@@ -378,7 +487,7 @@ class Installer:
                 logger.warning(f"Installation of {app.name} failed with code {returncode}")
                 return InstallResult(
                     app=app, success=False, cancelled=False,
-                    error=f"Установщик завершился с кодом {returncode}"
+                    error=self._format_installer_error(app, returncode, path)
                 )
 
         except OSError as e:
@@ -395,7 +504,10 @@ class Installer:
                     elif code in CANCEL_CODES:
                         return InstallResult(app=app, success=False, cancelled=True, error="Установка отменена пользователем")
                     else:
-                        return InstallResult(app=app, success=False, cancelled=False, error=f"Код: {code}")
+                        return InstallResult(
+                            app=app, success=False, cancelled=False,
+                            error=self._format_installer_error(app, code, path)
+                        )
                 except PermissionError:
                     return InstallResult(app=app, success=False, cancelled=True, error="Установка отменена в окне UAC")
                 except Exception as ex:
@@ -434,7 +546,7 @@ class Installer:
                     return InstallResult(app=app, success=True)
                 elif code in CANCEL_CODES:
                     return InstallResult(app=app, success=False, cancelled=True, error="Установка отменена пользователем")
-                return InstallResult(app=app, success=False, error=f"MSI код: {code}")
+                return InstallResult(app=app, success=False, error=self._format_installer_error(app, code, path))
             except PermissionError:
                 return InstallResult(app=app, success=False, cancelled=True, error="Установка отменена в окне UAC")
             except Exception as e:
@@ -469,7 +581,7 @@ class Installer:
             else:
                 return InstallResult(
                     app=app, success=False, cancelled=False,
-                    error=f"MSI завершился с кодом {returncode}"
+                    error=self._format_installer_error(app, returncode, path)
                 )
 
         except OSError as e:
@@ -483,7 +595,7 @@ class Installer:
                         return InstallResult(app=app, success=True)
                     elif code in CANCEL_CODES:
                         return InstallResult(app=app, success=False, cancelled=True, error="Установка отменена пользователем")
-                    return InstallResult(app=app, success=False, error=f"MSI код: {code}")
+                    return InstallResult(app=app, success=False, error=self._format_installer_error(app, code, path))
                 except PermissionError:
                     return InstallResult(app=app, success=False, cancelled=True, error="Установка отменена в окне UAC")
                 except Exception as ex:
@@ -549,8 +661,8 @@ class Installer:
             "gpuz": ["GPU-Z.exe", "TechPowerUp GPU-Z.exe"],
             "operaproxy": ["opera-proxy.exe", "opera-proxy-windows-amd64.exe", "Opera Proxy (Alexey71).exe"],
             "zapret": ["winws.exe", "zapret.exe", "blockcheck.exe"],
-            "obs": ["obs64.exe", "obs32.exe", "obs.exe"],
-            "obs-studio": ["obs64.exe", "obs32.exe", "obs.exe"],
+            "obs": ["obs64.exe", "obs32.exe", "obs.exe", "obs-browser-page.exe", "obs-ffmpeg-mux.exe"],
+            "obs-studio": ["obs64.exe", "obs32.exe", "obs.exe", "obs-browser-page.exe", "obs-ffmpeg-mux.exe"],
             "obsidian": ["Obsidian.exe"],
             "telegram": ["Telegram.exe"],
             "discord": ["Discord.exe", "DiscordCanary.exe", "DiscordPTB.exe"],

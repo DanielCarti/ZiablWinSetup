@@ -805,6 +805,8 @@ class AppBridge:
                 self.call_js("onLog", f"❌ Ошибка скачивания обновления {app.name}: {d_res.error}")
                 return False
 
+            self._downloaded_results[app_id] = d_res
+
             self.call_js("onAppStatus", app_id, "installing", "⚙️ Установка обновления...")
             self.call_js("onAppProgress", app_id, 90, "⚙️ Запуск установщика...")
             self.call_js("onLog", f"⚙️ Установка новой версии {app.name}...")
@@ -834,6 +836,8 @@ class AppBridge:
                 self.call_js("onAppProgress", app_id, 0, "")
                 self.call_js("onAppStatus", app_id, "idle", "")
                 self.call_js("onLog", f"❌ Ошибка установки обновления {app.name}: {inst_res.error}")
+                if "Код 6" in inst_res.error or "Код: 6" in inst_res.error:
+                    self.call_js("onLog", "💡 Совет: браузер или мессенджер удерживает виртуальную камеру OBS. Закройте браузер (Chrome) и нажмите «Обновить» снова.")
                 return False
         except Exception as e:
             logger.error(f"Error upgrading {app.name}: {e}", exc_info=True)
