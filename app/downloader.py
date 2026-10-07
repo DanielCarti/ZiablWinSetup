@@ -7,8 +7,11 @@ import fnmatch
 import json
 import logging
 import os
+import queue
 import re
 import subprocess
+import threading
+import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
@@ -221,9 +224,6 @@ class Downloader:
     def _download_winget(self, app: AppEntry, dest_dir: Path, cb: ProgressCallback, target_winget_id: str = "") -> DownloadResult:
         """Скачивает установщик через winget download с неблокирующим чтением и таймером активности."""
         try:
-            import queue
-            import time
-
             # Запоминаем файлы до скачивания
             existing_files = set(dest_dir.iterdir()) if dest_dir.exists() else set()
             pkg_id = target_winget_id or app.winget_id
