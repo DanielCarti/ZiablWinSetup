@@ -298,11 +298,33 @@ if ($replaced -and (Test-Path -LiteralPath $targetExe)) {{
     # Снимаем метку Zone.Identifier (Mark-of-the-Web), чтобы Windows Defender и SmartScreen не блокировали чтение архива PyInstaller
     Unblock-File -LiteralPath $targetExe -ErrorAction SilentlyContinue
 
+    # КРИТИЧЕСКИ ВАЖНО для PyInstaller:
+    # Удаляем переменные _MEIPASS2, _MEIPASS, PYTHONHOME, PYTHONPATH из окружения PowerShell!
+    # Если _MEIPASS2 остается в окружении, bootloader PyInstaller считает процесс дочерним
+    # воркером и пытается загрузить DLL из старого (уже удаленного) временного каталога _MEIxxxxxx!
+    Remove-Item env:_MEIPASS2 -ErrorAction SilentlyContinue
+    Remove-Item env:_MEIPASS -ErrorAction SilentlyContinue
+    Remove-Item env:PYTHONHOME -ErrorAction SilentlyContinue
+    Remove-Item env:PYTHONPATH -ErrorAction SilentlyContinue
+    [System.Environment]::SetEnvironmentVariable('_MEIPASS2', $null, [System.EnvironmentVariableTarget]::Process)
+    [System.Environment]::SetEnvironmentVariable('_MEIPASS', $null, [System.EnvironmentVariableTarget]::Process)
+    [System.Environment]::SetEnvironmentVariable('PYTHONHOME', $null, [System.EnvironmentVariableTarget]::Process)
+    [System.Environment]::SetEnvironmentVariable('PYTHONPATH', $null, [System.EnvironmentVariableTarget]::Process)
+
     # Пауза для окончательной фиксации на диске NTFS и антивирусного сканирования
     Start-Sleep -Milliseconds 1200
 
     $workDir = Split-Path -Parent $targetExe
-    Start-Process -FilePath $targetExe -WorkingDirectory $workDir
+
+    # Запускаем приложение через оболочку Windows Shell (explorer.exe),
+    # что гарантирует абсолютно чистое пользовательское окружение рабочего стола,
+    # полностью изолированное от скрипта обновления:
+    try {{
+        $shell = New-Object -ComObject Shell.Application
+        $shell.ShellExecute($targetExe, "", $workDir, "open", 1)
+    }} catch {{
+        Start-Process -FilePath $targetExe -WorkingDirectory $workDir
+    }}
 }}
 
 # 4. Очистка временных файлов
@@ -321,6 +343,12 @@ Remove-Item -LiteralPath '{ps1_ps}' -Force -ErrorAction SilentlyContinue
         if progress_callback:
             progress_callback(100, "Перезапуск приложения...")
 
+        # Формируем очищенное окружение для процессов обновления,
+        # исключая любые переменные PyInstaller
+        clean_env = os.environ.copy()
+        for env_var in ("_MEIPASS2", "_MEIPASS", "PYTHONHOME", "PYTHONPATH", "PYINSTALLER_STRICT_UNLOAD"):
+            clean_env.pop(env_var, None)
+
         # Запускаем открепленный процесс обновления.
         # wscript.exe является GUI-подсистемой (IMAGE_SUBSYSTEM_WINDOWS_GUI),
         # поэтому Windows принципиально не создает консольных окон cmd/find.exe.
@@ -330,6 +358,7 @@ Remove-Item -LiteralPath '{ps1_ps}' -Force -ErrorAction SilentlyContinue
                 ["wscript.exe", "//B", "//Nologo", str(updater_vbs_path)],
                 creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW,
                 close_fds=True,
+                env=clean_env,
             )
             launched = True
             logger.info("Открепленный процесс обновления запущен через wscript.exe")
@@ -351,6 +380,7 @@ Remove-Item -LiteralPath '{ps1_ps}' -Force -ErrorAction SilentlyContinue
                 ],
                 creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW,
                 close_fds=True,
+                env=clean_env,
             )
             logger.info("Открепленный процесс обновления запущен через powershell.exe")
 

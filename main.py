@@ -10,6 +10,10 @@ import os
 if sys.platform == "win32":
     os.environ.setdefault("PYTHONIOENCODING", "utf-8")
 
+# Защита от утечки служебных переменных PyInstaller в дочерние процессы (self-updater, winget и др.)
+for _var in ("_MEIPASS2", "PYTHONHOME", "PYTHONPATH", "PYINSTALLER_STRICT_UNLOAD"):
+    os.environ.pop(_var, None)
+
 # Защита от 'lost sys.stdin/stdout/stderr' в оконном режиме PyInstaller (console=False)
 if sys.stdin is None:
     sys.stdin = open(os.devnull, "r", encoding="utf-8")
