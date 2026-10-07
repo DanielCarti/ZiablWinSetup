@@ -562,6 +562,44 @@ def _clean_telegram_cache() -> tuple[bool, str]:
     return True, f"Медиа-кэш Telegram очищен! Освобождено {mb} МБ ({files_deleted} файлов)."
 
 
+def _clean_winsetup_installers() -> tuple[bool, str]:
+    """
+    Удаляет все .exe, .msi, .zip и дистрибутивы, скачанные нашей программой (ZiablWinSetup).
+    Очищает временный кэш WinSetup_Downloads и WinSetup_Winget.
+    """
+    import tempfile
+    from app.utils import get_download_dir, format_size
+    temp_root = Path(tempfile.gettempdir())
+    dirs_to_clean = [
+        get_download_dir(),  # WinSetup_Downloads
+        temp_root / "WinSetup_Winget",
+    ]
+    deleted_files = 0
+    total_freed = 0
+    for d in dirs_to_clean:
+        if not d.exists():
+            continue
+        for item in list(d.rglob("*")):
+            if item.is_file():
+                try:
+                    sz = item.stat().st_size
+                    item.unlink(missing_ok=True)
+                    deleted_files += 1
+                    total_freed += sz
+                except Exception:
+                    pass
+        for item in sorted(list(d.rglob("*")), key=lambda p: len(str(p)), reverse=True):
+            if item.is_dir():
+                try:
+                    item.rmdir()
+                except Exception:
+                    pass
+
+    if deleted_files == 0:
+        return True, "Кэш установщиков уже пуст (файлы .exe не найдены)."
+    return True, f"Успешно удалено {deleted_files} файлов инсталляторов (освобождено {format_size(total_freed)} памяти)."
+
+
 # ==========================================
 # 8. ТВИК: Отключение индексации (Windows Search) для SSD
 # ==========================================
@@ -838,6 +876,20 @@ TWEAKS: list[TweakEntry] = [
         is_available=lambda: (Path(os.environ.get("APPDATA", "")) / "Telegram Desktop" / "tdata").exists(),
         unavailable_reason="Telegram Desktop не установлен",
         unavailable_reason_en="Telegram Desktop is not installed",
+    ),
+    TweakEntry(
+        id="clean_winsetup_installers",
+        name="Очистить скачанные установщики (.exe)",
+        name_en="Clean Downloaded Installers (.exe)",
+        description="Удаляет все .exe, .msi и дистрибутивы, скачанные программой ZiablWinSetup в кэш. Не затрагивает уже установленные в системе программы.",
+        description_en="Removes all .exe, .msi, and installer files downloaded by ZiablWinSetup. Installed programs are not affected.",
+        category="cleanup",
+        icon="🗑️",
+        is_applied=lambda: False,
+        apply=_clean_winsetup_installers,
+        revert=lambda: (True, "Действие очистки не требует отката."),
+        type="action",
+        is_available=lambda: True,
     ),
 ]
 

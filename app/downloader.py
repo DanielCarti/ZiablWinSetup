@@ -91,15 +91,78 @@ class Downloader:
         self._cancelled_apps.clear()
         self._active_processes.clear()
 
-    def download(self, app: AppEntry, progress_cb: ProgressCallback | None = None, target_winget_id: str = "") -> DownloadResult:
+    def get_cached_installer(self, app: AppEntry, target_version: str = "") -> Path | None:
+        """
+        Проверяет, скачан ли уже подходящий и валидный установщик для приложения в локальном кэше.
+        Если указана target_version, проверяет соответствие версии в имени файла или PE-метаданных.
+        """
+        app_dir = self.download_dir / app.id
+        if not app_dir.exists():
+            return None
+
+        candidates: list[Path] = []
+        for item in app_dir.rglob("*"):
+            if item.is_file():
+                ext = item.suffix.lower()
+                if ext in (".exe", ".msi", ".zip", ".msix", ".msixbundle") and not item.name.endswith((".part", ".tmp", ".old")):
+                    try:
+                        if item.stat().st_size >= 256 * 1024:
+                            candidates.append(item)
+                    except Exception:
+                        pass
+
+        if not candidates:
+            return None
+
+        candidates.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+
+        if target_version:
+            clean_ver = target_version.lstrip("vV").strip()
+            # 1. Поиск по имени файла (например OBS-Studio-32.2.2...)
+            for cand in candidates:
+                if clean_ver in cand.name:
+                    return cand
+
+            # 2. Поиск по PE ресурсам GetFileVersionInfo
+            from app.utils import get_file_version
+            for cand in candidates:
+                if cand.suffix.lower() in (".exe", ".dll"):
+                    pe_ver = get_file_version(cand)
+                    if pe_ver and clean_ver in pe_ver:
+                        return cand
+
+            # 3. Поиск по манифестам winget .yaml
+            for yaml_file in app_dir.glob("*.yaml"):
+                try:
+                    content = yaml_file.read_text(encoding="utf-8", errors="ignore")
+                    if f"PackageVersion: {clean_ver}" in content or f"PackageVersion: {target_version}" in content:
+                        for cand in candidates:
+                            if clean_ver in cand.name:
+                                return cand
+                except Exception:
+                    pass
+
+            return None
+
+        return candidates[0]
+
+    def download(self, app: AppEntry, progress_cb: ProgressCallback | None = None, target_winget_id: str = "", target_version: str = "") -> DownloadResult:
         """
         Скачивает установщик для приложения.
-        Приоритет: GitHub releases → winget download → direct URL.
+        Приоритет: локальный кэш → GitHub releases → winget download → direct URL.
         """
         if self.is_app_cancelled(app.id):
             return DownloadResult(app=app, success=False, error="Отменено")
 
         cb = progress_cb or (lambda *_: None)
+
+        # 0. Проверяем локальный кэш на наличие уже скачанного установщика
+        cached_file = self.get_cached_installer(app, target_version=target_version)
+        if cached_file:
+            size_str = format_size(cached_file.stat().st_size)
+            logger.info(f"Используется готовый установщик из кэша для {app.name}: {cached_file.name} ({size_str})")
+            _safe_cb(cb, app.id, 100, f"Готово (из кэша: {size_str})")
+            return DownloadResult(app=app, success=True, installer_path=cached_file)
 
         # Создаём отдельную папку для каждого приложения (чтобы не путать файлы)
         app_dir = self.download_dir / app.id
@@ -336,8 +399,16 @@ class Downloader:
                 download_url = assets[0]["browser_download_url"]
                 asset_name = assets[0]["name"]
 
-            # Скачиваем файл
+            # Скачиваем файл с проверкой кэша
             dest_path = dest_dir / asset_name
+            remote_size = int(asset.get("size", 0)) if asset else 0
+            if dest_path.exists() and dest_path.stat().st_size >= 256 * 1024:
+                if remote_size == 0 or dest_path.stat().st_size == remote_size:
+                    size_str = format_size(dest_path.stat().st_size)
+                    logger.info(f"Файл {asset_name} уже в кэше ({size_str}), повторная загрузка пропущена.")
+                    _safe_cb(cb, app.id, 100, f"Готово (из кэша: {size_str})")
+                    return DownloadResult(app=app, success=True, installer_path=dest_path)
+
             return self._download_file(app, download_url, dest_path, cb)
 
         except urllib.error.URLError as e:
@@ -346,7 +417,7 @@ class Downloader:
             return DownloadResult(app=app, success=False, error=str(e))
 
     def _download_url(self, app: AppEntry, url: str, dest_dir: Path, cb: ProgressCallback) -> DownloadResult:
-        """Скачивает файл по прямому URL."""
+        """Скачивает файл по прямому URL с проверкой кэша."""
         try:
             # Определяем имя файла из URL
             from urllib.parse import urlparse, unquote
@@ -358,13 +429,33 @@ class Downloader:
                 filename += ".exe"
 
             dest_path = dest_dir / filename
+
+            # Если файл уже существует в кэше, проверяем Content-Length через быстрый HEAD запрос
+            if dest_path.exists() and dest_path.stat().st_size >= 256 * 1024:
+                try:
+                    head_req = urllib.request.Request(
+                        url,
+                        headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"},
+                        method="HEAD"
+                    )
+                    with urllib.request.urlopen(head_req, timeout=5) as head_resp:
+                        cl = head_resp.headers.get("Content-Length")
+                        if cl and int(cl) == dest_path.stat().st_size:
+                            size_str = format_size(dest_path.stat().st_size)
+                            logger.info(f"Файл {dest_path.name} уже в кэше ({size_str}), повторная загрузка пропущена.")
+                            _safe_cb(cb, app.id, 100, f"Готово (из кэша: {size_str})")
+                            return DownloadResult(app=app, success=True, installer_path=dest_path)
+                except Exception:
+                    pass
+
             return self._download_file(app, url, dest_path, cb)
 
         except Exception as e:
             return DownloadResult(app=app, success=False, error=str(e))
 
     def _download_file(self, app: AppEntry, url: str, dest_path: Path, cb: ProgressCallback) -> DownloadResult:
-        """Скачивает файл с URL в указанный путь с отображением прогресса."""
+        """Скачивает файл с URL в указанный путь с отображением прогресса и атомарной записью через .part."""
+        part_path = dest_path.with_suffix(dest_path.suffix + ".part")
         try:
             from urllib.parse import urlparse
             parsed = urlparse(url)
@@ -391,13 +482,13 @@ class Downloader:
                 downloaded = 0
                 block_size = 8192 * 4  # 32KB blocks
 
-                with open(dest_path, "wb") as f:
+                with open(part_path, "wb") as f:
                     while True:
                         if self.is_app_cancelled(app.id):
                             f.close()
-                            if dest_path.exists():
+                            if part_path.exists():
                                 try:
-                                    dest_path.unlink()
+                                    part_path.unlink()
                                 except Exception:
                                     pass
                             return DownloadResult(app=app, success=False, error="Отменено пользователем")
@@ -416,13 +507,32 @@ class Downloader:
                         else:
                             cb(app.id, -1, f"Скачивание... {format_size(downloaded)}")
 
+            # Загрузка завершена успешно — заменяем .part на финальный файл
+            if part_path.exists():
+                if dest_path.exists():
+                    try:
+                        dest_path.unlink(missing_ok=True)
+                    except Exception:
+                        pass
+                part_path.replace(dest_path)
+
             _safe_cb(cb, app.id, 100, "Скачано")
             logger.info(f"Downloaded {app.name} → {dest_path}")
             return DownloadResult(app=app, success=True, installer_path=dest_path)
 
         except urllib.error.URLError as e:
+            if part_path.exists():
+                try:
+                    part_path.unlink(missing_ok=True)
+                except Exception:
+                    pass
             return DownloadResult(app=app, success=False, error=f"Ошибка загрузки: {e}")
         except Exception as e:
+            if part_path.exists():
+                try:
+                    part_path.unlink(missing_ok=True)
+                except Exception:
+                    pass
             return DownloadResult(app=app, success=False, error=str(e))
 
     @staticmethod

@@ -437,7 +437,10 @@ class AppBridge:
                 self.call_js("onAppProgress", aid, percent, status_text)
 
             try:
-                result = self._downloader.download(app, progress_cb)
+                up_info = getattr(self, "_available_updates", {}).get(app_id, {})
+                target_ver = up_info.get("available_version", "")
+                target_wid = up_info.get("target_winget_id", "")
+                result = self._downloader.download(app, progress_cb, target_winget_id=target_wid, target_version=target_ver)
                 if result.success:
                     self._downloaded_results[app.id] = result
                     self.call_js("onAppDownloaded", app.id, str(result.installer_path))
@@ -500,6 +503,18 @@ class AppBridge:
         app = self._catalog_map.get(app_id)
         name = app.name if app else app_id
         self.call_js("onLog", f"🗑️ Скачанный установщик {name} удален.")
+
+    def clean_downloaded_installers(self) -> dict[str, Any]:
+        """Удаляет все .exe, .msi и дистрибутивы, скачанные программой в кэш."""
+        try:
+            from app.tweaks import _clean_winsetup_installers
+            ok, msg = _clean_winsetup_installers()
+            self._downloaded_results.clear()
+            self.call_js("onLog", f"🗑️ {msg}")
+            return {"success": ok, "message": msg}
+        except Exception as e:
+            logger.error(f"Error cleaning downloaded installers: {e}")
+            return {"success": False, "message": str(e)}
 
     def is_busy(self) -> bool:
         """Проверяет, выполняется ли в данный момент скачивание, установка или обновление."""
@@ -704,7 +719,11 @@ class AppBridge:
         return get_all_tweaks(i18n.lang)
 
     def apply_tweak(self, tweak_id: str) -> dict[str, Any]:
-        return apply_tweak_by_id(tweak_id)
+        res = apply_tweak_by_id(tweak_id)
+        if tweak_id == "clean_winsetup_installers":
+            self._downloaded_results.clear()
+            self.call_js("onLog", f"🗑️ {res.get('message', '')}")
+        return res
 
     def revert_tweak(self, tweak_id: str) -> dict[str, Any]:
         return revert_tweak_by_id(tweak_id)
@@ -799,7 +818,7 @@ class AppBridge:
                 target_version = up_info.get("available_version", "")
                 target_winget_id = up_info.get("target_winget_id", "")
 
-            d_res = self._downloader.download(app, progress_cb, target_winget_id=target_winget_id)
+            d_res = self._downloader.download(app, progress_cb, target_winget_id=target_winget_id, target_version=target_version)
             if self._downloader.is_app_cancelled(app_id) or self._installer.is_app_cancelled(app_id):
                 self.call_js("onAppProgress", app_id, 0, "")
                 self.call_js("onAppStatus", app_id, "idle", "")
@@ -819,7 +838,7 @@ class AppBridge:
             self.call_js("onLog", f"⚙️ Установка новой версии {app.name}...")
 
             as_admin = False
-            if app_id in ("anydesk", "gpuz", "python") or (app.silent_args and any("program files" in str(a).lower() for a in app.silent_args)):
+            if app_id in ("anydesk", "gpuz", "python", "obs", "obs-studio") or (app.silent_args and any("program files" in str(a).lower() for a in app.silent_args)):
                 as_admin = True
 
             inst_res = self._installer.run(app, Path(d_res.installer_path), silent=silent, as_admin=as_admin, version=target_version)
@@ -845,8 +864,6 @@ class AppBridge:
                 self.call_js("onAppProgress", app_id, 0, "")
                 self.call_js("onAppStatus", app_id, "idle", "")
                 self.call_js("onLog", f"❌ Ошибка установки обновления {app.name}: {inst_res.error}")
-                if "Код 6" in inst_res.error or "Код: 6" in inst_res.error:
-                    self.call_js("onLog", "💡 Совет: браузер или мессенджер удерживает виртуальную камеру OBS. Закройте браузер (Chrome) и нажмите «Обновить» снова.")
                 return False
         except Exception as e:
             logger.error(f"Error upgrading {app.name}: {e}", exc_info=True)

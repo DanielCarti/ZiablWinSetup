@@ -439,12 +439,43 @@ class Installer:
         CANCEL_CODES = (1, 2, 5, 1223, 1602, -1073741510, 3221225786, -1978335216, -1978335188)
         ELEVATION_CODES = (5, 11341828, 11341829, 0xAD1004, 0xAD1005)
 
-        needs_admin = as_admin or app.id in ("anydesk", "gpuz", "python") or any("program files" in str(a).lower() for a in args)
+        is_obs = app.id in ("obs", "obs-studio")
+        needs_admin = as_admin or is_obs or app.id in ("anydesk", "gpuz", "python") or any("program files" in str(a).lower() for a in args)
 
         if needs_admin:
             logger.info(f"Running (as admin / UAC): {path} {' '.join(args)}")
+            obs_cmd_path = None
             try:
-                code = run_with_elevation(path, args, cwd=path.parent, on_handle_created=register_handle)
+                if is_obs:
+                    # OBS Studio использует виртуальную камеру (obs-virtualcam-module64.dll),
+                    # которую загружают Electron (Antigravity), браузеры и мессенджеры.
+                    # Создаем временный CMD-раннер с правами администратора, который безопасно
+                    # открепляет DirectShow фильтр и переименовывает заблокированные DLL в .old.
+                    # После этого NSIS создает новый файл без конфликтов и не падает с Кодом 6.
+                    import tempfile
+                    import time
+                    obs_runner_content = f"""@echo off
+set "DSHOW_DIR=C:\\Program Files\\obs-studio\\data\\obs-plugins\\win-dshow"
+if exist "%DSHOW_DIR%\\obs-virtualcam-module64.dll" (
+    regsvr32.exe /u /s "%DSHOW_DIR%\\obs-virtualcam-module64.dll"
+    if exist "%DSHOW_DIR%\\obs-virtualcam-module64.dll.old" del /f /q "%DSHOW_DIR%\\obs-virtualcam-module64.dll.old" 2>nul
+    move /y "%DSHOW_DIR%\\obs-virtualcam-module64.dll" "%DSHOW_DIR%\\obs-virtualcam-module64.dll.old" 2>nul
+)
+if exist "%DSHOW_DIR%\\obs-virtualcam-module32.dll" (
+    regsvr32.exe /u /s "%DSHOW_DIR%\\obs-virtualcam-module32.dll"
+    if exist "%DSHOW_DIR%\\obs-virtualcam-module32.dll.old" del /f /q "%DSHOW_DIR%\\obs-virtualcam-module32.dll.old" 2>nul
+    move /y "%DSHOW_DIR%\\obs-virtualcam-module32.dll" "%DSHOW_DIR%\\obs-virtualcam-module32.dll.old" 2>nul
+)
+"{path}" {subprocess.list2cmdline(args)}
+exit /b %errorlevel%
+"""
+                    temp_dir = Path(tempfile.gettempdir())
+                    obs_cmd_path = temp_dir / f"obs_elevated_runner_{int(time.time())}.cmd"
+                    obs_cmd_path.write_text(obs_runner_content, encoding="ascii")
+                    code = run_with_elevation("cmd.exe", ["/c", str(obs_cmd_path)], cwd=path.parent, on_handle_created=register_handle)
+                else:
+                    code = run_with_elevation(path, args, cwd=path.parent, on_handle_created=register_handle)
+
                 if self.is_app_cancelled(app.id):
                     return InstallResult(app=app, success=False, cancelled=True, error="Установка отменена пользователем")
                 if code in (0, 3010):
@@ -453,6 +484,14 @@ class Installer:
                             subprocess.run(["net", "start", "AnyDesk"], capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
                         except Exception:
                             pass
+                    if is_obs:
+                        # Перерегистрируем новую установленную виртуальную камеру OBS
+                        new_vcam = Path(r"C:\Program Files\obs-studio\data\obs-plugins\win-dshow\obs-virtualcam-module64.dll")
+                        if new_vcam.exists():
+                            try:
+                                subprocess.run(["regsvr32.exe", "/i", "/s", str(new_vcam)], capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
+                            except Exception:
+                                pass
                     return InstallResult(app=app, success=True)
                 elif code in CANCEL_CODES:
                     return InstallResult(app=app, success=False, cancelled=True, error="Установка отменена пользователем")
@@ -466,6 +505,11 @@ class Installer:
             except Exception as e:
                 return InstallResult(app=app, success=False, error=str(e))
             finally:
+                if obs_cmd_path and obs_cmd_path.exists():
+                    try:
+                        obs_cmd_path.unlink(missing_ok=True)
+                    except Exception:
+                        pass
                 with self._lock:
                     self._active_handles.pop(app.id, None)
 

@@ -2064,6 +2064,11 @@
           <span class="qa-label" id="lblExclusionsBtn">Исключения автообновления</span>
         </button>
 
+        <button class="quick-btn" id="btnCleanInstallers" onclick="cleanDownloadedInstallersManual()" style="margin-top: 6px; border: 1px solid var(--border-subtle); padding: 7px 10px;" title="Удалить все скачанные программой файлы .exe и освободить место на диске">
+          <svg class="qa-svg" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+          <span class="qa-label" id="lblCleanInstallersBtn">Очистить кэш (.exe)</span>
+        </button>
+
         <div style="margin-top: 10px; font-size: 10px; color: var(--text-dim); text-align: center; opacity: 0.8;" id="sidebarAppVerDisplay">ZiablWinSetup v1.3.2</div>
       </div>
     </aside>
@@ -4653,6 +4658,30 @@
         console.error('onToggleAutoCheckAppUpdates error:', err);
       }
     }
+
+    async function cleanDownloadedInstallersManual() {
+      const btn = document.getElementById('btnCleanInstallers');
+      if (btn) {
+        btn.disabled = true;
+        btn.style.opacity = '0.6';
+      }
+      try {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.clean_downloaded_installers) {
+          const res = await window.pywebview.api.clean_downloaded_installers();
+          if (res && res.message) {
+            showToast(res.message, res.success ? 'success' : 'error', 3500);
+          }
+        }
+      } catch (err) {
+        console.error('cleanDownloadedInstallersManual error:', err);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.style.opacity = '1';
+        }
+      }
+    }
+    window.cleanDownloadedInstallersManual = cleanDownloadedInstallersManual;
 
     // Callbacks from Python to JS
     window.onAppUpdateFound = function(info) {
