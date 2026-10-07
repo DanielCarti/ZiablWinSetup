@@ -91,10 +91,10 @@ class Downloader:
         self._cancelled_apps.clear()
         self._active_processes.clear()
 
-    def download(self, app: AppEntry, progress_cb: ProgressCallback | None = None) -> DownloadResult:
+    def download(self, app: AppEntry, progress_cb: ProgressCallback | None = None, target_winget_id: str = "") -> DownloadResult:
         """
         Скачивает установщик для приложения.
-        Приоритет: winget download → GitHub releases → direct URL.
+        Приоритет: GitHub releases → winget download → direct URL.
         """
         if self.is_app_cancelled(app.id):
             return DownloadResult(app=app, success=False, error="Отменено")
@@ -107,18 +107,7 @@ class Downloader:
 
         last_error = ""
 
-        # Приоритет 1: winget download
-        if app.winget_id:
-            if self.is_app_cancelled(app.id):
-                return DownloadResult(app=app, success=False, error="Отменено")
-            cb(app.id, 0, "Скачивание через winget...")
-            result = self._download_winget(app, app_dir, cb)
-            if result.success or self.is_app_cancelled(app.id):
-                return result
-            last_error = result.error
-            logger.warning(f"winget download failed for {app.name}: {result.error}, trying fallback...")
-
-        # Приоритет 2: GitHub releases
+        # Приоритет 1: GitHub releases (прямая загрузка с CDN через urllib с отображением байтов и скорости)
         if app.github_repo:
             if self.is_app_cancelled(app.id):
                 return DownloadResult(app=app, success=False, error="Отменено")
@@ -127,7 +116,19 @@ class Downloader:
             if result.success or self.is_app_cancelled(app.id):
                 return result
             last_error = result.error
-            logger.warning(f"GitHub download failed for {app.name}: {result.error}")
+            logger.warning(f"GitHub download failed for {app.name}: {result.error}, trying winget/fallback...")
+
+        # Приоритет 2: winget download
+        effective_winget_id = target_winget_id or app.winget_id
+        if effective_winget_id:
+            if self.is_app_cancelled(app.id):
+                return DownloadResult(app=app, success=False, error="Отменено")
+            cb(app.id, 0, "Скачивание через winget...")
+            result = self._download_winget(app, app_dir, cb, target_winget_id=effective_winget_id)
+            if result.success or self.is_app_cancelled(app.id):
+                return result
+            last_error = result.error
+            logger.warning(f"winget download failed for {app.name}: {result.error}, trying fallback...")
 
         # Приоритет 3: Direct URL
         if app.direct_url:
@@ -154,15 +155,19 @@ class Downloader:
             error=final_error,
         )
 
-    def _download_winget(self, app: AppEntry, dest_dir: Path, cb: ProgressCallback) -> DownloadResult:
-        """Скачивает установщик через winget download."""
+    def _download_winget(self, app: AppEntry, dest_dir: Path, cb: ProgressCallback, target_winget_id: str = "") -> DownloadResult:
+        """Скачивает установщик через winget download с неблокирующим чтением и таймером активности."""
         try:
+            import queue
+            import time
+
             # Запоминаем файлы до скачивания
             existing_files = set(dest_dir.iterdir()) if dest_dir.exists() else set()
+            pkg_id = target_winget_id or app.winget_id
 
             cmd = [
                 "winget", "download",
-                "--id", app.winget_id,
+                "--id", pkg_id,
                 "-d", str(dest_dir),
                 "--accept-source-agreements",
                 "--accept-package-agreements",
@@ -182,8 +187,27 @@ class Downloader:
             )
             self._active_processes[app.id] = process
 
-            # Читаем вывод для отслеживания прогресса
             output_lines = []
+            line_queue = queue.Queue()
+
+            def reader_thread():
+                try:
+                    for line in iter(process.stdout.readline, ""):
+                        line_queue.put(line)
+                except Exception:
+                    pass
+                finally:
+                    try:
+                        process.stdout.close()
+                    except Exception:
+                        pass
+
+            r_thread = threading.Thread(target=reader_thread, daemon=True)
+            r_thread.start()
+
+            start_time = time.time()
+            last_status_time = start_time
+
             try:
                 while True:
                     if self.is_app_cancelled(app.id):
@@ -197,24 +221,45 @@ class Downloader:
                             process.kill()
                         return DownloadResult(app=app, success=False, error="Отменено пользователем")
 
-                    line = process.stdout.readline()
-                    if not line and process.poll() is not None:
+                    # Забираем поступившие строки вывода
+                    while not line_queue.empty():
+                        try:
+                            line = line_queue.get_nowait().strip()
+                        except queue.Empty:
+                            break
+                        if line:
+                            output_lines.append(line)
+                            logger.debug(f"winget: {line}")
+
+                            match = re.search(r'(\d+)\s*%', line)
+                            if match:
+                                percent = int(match.group(1))
+                                cb(app.id, percent, f"Скачивание... {percent}%")
+                            elif any(w in line.lower() for w in ["хэш", "hash", "проверка"]):
+                                cb(app.id, 92, "Проверка хэша установщика...")
+
+                    if process.poll() is not None and line_queue.empty():
                         break
 
-                    line = line.strip()
-                    if line:
-                        output_lines.append(line)
-                        logger.debug(f"winget: {line}")
+                    now = time.time()
+                    if now - last_status_time >= 0.5:
+                        last_status_time = now
+                        elapsed = int(now - start_time)
+                        curr_size = 0
+                        if dest_dir.exists():
+                            for f in dest_dir.iterdir():
+                                if f not in existing_files and not f.name.endswith(".yaml"):
+                                    try:
+                                        curr_size += f.stat().st_size
+                                    except Exception:
+                                        pass
+                        if curr_size > 0:
+                            mb = curr_size / (1024 * 1024)
+                            cb(app.id, -1, f"Скачивание через winget ({mb:.1f} МБ, {elapsed} сек)...")
+                        else:
+                            cb(app.id, -1, f"Скачивание через winget ({elapsed} сек)...")
 
-                        # Пытаемся извлечь прогресс из вывода winget
-                        match = re.search(r'(\d+)\s*%', line)
-                        if match:
-                            percent = int(match.group(1))
-                            cb(app.id, percent, f"Скачивание... {percent}%")
-                        elif any(w in line.lower() for w in ["хэш", "hash", "проверка"]):
-                            cb(app.id, 90, "Проверка хэша установщика...")
-                        elif "скачивание" in line.lower() or "download" in line.lower():
-                            cb(app.id, -1, "Скачивание...")
+                    time.sleep(0.1)
 
                 returncode = process.wait()
             finally:

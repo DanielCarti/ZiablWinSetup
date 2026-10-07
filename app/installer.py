@@ -372,6 +372,10 @@ class Installer:
             elif ext in (".msix", ".msixbundle", ".appx", ".appxbundle"):
                 return self._run_msix(app, installer_path)
             elif app.installer_type == "portable" or self.is_portable_executable(app, installer_path):
+                # Если в системе уже установлен GPU-Z в Program Files, обновляем установленную программу на месте!
+                if app.id == "gpuz" and (Path(r"C:\Program Files (x86)\GPU-Z\GPU-Z.exe").exists() or Path(r"C:\Program Files\GPU-Z\GPU-Z.exe").exists()):
+                    logger.info("Found installed GPU-Z in Program Files. Running in-place silent installer update...")
+                    return self._run_exe(app, installer_path, silent=True, as_admin=True)
                 return self._handle_portable(app, installer_path, launch=(not silent), version=version)
             else:
                 # .exe и всё остальное
@@ -409,6 +413,8 @@ class Installer:
             return "Установка отменена в окне контроля учетных записей (UAC)."
         elif code == 5:
             return "Отказано в доступе (Код 5). Запустите программу от имени администратора или проверьте антивирус."
+        elif code in (11341828, 11341829, 0xAD1004, 0xAD1005):
+            return f"Ошибка AnyDesk (Код {code}): требуются права администратора или служба AnyDesk заблокирована."
         elif code in (1, 2):
             return f"Установщик прерван или сообщил об ошибке (Код {code})."
         else:
@@ -431,14 +437,22 @@ class Installer:
                 self._active_handles[app.id] = h
 
         CANCEL_CODES = (1, 2, 5, 1223, 1602, -1073741510, 3221225786, -1978335216, -1978335188)
+        ELEVATION_CODES = (5, 11341828, 11341829, 0xAD1004, 0xAD1005)
 
-        if as_admin:
+        needs_admin = as_admin or app.id in ("anydesk", "gpuz", "python") or any("program files" in str(a).lower() for a in args)
+
+        if needs_admin:
             logger.info(f"Running (as admin / UAC): {path} {' '.join(args)}")
             try:
                 code = run_with_elevation(path, args, cwd=path.parent, on_handle_created=register_handle)
                 if self.is_app_cancelled(app.id):
                     return InstallResult(app=app, success=False, cancelled=True, error="Установка отменена пользователем")
                 if code in (0, 3010):
+                    if app.id == "anydesk":
+                        try:
+                            subprocess.run(["net", "start", "AnyDesk"], capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
+                        except Exception:
+                            pass
                     return InstallResult(app=app, success=True)
                 elif code in CANCEL_CODES:
                     return InstallResult(app=app, success=False, cancelled=True, error="Установка отменена пользователем")
@@ -478,8 +492,40 @@ class Installer:
                 return InstallResult(app=app, success=False, cancelled=True, error="Установка отменена пользователем")
 
             if returncode in (0, 3010):
+                if app.id == "anydesk":
+                    try:
+                        subprocess.run(["net", "start", "AnyDesk"], capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
+                    except Exception:
+                        pass
                 logger.info(f"Installation of {app.name} completed (exit code {returncode})")
                 return InstallResult(app=app, success=True)
+            elif returncode in ELEVATION_CODES:
+                logger.info(f"Installation of {app.name} exited with code {returncode} (elevation required). Retrying with UAC elevation...")
+                try:
+                    code = run_with_elevation(path, args, cwd=path.parent, on_handle_created=register_handle)
+                    if self.is_app_cancelled(app.id):
+                        return InstallResult(app=app, success=False, cancelled=True, error="Установка отменена пользователем")
+                    if code in (0, 3010):
+                        if app.id == "anydesk":
+                            try:
+                                subprocess.run(["net", "start", "AnyDesk"], capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
+                            except Exception:
+                                pass
+                        return InstallResult(app=app, success=True)
+                    elif code in CANCEL_CODES:
+                        return InstallResult(app=app, success=False, cancelled=True, error="Установка отменена пользователем")
+                    else:
+                        return InstallResult(
+                            app=app, success=False, cancelled=False,
+                            error=self._format_installer_error(app, code, path)
+                        )
+                except PermissionError:
+                    return InstallResult(app=app, success=False, cancelled=True, error="Установка отменена в окне UAC")
+                except Exception as ex:
+                    return InstallResult(app=app, success=False, error=str(ex))
+                finally:
+                    with self._lock:
+                        self._active_handles.pop(app.id, None)
             elif returncode in CANCEL_CODES:
                 logger.warning(f"Installation of {app.name} was cancelled by user (code {returncode})")
                 return InstallResult(app=app, success=False, cancelled=True, error="Установка отменена пользователем")
@@ -649,14 +695,18 @@ class Installer:
         if dest_exe:
             names_to_kill.add(dest_exe.name)
             names_to_kill.add(f"{dest_exe.stem}.exe")
-        if src_path:
-            names_to_kill.add(src_path.name)
-            names_to_kill.add(f"{src_path.stem}.exe")
         names_to_kill.add(f"{app.name}.exe")
         names_to_kill.add(f"{app.id}.exe")
 
+        if app.id == "anydesk":
+            try:
+                subprocess.run(["net", "stop", "AnyDesk"], capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
+            except Exception:
+                pass
+
         # Дополнительные известные имена исполняемых файлов для портативных утилит и программ
         known_aliases = {
+            "anydesk": ["AnyDesk.exe"],
             "tgwsproxy": ["tg-ws-proxy.exe", "tg_ws_proxy.exe", "tg-ws-proxy-windows.exe", "winws.exe"],
             "gpuz": ["GPU-Z.exe", "TechPowerUp GPU-Z.exe"],
             "operaproxy": ["opera-proxy.exe", "opera-proxy-windows-amd64.exe", "Opera Proxy (Alexey71).exe"],

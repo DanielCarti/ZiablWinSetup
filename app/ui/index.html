@@ -893,6 +893,18 @@
       transition: width 0.2s;
     }
 
+    .progress-fill.indeterminate {
+      width: 100% !important;
+      background: linear-gradient(90deg, var(--accent) 0%, #38bdf8 50%, var(--accent) 100%);
+      background-size: 200% 100%;
+      animation: indeterminateProgress 1.4s infinite linear;
+    }
+
+    @keyframes indeterminateProgress {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
     .progress-text {
       font-size: 10px;
       color: var(--text-muted);
@@ -3072,13 +3084,14 @@
       }
       if (st.status === 'downloading') {
         const percent = Math.max(0, Math.min(100, st.progress));
+        const isIndet = (st.progress <= 0 || st.progress === -1);
         return `
           <div style="display: flex; align-items: center; gap: 8px;">
-            <div class="progress-bar-wrap" style="min-width: 110px;">
+            <div class="progress-bar-wrap" style="min-width: 125px;">
               <div class="progress-bar">
-                <div class="progress-fill" style="width: ${percent}%"></div>
+                <div class="progress-fill ${isIndet ? 'indeterminate' : ''}" style="width: ${isIndet ? 100 : percent}%"></div>
               </div>
-              <div class="progress-text">${percent > 0 ? percent + '%' : (st.detail || '...')}</div>
+              <div class="progress-text">${!isIndet && percent > 0 ? percent + '%' : (st.detail || 'Скачивание...')}</div>
             </div>
             <button class="btn-action btn-danger-outline" onclick="cancelSingleDownload('${app.id}')" title="Отменить скачивание" style="padding: 0 10px; height: 32px; font-size: 12px; white-space: nowrap;">⛔ ${s.btn_cancel || 'Отмена'}</button>
           </div>
@@ -3098,13 +3111,14 @@
         `;
       } else if (st.status === 'installing') {
         const percent = st.progress || 0;
+        const isIndet = (percent <= 0 || percent === -1);
         return `
           <div style="display: flex; align-items: center; gap: 8px;">
-            <div class="progress-wrap" style="min-width: 110px; text-align: right;">
+            <div class="progress-wrap" style="min-width: 125px; text-align: right;">
               <div class="progress-bar" style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin-bottom: 4px;">
-                <div class="progress-fill" style="width: ${percent > 0 ? percent : 20}%; height: 100%; background: linear-gradient(90deg, #38bdf8, #10b981); transition: width 0.2s ease;"></div>
+                <div class="progress-fill ${isIndet ? 'indeterminate' : ''}" style="width: ${isIndet ? 100 : percent}%; height: 100%; transition: width 0.2s ease;"></div>
               </div>
-              <div class="progress-text" style="font-size: 11px; color: #38bdf8; font-weight: 500;">${st.detail || (percent > 0 ? percent + '%' : (s.status_installing || 'Установка...'))}</div>
+              <div class="progress-text" style="font-size: 11px; color: #38bdf8; font-weight: 500;">${st.detail || (!isIndet && percent > 0 ? percent + '%' : (s.status_installing || 'Установка...'))}</div>
             </div>
             <button class="btn-action btn-danger-outline" onclick="cancelSingleDownload('${app.id}')" title="Отменить" style="padding: 0 10px; height: 32px; font-size: 12px; white-space: nowrap;">⛔ ${s.btn_cancel || 'Отмена'}</button>
           </div>

@@ -792,7 +792,14 @@ class AppBridge:
             def progress_cb(aid: str, percent: float, text: str):
                 self.call_js("onAppProgress", aid, percent, f"{text}")
 
-            d_res = self._downloader.download(app, progress_cb)
+            target_version = ""
+            target_winget_id = ""
+            if hasattr(self, "_available_updates") and self._available_updates:
+                up_info = self._available_updates.get(app_id, {})
+                target_version = up_info.get("available_version", "")
+                target_winget_id = up_info.get("target_winget_id", "")
+
+            d_res = self._downloader.download(app, progress_cb, target_winget_id=target_winget_id)
             if self._downloader.is_app_cancelled(app_id) or self._installer.is_app_cancelled(app_id):
                 self.call_js("onAppProgress", app_id, 0, "")
                 self.call_js("onAppStatus", app_id, "idle", "")
@@ -811,17 +818,19 @@ class AppBridge:
             self.call_js("onAppProgress", app_id, 90, "⚙️ Запуск установщика...")
             self.call_js("onLog", f"⚙️ Установка новой версии {app.name}...")
 
-            target_version = ""
-            if hasattr(self, "_available_updates") and self._available_updates:
-                target_version = self._available_updates.get(app_id, {}).get("available_version", "")
+            as_admin = False
+            if app_id in ("anydesk", "gpuz", "python") or (app.silent_args and any("program files" in str(a).lower() for a in app.silent_args)):
+                as_admin = True
 
-            inst_res = self._installer.run(app, Path(d_res.installer_path), silent=silent, version=target_version)
+            inst_res = self._installer.run(app, Path(d_res.installer_path), silent=silent, as_admin=as_admin, version=target_version)
             if inst_res.success:
                 if hasattr(self, "_installed_apps") and self._installed_apps is not None:
                     if app_id not in self._installed_apps:
                         self._installed_apps[app_id] = {"installed": True, "name": app.name}
                     if target_version:
                         self._installed_apps[app_id]["version"] = target_version
+                if hasattr(self, "_available_updates") and self._available_updates:
+                    self._available_updates.pop(app_id, None)
                 self.call_js("onAppProgress", app_id, 100, "Готово!")
                 self.call_js("onAppStatus", app_id, "done", "")
                 self.call_js("onLog", f"✅ {app.name} успешно обновлён!")

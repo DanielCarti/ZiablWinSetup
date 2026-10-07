@@ -106,6 +106,7 @@ def parse_winget_upgrade_output(output: str) -> dict[str, dict]:
             avail = parts[3]
             upgrades[pkg_id.lower()] = {
                 "name": name,
+                "pkg_id": pkg_id,
                 "version": ver,
                 "available": avail,
             }
@@ -144,26 +145,45 @@ def check_updates_sync(installed: dict[str, dict[str, Any]] | None = None) -> di
                 # Fallback: поиск по совпадению имени или идентификатора
                 up_name_l = up_info["name"].lower()
                 for c_app in catalog:
+                    if c_app.id == "python":
+                        if "launcher" in up_name_l or "launcher" in wid:
+                            continue
+                        if wid.startswith("python.python.") or ("python 3" in up_name_l):
+                            app = c_app
+                            break
                     c_name_l = c_app.name.lower()
                     if c_name_l in up_name_l or up_name_l in c_name_l:
                         app = c_app
                         break
             if app:
+                if app.id in results:
+                    prev_avail = results[app.id].get("available_version", "")
+                    if not is_newer_version(up_info["available"], prev_avail):
+                        continue
+
+                target_wid = up_info.get("pkg_id") or wid
+                display_name = app.name
+                if app.id == "python" and "." in up_info["version"]:
+                    parts = up_info["version"].split(".")
+                    if len(parts) >= 2 and parts[0].isdigit() and parts[1].isdigit():
+                        display_name = f"Python {parts[0]}.{parts[1]}"
+
                 results[app.id] = {
                     "app_id": app.id,
-                    "name": app.name,
+                    "name": display_name,
                     "current_version": up_info["version"],
                     "available_version": up_info["available"],
+                    "target_winget_id": target_wid,
                     "source": "winget",
                 }
-                # Если winget нашел обновление — приложение 100% установлено в системе!
-                if app.id not in installed:
+                # Синхронизируем версию в installed, чтобы в UI не было рассинхрона
+                if installed is not None:
                     installed[app.id] = {
                         "installed": True,
-                        "name": app.name,
+                        "name": display_name,
                         "version": up_info["version"],
-                        "uninstall_cmd": "",
-                        "quiet_uninstall": "",
+                        "uninstall_cmd": installed.get(app.id, {}).get("uninstall_cmd", ""),
+                        "quiet_uninstall": installed.get(app.id, {}).get("quiet_uninstall", ""),
                     }
     except Exception as e:
         logger.error(f"Winget upgrade check error: {e}")
