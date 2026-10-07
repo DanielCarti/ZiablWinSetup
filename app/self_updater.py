@@ -298,32 +298,46 @@ if ($replaced -and (Test-Path -LiteralPath $targetExe)) {{
     # Снимаем метку Zone.Identifier (Mark-of-the-Web), чтобы Windows Defender и SmartScreen не блокировали чтение архива PyInstaller
     Unblock-File -LiteralPath $targetExe -ErrorAction SilentlyContinue
 
-    # КРИТИЧЕСКИ ВАЖНО для PyInstaller:
-    # Удаляем переменные _MEIPASS2, _MEIPASS, PYTHONHOME, PYTHONPATH из окружения PowerShell!
-    # Если _MEIPASS2 остается в окружении, bootloader PyInstaller считает процесс дочерним
-    # воркером и пытается загрузить DLL из старого (уже удаленного) временного каталога _MEIxxxxxx!
+    # КРИТИЧЕСКИ ВАЖНО для PyInstaller 5.x и 6.x:
+    # Удаляем ВСЕ переменные _PYI*, _MEI*, PYTHON*, PYINSTALLER* из окружения процесса!
+    # В PyInstaller 6.x bootloader проверяет _PYI_ARCHIVE_FILE и _PYI_APPLICATION_HOME_DIR!
+    # Если они остаются в окружении, bootloader считает процесс дочерним воркером и пытается
+    # загрузить python312.dll из старого (уже удаленного) временного каталога _MEIxxxxxx!
+    Remove-Item env:_PYI_ARCHIVE_FILE -ErrorAction SilentlyContinue
+    Remove-Item env:_PYI_APPLICATION_HOME_DIR -ErrorAction SilentlyContinue
+    Remove-Item env:_PYI_PARENT_PROCESS_LEVEL -ErrorAction SilentlyContinue
+    Remove-Item env:_PYI_SPLASH_IPC -ErrorAction SilentlyContinue
     Remove-Item env:_MEIPASS2 -ErrorAction SilentlyContinue
     Remove-Item env:_MEIPASS -ErrorAction SilentlyContinue
     Remove-Item env:PYTHONHOME -ErrorAction SilentlyContinue
     Remove-Item env:PYTHONPATH -ErrorAction SilentlyContinue
+    Remove-Item env:PYINSTALLER_STRICT_UNLOAD -ErrorAction SilentlyContinue
+
+    [System.Environment]::SetEnvironmentVariable('_PYI_ARCHIVE_FILE', $null, [System.EnvironmentVariableTarget]::Process)
+    [System.Environment]::SetEnvironmentVariable('_PYI_APPLICATION_HOME_DIR', $null, [System.EnvironmentVariableTarget]::Process)
+    [System.Environment]::SetEnvironmentVariable('_PYI_PARENT_PROCESS_LEVEL', $null, [System.EnvironmentVariableTarget]::Process)
+    [System.Environment]::SetEnvironmentVariable('_PYI_SPLASH_IPC', $null, [System.EnvironmentVariableTarget]::Process)
     [System.Environment]::SetEnvironmentVariable('_MEIPASS2', $null, [System.EnvironmentVariableTarget]::Process)
     [System.Environment]::SetEnvironmentVariable('_MEIPASS', $null, [System.EnvironmentVariableTarget]::Process)
     [System.Environment]::SetEnvironmentVariable('PYTHONHOME', $null, [System.EnvironmentVariableTarget]::Process)
     [System.Environment]::SetEnvironmentVariable('PYTHONPATH', $null, [System.EnvironmentVariableTarget]::Process)
+    [System.Environment]::SetEnvironmentVariable('PYINSTALLER_STRICT_UNLOAD', $null, [System.EnvironmentVariableTarget]::Process)
+
+    # Официальный флаг сброса окружения в PyInstaller (форсирует распаковку нового каталога _MEI)
+    $env:PYINSTALLER_RESET_ENVIRONMENT = '1'
+    [System.Environment]::SetEnvironmentVariable('PYINSTALLER_RESET_ENVIRONMENT', '1', [System.EnvironmentVariableTarget]::Process)
 
     # Пауза для окончательной фиксации на диске NTFS и антивирусного сканирования
-    Start-Sleep -Milliseconds 1200
+    Start-Sleep -Milliseconds 800
 
     $workDir = Split-Path -Parent $targetExe
 
-    # Запускаем приложение через оболочку Windows Shell (explorer.exe),
-    # что гарантирует абсолютно чистое пользовательское окружение рабочего стола,
-    # полностью изолированное от скрипта обновления:
+    # Запускаем приложение через оболочку Windows Shell
     try {{
         $shell = New-Object -ComObject Shell.Application
         $shell.ShellExecute($targetExe, "", $workDir, "open", 1)
     }} catch {{
-        Start-Process -FilePath $targetExe -WorkingDirectory $workDir
+        Start-Process -FilePath "cmd.exe" -ArgumentList "/c", "start", '""', "`"$targetExe`"" -WorkingDirectory $workDir -WindowStyle Hidden
     }}
 }}
 
@@ -344,10 +358,12 @@ Remove-Item -LiteralPath '{ps1_ps}' -Force -ErrorAction SilentlyContinue
             progress_callback(100, "Перезапуск приложения...")
 
         # Формируем очищенное окружение для процессов обновления,
-        # исключая любые переменные PyInstaller
+        # исключая любые переменные PyInstaller 5.x/6.x и устанавливая флаг сброса
         clean_env = os.environ.copy()
-        for env_var in ("_MEIPASS2", "_MEIPASS", "PYTHONHOME", "PYTHONPATH", "PYINSTALLER_STRICT_UNLOAD"):
-            clean_env.pop(env_var, None)
+        for k in list(clean_env.keys()):
+            if k.startswith(("_PYI", "_MEI", "PYTHONHOME", "PYTHONPATH", "PYINSTALLER")):
+                clean_env.pop(k, None)
+        clean_env["PYINSTALLER_RESET_ENVIRONMENT"] = "1"
 
         # Запускаем открепленный процесс обновления.
         # wscript.exe является GUI-подсистемой (IMAGE_SUBSYSTEM_WINDOWS_GUI),
