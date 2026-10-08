@@ -156,6 +156,12 @@ def check_updates_sync(installed: dict[str, dict[str, Any]] | None = None) -> di
                         app = c_app
                         break
             if app:
+                # Проверка: доступная версия должна быть строго больше текущей установленной версии!
+                if installed and app.id in installed:
+                    curr_inst_ver = installed[app.id].get("version", "")
+                    if curr_inst_ver and not is_newer_version(up_info["available"], curr_inst_ver):
+                        continue
+
                 if app.id in results:
                     prev_avail = results[app.id].get("available_version", "")
                     if not is_newer_version(up_info["available"], prev_avail):

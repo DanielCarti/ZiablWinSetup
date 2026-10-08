@@ -227,7 +227,7 @@ DETECTION_RULES: dict[str, dict[str, list[str]]] = {
         "paths": [],
     },
     "python": {
-        "patterns": [r"^Python 3\."],
+        "patterns": [r"^Python 3\.\d+(?:\.\d+)?\s*\((?:64|32)-bit\)$", r"^Python 3\."],
         "paths": [],
     },
     "vscode": {
@@ -409,20 +409,35 @@ def detect_installed_apps() -> dict[str, dict[str, Any]]:
         match_info = None
 
         # 1. Поиск в реестре Windows
+        matching_entries = []
         for e in entries:
             dn = e["display_name"]
             for pat in rule["patterns"]:
                 if re.search(pat, dn, re.IGNORECASE):
-                    match_info = {
+                    ver = e["version"]
+                    if app.id == "python":
+                        # Очищаем внутренний формат MSI (3.12.10150.0 -> 3.12.10)
+                        vm = re.search(r"Python\s+([0-9]+\.[0-9]+(?:\.[0-9]+)?)", dn, re.IGNORECASE)
+                        if vm:
+                            ver = vm.group(1)
+                    matching_entries.append({
                         "installed": True,
                         "name": dn,
-                        "version": e["version"],
+                        "version": ver,
                         "uninstall_cmd": e["uninstall"],
                         "quiet_uninstall": e["quiet_uninstall"],
-                    }
+                    })
                     break
-            if match_info:
-                break
+        if matching_entries:
+            from app.updater import parse_version_tuple
+            if app.id == "python":
+                roots = [m for m in matching_entries if not any(w in m["name"].lower() for w in ("libraries", "suite", "pip", "documentation", "tcl", "path", "utility", "tools", "standard library", "executables"))]
+                if roots:
+                    matching_entries = roots
+            matching_entries.sort(key=lambda x: parse_version_tuple(x.get("version", "")), reverse=True)
+            match_info = matching_entries[0]
+            if app.id == "python" and match_info.get("version"):
+                match_info["name"] = f"Python {match_info['version']}"
 
         # 2. Fallback: поиск исполняемых файлов в стандартных папках установки
         if not match_info:
