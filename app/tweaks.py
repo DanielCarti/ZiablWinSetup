@@ -565,10 +565,22 @@ def _clean_telegram_cache() -> tuple[bool, str]:
 def _clean_winsetup_installers() -> tuple[bool, str]:
     """
     Удаляет все .exe, .msi, .zip и дистрибутивы, скачанные нашей программой (ZiablWinSetup).
-    Очищает временный кэш WinSetup_Downloads и WinSetup_Winget.
+    Очищает временный кэш WinSetup_Downloads и WinSetup_Winget,
+    а также удаляет временные файлы автообновления и старые/дублирующие копии самой ZiablWinSetup
+    (.old, .bak, ZiablWinSetup (1).exe в папке приложения и Downloads),
+    никогда не затрагивая текущий запущенный экземпляр программы.
     """
+    import os
+    import re
+    import sys
     import tempfile
     from app.utils import get_download_dir, format_size
+
+    try:
+        running_exe = Path(sys.executable).resolve()
+    except Exception:
+        running_exe = None
+
     temp_root = Path(tempfile.gettempdir())
     dirs_to_clean = [
         get_download_dir(),  # WinSetup_Downloads
@@ -576,12 +588,16 @@ def _clean_winsetup_installers() -> tuple[bool, str]:
     ]
     deleted_files = 0
     total_freed = 0
+
+    # 1. Кэш установщиков WinSetup_Downloads и WinSetup_Winget
     for d in dirs_to_clean:
         if not d.exists():
             continue
         for item in list(d.rglob("*")):
             if item.is_file():
                 try:
+                    if running_exe and item.resolve() == running_exe:
+                        continue
                     sz = item.stat().st_size
                     item.unlink(missing_ok=True)
                     deleted_files += 1
@@ -595,9 +611,84 @@ def _clean_winsetup_installers() -> tuple[bool, str]:
                 except Exception:
                     pass
 
+    # 2. Временные файлы автообновления ZiablWinSetup в %TEMP%
+    try:
+        for item in temp_root.iterdir():
+            if not item.is_file():
+                continue
+            name_lower = item.name.lower()
+            if (name_lower.startswith("ziablwinsetup_new_") or 
+                name_lower.startswith("ziabl_update_") or 
+                name_lower.startswith("ziablwinsetup_setup_")):
+                try:
+                    if running_exe and item.resolve() == running_exe:
+                        continue
+                    sz = item.stat().st_size
+                    item.unlink(missing_ok=True)
+                    deleted_files += 1
+                    total_freed += sz
+                except Exception:
+                    pass
+    except Exception:
+        pass
+
+    # 3. Старые копии и дубликаты ZiablWinSetup (.old, .bak, (1).exe, копия) в Downloads и папке запуска
+    search_dirs = set()
+    try:
+        search_dirs.add(Path.home() / "Downloads")
+    except Exception:
+        pass
+    if running_exe:
+        try:
+            exe_dir = running_exe.parent
+            if exe_dir.exists():
+                search_dirs.add(exe_dir)
+        except Exception:
+            pass
+
+    dup_pattern = re.compile(r"^ziablwinsetup.*\s*(\(\d+\)|[-_]copy|[-_]копия)\.exe$", re.IGNORECASE)
+    old_exts = {".old", ".bak", ".tmp"}
+
+    for s_dir in search_dirs:
+        if not s_dir.exists():
+            continue
+        try:
+            for item in s_dir.iterdir():
+                if not item.is_file():
+                    continue
+                name_lower = item.name.lower()
+                if not name_lower.startswith("ziablwinsetup"):
+                    continue
+
+                # Абсолютная защита: никогда не удалять текущий запущенный exe
+                try:
+                    if running_exe and item.resolve() == running_exe:
+                        continue
+                except Exception:
+                    continue
+
+                should_delete = False
+                # Старые версии и бэкапы: ZiablWinSetup.exe.old, ZiablWinSetup.old, ZiablWinSetup.bak
+                if any(name_lower.endswith(ext) for ext in old_exts):
+                    should_delete = True
+                # Дубликаты скачиваний: ZiablWinSetup (1).exe, ZiablWinSetup - копия.exe
+                elif dup_pattern.match(name_lower):
+                    should_delete = True
+
+                if should_delete:
+                    try:
+                        sz = item.stat().st_size
+                        item.unlink(missing_ok=True)
+                        deleted_files += 1
+                        total_freed += sz
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
     if deleted_files == 0:
-        return True, "Кэш установщиков уже пуст (файлы .exe не найдены)."
-    return True, f"Успешно удалено {deleted_files} файлов инсталляторов (освобождено {format_size(total_freed)} памяти)."
+        return True, "Кэш установщиков уже пуст (файлы .exe и старые копии не найдены)."
+    return True, f"Успешно удалено {deleted_files} файлов инсталляторов и старых копий (освобождено {format_size(total_freed)} памяти)."
 
 
 # ==========================================
@@ -879,10 +970,10 @@ TWEAKS: list[TweakEntry] = [
     ),
     TweakEntry(
         id="clean_winsetup_installers",
-        name="Очистить скачанные установщики (.exe)",
-        name_en="Clean Downloaded Installers (.exe)",
-        description="Удаляет все .exe, .msi и дистрибутивы, скачанные программой ZiablWinSetup в кэш. Не затрагивает уже установленные в системе программы.",
-        description_en="Removes all .exe, .msi, and installer files downloaded by ZiablWinSetup. Installed programs are not affected.",
+        name="Очистить скачанные установщики (.exe) и старые копии",
+        name_en="Clean Downloaded Installers (.exe) & Old Copies",
+        description="Удаляет скачанные инсталляторы программ, временные файлы автообновления и старые/дублирующие копии ZiablWinSetup (.old, (1).exe в Загрузках). Запущенное приложение защищено.",
+        description_en="Removes downloaded program installers, update temp files, and old copies/duplicates of ZiablWinSetup (.old, (1).exe). The running app is protected.",
         category="cleanup",
         icon="🗑️",
         is_applied=lambda: False,

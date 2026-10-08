@@ -3083,9 +3083,11 @@
     function getActionHtml(app, st) {
       const s = appData.strings;
 
-      // 1. Внешняя ссылка (например, 1progs.ru)
-      if (app.web_url) {
-        return `<button class="btn-action btn-primary" onclick="openExternalUrl('${app.web_url}')" title="Открыть страницу скачивания на 1progs.ru">🌐 ${s.open_web_1progs || 'Скачать с 1progs.ru'}</button>`;
+      // 1. Внешняя ссылка (только если нет прямого установщика, например Photoshop / Premiere)
+      if (app.web_url && !app.winget_id && !app.direct_url && !app.github_repo) {
+        const is1progs = (app.web_url || '').includes('1progs.ru');
+        const btnTitle = is1progs ? (s.open_web_1progs || 'Скачать с 1progs.ru') : (s.open_web || 'Перейти на сайт');
+        return `<button class="btn-action btn-primary" onclick="openExternalUrl('${app.web_url}')" title="${btnTitle}">🌐 ${btnTitle}</button>`;
       }
       if (st.status === 'downloading') {
         const percent = Math.max(0, Math.min(100, st.progress));
