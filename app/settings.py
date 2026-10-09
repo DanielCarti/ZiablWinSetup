@@ -92,3 +92,10 @@ def toggle_app_ignored_update(app_id: str) -> bool:
     settings["ignored_update_apps"] = sorted(list(ignored_list))
     save_settings(settings)
     return is_ignored
+
+
+def set_ignored_update_apps(app_ids: list[str]) -> list[str]:
+    settings = load_settings()
+    settings["ignored_update_apps"] = sorted(list(set(app_ids)))
+    save_settings(settings)
+    return settings["ignored_update_apps"]

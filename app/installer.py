@@ -426,10 +426,14 @@ class Installer:
             return InstallResult(app=app, success=False, error="Отменено", cancelled=True)
 
         args = app.silent_args if (silent and app.silent_args) else []
+        if app.id == "amnezia-vpn":
+            silent = False
+            as_admin = True
+            args = []
 
         # Перед установкой/обновлением завершаем активные процессы программы,
         # чтобы установщик не завершился ошибкой блокировки (например, OBS Studio obs64.exe)
-        if silent:
+        if silent or app.id == "amnezia-vpn":
             self._terminate_app_processes(app, src_path=path)
 
         def register_handle(h):
@@ -440,7 +444,7 @@ class Installer:
         ELEVATION_CODES = (5, 11341828, 11341829, 0xAD1004, 0xAD1005)
 
         is_obs = app.id in ("obs", "obs-studio")
-        needs_admin = as_admin or is_obs or app.id in ("anydesk", "gpuz", "python") or any("program files" in str(a).lower() for a in args)
+        needs_admin = as_admin or is_obs or app.id in ("anydesk", "gpuz", "python", "amnezia-vpn") or any("program files" in str(a).lower() for a in args)
 
         if needs_admin:
             logger.info(f"Running (as admin / UAC): {path} {' '.join(args)}")
@@ -748,8 +752,19 @@ exit /b %errorlevel%
             except Exception:
                 pass
 
+        if app.id == "amnezia-vpn":
+            try:
+                subprocess.run(["net", "stop", "AmneziaVPN-service"], capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
+            except Exception:
+                pass
+            try:
+                subprocess.run(["powershell", "-NoProfile", "-Command", "Stop-Service -Name *amnezia* -Force -ErrorAction SilentlyContinue"], capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
+            except Exception:
+                pass
+
         # Дополнительные известные имена исполняемых файлов для портативных утилит и программ
         known_aliases = {
+            "amnezia-vpn": ["AmneziaVPN.exe", "AmneziaVPN-service.exe", "wireguard.exe", "openvpn.exe", "tun2socks.exe"],
             "anydesk": ["AnyDesk.exe"],
             "tgwsproxy": ["tg-ws-proxy.exe", "tg_ws_proxy.exe", "tg-ws-proxy-windows.exe", "winws.exe"],
             "gpuz": ["GPU-Z.exe", "TechPowerUp GPU-Z.exe"],

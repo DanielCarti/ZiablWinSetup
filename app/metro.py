@@ -257,6 +257,16 @@ METRO_APPS: list[MetroAppDef] = [
         package_patterns=["*People*"],
         store_id="9NBLGGH10PG8",
     ),
+    MetroAppDef(
+        id="copilot",
+        name="Microsoft Copilot",
+        name_en="Microsoft Copilot",
+        description="Встроенный ИИ-ассистент Windows 11 и боковая панель Copilot.",
+        description_en="Built-in AI assistant and Copilot sidebar in Windows 11.",
+        icon="🤖",
+        package_patterns=["*Microsoft.Copilot*", "*Windows.Ai.Copilot*"],
+        store_id="9NHT9RB2F4HD",
+    ),
 ]
 
 
@@ -388,6 +398,12 @@ def remove_metro_app_by_id(app_id: str) -> dict[str, Any]:
             capture_output=True, text=True, encoding="utf-8", errors="ignore",
             creationflags=NO_WINDOW
         )
+        if app_id == "copilot":
+            try:
+                subprocess.run(["reg", "add", r"HKCU\Software\Policies\Microsoft\Windows\WindowsCopilot", "/v", "TurnOffWindowsCopilot", "/t", "REG_DWORD", "/d", "1", "/f"], capture_output=True, creationflags=NO_WINDOW)
+                subprocess.run(["reg", "add", r"HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", "/v", "ShowCopilotButton", "/t", "REG_DWORD", "/d", "0", "/f"], capture_output=True, creationflags=NO_WINDOW)
+            except Exception:
+                pass
         return {
             "success": True,
             "message": f"Приложение «{app.name}» успешно удалено!",

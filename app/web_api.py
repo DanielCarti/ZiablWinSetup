@@ -40,6 +40,7 @@ from app.settings import (
     load_settings,
     save_settings,
     set_app_ignored_update,
+    set_ignored_update_apps,
     toggle_app_ignored_update,
 )
 from app.tweaks import apply_tweak_by_id, get_all_tweaks, revert_tweak_by_id
@@ -302,6 +303,12 @@ class AppBridge:
 
     def set_ignore_update(self, app_id: str, ignored: bool) -> list[str]:
         return set_app_ignored_update(app_id, ignored)
+
+    def set_all_ignored_updates(self, app_ids: list[str]) -> list[str]:
+        """Устанавливает полный список исключенных приложений."""
+        res = set_ignored_update_apps(app_ids)
+        self.call_js("onLog", f"🛡️ Обновлен список исключений автообновления: {len(res)} приложений.")
+        return res
 
     # ==========================================
     # Путь для распаковки портативных версий
@@ -838,10 +845,15 @@ class AppBridge:
             self.call_js("onLog", f"⚙️ Установка новой версии {app.name}...")
 
             as_admin = False
-            if app_id in ("anydesk", "gpuz", "python", "obs", "obs-studio") or (app.silent_args and any("program files" in str(a).lower() for a in app.silent_args)):
+            is_silent = silent
+            if app_id in ("anydesk", "gpuz", "python", "obs", "obs-studio", "amnezia-vpn") or (app.silent_args and any("program files" in str(a).lower() for a in app.silent_args)):
                 as_admin = True
+            if app_id == "amnezia-vpn" or not app.silent_args:
+                is_silent = False
+                as_admin = True
+                self.call_js("onLog", f"ℹ️ Открыт установщик {app.name}. Пожалуйста, подтвердите установку в открывшемся окне...")
 
-            inst_res = self._installer.run(app, Path(d_res.installer_path), silent=silent, as_admin=as_admin, version=target_version)
+            inst_res = self._installer.run(app, Path(d_res.installer_path), silent=is_silent, as_admin=as_admin, version=target_version)
             if inst_res.success:
                 if hasattr(self, "_installed_apps") and self._installed_apps is not None:
                     if app_id not in self._installed_apps:

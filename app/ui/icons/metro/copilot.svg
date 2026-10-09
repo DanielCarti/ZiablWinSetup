@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <defs>
+    <linearGradient id="copilot1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0078D4"/>
+      <stop offset="100%" stop-color="#8661C5"/>
+    </linearGradient>
+    <linearGradient id="copilot2" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#E3008C"/>
+      <stop offset="100%" stop-color="#FFB900"/>
+    </linearGradient>
+  </defs>
+  <rect width="48" height="48" rx="10" fill="#18181B"/>
+  <path d="M14 26 C14 18 20 14 26 14 C32 14 36 18 36 22 C36 28 30 31 24 31 L18 31 C15.8 31 14 29.2 14 27 Z" fill="url(#copilot1)" opacity="0.9"/>
+  <path d="M34 22 C34 30 28 34 22 34 C16 34 12 30 12 26 C12 20 18 17 24 17 L30 17 C32.2 17 34 18.8 34 21 Z" fill="url(#copilot2)" opacity="0.9"/>
+  <circle cx="24" cy="24" r="5" fill="#FFFFFF" opacity="0.95"/>
+</svg>

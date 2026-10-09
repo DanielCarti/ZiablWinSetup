@@ -44,7 +44,7 @@ CATEGORIES: dict[str, str] = {
     "browsers":      "🌐  Браузеры",
     "media":         "🎬  Медиа",
     "utilities":     "🔧  Утилиты",
-    "communication": "💬  Связь",
+    "communication": "💬  Мессенджеры и ИИ",
     "development":   "💻  Разработка",
     "gpu_drivers":   "🖥️  GPU и драйверы",
     "vpn_network":   "🔒  VPN и сеть",
@@ -379,14 +379,6 @@ def _build_catalog() -> list[AppEntry]:
             category="communication",
             winget_id="9PLM9XGG6VKS",
             recommended=True,
-        ),
-        AppEntry(
-            id="todoist",
-            name="Todoist",
-            description="Популярный планировщик задач, списков дел и проектов",
-            description_en="Organize your work and personal life with task manager",
-            category="communication",
-            winget_id="Doist.Todoist",
         ),
 
         # ========================
@@ -729,6 +721,14 @@ def _build_catalog() -> list[AppEntry]:
             category="office",
             winget_id="Apache.OpenOffice",
             silent_args=["/qn"],
+        ),
+        AppEntry(
+            id="todoist",
+            name="Todoist",
+            description="Популярный планировщик задач, списков дел и проектов",
+            description_en="Organize your work and personal life with task manager",
+            category="office",
+            winget_id="Doist.Todoist",
         ),
 
         # ========================
