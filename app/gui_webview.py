@@ -125,15 +125,12 @@ def run_app(start_in_tray: bool = False):
     html_path = get_ui_path()
     logger.info(f"Loading UI from: {html_path} (start_in_tray={start_in_tray})")
 
-    # Флаги Chromium для Edge WebView2: исключаем избыточное потребление RAM GPU-процессом
+    # Флаги Chromium для Edge WebView2: оптимизация памяти без артефактов растеризации
     os.environ["WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS"] = (
         "--disable-features=CalculateNativeWinOcclusion,ElasticOverscroll "
-        "--disable-gpu-rasterization "
         "--disable-gpu-memory-buffer-video-frames "
         "--renderer-process-limit=1 "
-        "--enable-low-end-device-mode "
-        "--js-flags=--max-old-space-size=128 "
-        "--disable-backgrounding-occluded-windows=false"
+        "--js-flags=--max-old-space-size=128"
     )
 
     # Разрешаем прямую загрузку файлов без запуска локального HTTP-сервера Bottle

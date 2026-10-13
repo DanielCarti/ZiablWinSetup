@@ -144,6 +144,12 @@ STRINGS: dict[Language, dict[str, str]] = {
 
         # Настройки
         "settings": "Настройки",
+        "settings_view_title": "Настройки ZiablWinSetup",
+        "settings_view_subtitle": "Параметры масштабирования, путей распаковки, фонового режима и системных инструментов.",
+        "ui_scale_title": "Масштаб интерфейса",
+        "system_group_title": "Параметры работы",
+        "tools_group_title": "Инструменты и обслуживание",
+        "clean_cache_btn": "Очистить кэш (.exe)",
         "extract_path_label": "Путь для распаковки ZIP-архивов:",
         "extract_path_desktop": "Рабочий стол",
         "browse": "Обзор...",
@@ -368,6 +374,12 @@ STRINGS: dict[Language, dict[str, str]] = {
 
         # Settings
         "settings": "Settings",
+        "settings_view_title": "ZiablWinSetup Settings",
+        "settings_view_subtitle": "UI scaling, extraction paths, background behavior, and maintenance tools.",
+        "ui_scale_title": "Interface Scale",
+        "system_group_title": "Operation Settings",
+        "tools_group_title": "Tools & Maintenance",
+        "clean_cache_btn": "Clean Cache (.exe)",
         "extract_path_label": "ZIP extraction path:",
         "extract_path_desktop": "Desktop",
         "browse": "Browse...",

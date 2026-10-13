@@ -341,8 +341,21 @@ def extract_appx_icon(install_dir: str) -> str:
     return ""
 
 
-def _get_installed_packages_map() -> dict[str, str]:
-    """Возвращает словарь {package_name: install_location} для установленных пакетов."""
+_INSTALLED_PKGS_CACHE: dict[str, str] | None = None
+
+
+def invalidate_metro_cache():
+    """Сбрасывает кэш установленных пакетов Metro."""
+    global _INSTALLED_PKGS_CACHE
+    _INSTALLED_PKGS_CACHE = None
+
+
+def _get_installed_packages_map(force_rescan: bool = False) -> dict[str, str]:
+    """Возвращает словарь {package_name: install_location} для установленных пакетов с кэшированием."""
+    global _INSTALLED_PKGS_CACHE
+    if _INSTALLED_PKGS_CACHE is not None and not force_rescan:
+        return _INSTALLED_PKGS_CACHE
+
     try:
         cmd = ["powershell", "-NoProfile", "-NonInteractive", "-Command",
                "Get-AppxPackage | Select-Object Name, InstallLocation | ConvertTo-Json -Compress"]
@@ -351,10 +364,12 @@ def _get_installed_packages_map() -> dict[str, str]:
             data = json.loads(res.stdout)
             if isinstance(data, dict):
                 data = [data]
-            return {p["Name"]: p.get("InstallLocation", "") for p in data if p.get("Name")}
+            _INSTALLED_PKGS_CACHE = {p["Name"]: p.get("InstallLocation", "") for p in data if p.get("Name")}
+            return _INSTALLED_PKGS_CACHE
     except Exception:
         pass
-    return {}
+    _INSTALLED_PKGS_CACHE = {}
+    return _INSTALLED_PKGS_CACHE
 
 
 def _get_installed_package_names() -> set[str]:
@@ -362,9 +377,9 @@ def _get_installed_package_names() -> set[str]:
     return set(_get_installed_packages_map().keys())
 
 
-def get_all_metro_apps(lang: str = "ru") -> list[dict[str, Any]]:
+def get_all_metro_apps(lang: str = "ru", force_rescan: bool = False) -> list[dict[str, Any]]:
     """Возвращает список всех Metro-приложений с актуальным статусом установки и иконками."""
-    pkg_map = _get_installed_packages_map()
+    pkg_map = _get_installed_packages_map(force_rescan=force_rescan)
     result = []
     for app in METRO_APPS:
         is_inst = False
@@ -404,6 +419,7 @@ def remove_metro_app_by_id(app_id: str) -> dict[str, Any]:
                 subprocess.run(["reg", "add", r"HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", "/v", "ShowCopilotButton", "/t", "REG_DWORD", "/d", "0", "/f"], capture_output=True, creationflags=NO_WINDOW)
             except Exception:
                 pass
+        invalidate_metro_cache()
         return {
             "success": True,
             "message": f"Приложение «{app.name}» успешно удалено!",
@@ -441,6 +457,7 @@ def restore_metro_app_by_id(app_id: str) -> dict[str, Any]:
     for pat in app.package_patterns:
         for pkg in installed_names:
             if fnmatch.fnmatch(pkg.lower(), pat.lower()):
+                invalidate_metro_cache()
                 return {
                     "success": True,
                     "message": f"Приложение «{app.name}» успешно восстановлено!",
