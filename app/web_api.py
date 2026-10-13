@@ -24,7 +24,7 @@ from app.catalog import (
     get_catalog,
     get_recommended,
 )
-from app.detector import detect_installed_apps, uninstall_app
+from app.detector import detect_installed_apps, uninstall_app, find_leftovers, delete_leftovers
 from app.downloader import Downloader, DownloadResult
 from app.i18n import STRINGS, CATEGORY_NAMES, i18n
 from app.installer import Installer, InstallResult, get_desktop_path, get_exe_dir
@@ -91,6 +91,7 @@ class AppBridge:
         self._active_upgrades = 0
         self._installed_apps: dict[str, dict[str, Any]] = {}
         self._available_updates: dict[str, dict[str, Any]] = {}
+        self._pending_leftovers: dict[str, dict[str, list[str]]] = {}
         self._app_data: dict[str, Any] | None = None
         self._tray_manager: Any = None
         self._is_quitting = False
@@ -259,32 +260,106 @@ class AppBridge:
         threading.Thread(target=worker, daemon=True).start()
         return []
 
-    def uninstall_app(self, app_id: str):
-        """Запуск деинсталляции приложения."""
+    def uninstall_app(self, app_id: str) -> dict[str, Any]:
+        """Запуск деинсталляции приложения с отображением прогресса и поиском остатков."""
         app = self._catalog_map.get(app_id)
         if not app:
-            return
+            return {"success": False, "error": f"Приложение {app_id} не найдено"}
 
         def worker():
-            self.call_js("onAppStatus", app_id, "uninstalling", i18n.t("status_uninstalling"))
-            self.call_js("onLog", i18n.t("log_start_uninstall", name=app.name))
+            self.call_js("onAppStatus", app_id, "uninstalling", "Деинсталляция...")
+            self.call_js("onLog", f"🗑️ {app.name} — запуск процесса удаления...")
+
             res = uninstall_app(app_id)
-            if res.get("success"):
+            if not res.get("success"):
+                err = res.get("error", "Неизвестная ошибка")
+                self.call_js("onAppStatus", app_id, "error", err)
+                self.call_js("onLog", f"❌ {app.name} — ошибка деинсталляции: {err}")
+                return
+
+            leftovers = res.get("leftovers", {"dirs": [], "shortcuts": [], "registry": []})
+            total_leftovers = len(leftovers.get("dirs", [])) + len(leftovers.get("shortcuts", [])) + len(leftovers.get("registry", []))
+
+            # Если остатков нет
+            if total_leftovers == 0:
                 self.call_js("onAppStatus", app_id, "idle", "")
                 self.call_js("onAppUninstalled", app_id)
-                msg = res.get("message") or i18n.t("log_uninstalled", name=app.name)
-                self.call_js("onLog", msg)
+                self.call_js("onLog", f"✅ Программа «{app.name}» успешно удалена. Остаточных файлов не обнаружено.")
+                try:
+                    installed = detect_installed_apps()
+                    self.call_js("onInstalledAppsDetected", installed)
+                except Exception:
+                    pass
+                return
+
+            # Проверяем пользовательскую настройку: всегда ли удалять остатки автоматически
+            settings = load_settings()
+            auto_clean = settings.get("auto_clean_leftovers")
+
+            if auto_clean is True:
+                # Автоматическая очистка
+                cleaned = delete_leftovers(leftovers)
+                summary_parts = []
+                if cleaned["dirs"]:
+                    summary_parts.append(f"{len(cleaned['dirs'])} папок")
+                if cleaned["shortcuts"]:
+                    summary_parts.append(f"{len(cleaned['shortcuts'])} ярлыков")
+                if cleaned["registry"]:
+                    summary_parts.append(f"{len(cleaned['registry'])} записей реестра")
+                msg = f"Очищено остатков: {', '.join(summary_parts)}" if summary_parts else "Остатки очищены"
+                self.call_js("onAppStatus", app_id, "idle", "")
+                self.call_js("onAppUninstalled", app_id)
+                self.call_js("onLog", f"🧹 Программа «{app.name}» успешно удалена. {msg}.")
                 try:
                     installed = detect_installed_apps()
                     self.call_js("onInstalledAppsDetected", installed)
                 except Exception:
                     pass
             else:
-                err = res.get("error", "Неизвестная ошибка")
-                self.call_js("onAppStatus", app_id, "error", err)
-                self.call_js("onLog", i18n.t("log_uninstall_error", name=app.name, error=err))
+                # Сохраняем найденные остатки и вызываем модальное окно в стиле Uninstall Tool
+                self._pending_leftovers[app_id] = leftovers
+                self.call_js("onAppStatus", app_id, "uninstalling", "Очистка остатков...")
+                self.call_js("onLog", f"🔍 {app.name} — обнаружено {total_leftovers} остаточных элементов. Ожидание подтверждения...")
+                self.call_js("onShowLeftoversModal", app_id, app.name, leftovers)
 
         threading.Thread(target=worker, daemon=True).start()
+        return {"success": True, "message": "Процесс деинсталляции запущен"}
+
+    def clean_pending_leftovers(self, app_id: str, do_clean: bool, remember: bool) -> dict[str, Any]:
+        """Обрабатывает выбор пользователя из диалогового окна Uninstall Tool."""
+        app = self._catalog_map.get(app_id)
+        app_name = app.name if app else app_id
+        leftovers = self._pending_leftovers.pop(app_id, None)
+
+        if remember:
+            settings = load_settings()
+            settings["auto_clean_leftovers"] = bool(do_clean)
+            save_settings(settings)
+            status_text = "включена" if do_clean else "отключена"
+            self.call_js("onLog", f"⚙️ Автоматическая очистка остатков {status_text} (выбор запомнен).")
+
+        if do_clean and leftovers:
+            cleaned = delete_leftovers(leftovers)
+            summary_parts = []
+            if cleaned["dirs"]:
+                summary_parts.append(f"{len(cleaned['dirs'])} папок")
+            if cleaned["shortcuts"]:
+                summary_parts.append(f"{len(cleaned['shortcuts'])} ярлыков")
+            if cleaned["registry"]:
+                summary_parts.append(f"{len(cleaned['registry'])} записей реестра")
+            msg = f"Очищено остатков: {', '.join(summary_parts)}" if summary_parts else "Остатки очищены"
+            self.call_js("onLog", f"🧹 Программа «{app_name}» полностью удалена. {msg}.")
+        else:
+            self.call_js("onLog", f"ℹ️ Очистка остатков программы «{app_name}» пропущена пользователем.")
+
+        self.call_js("onAppStatus", app_id, "idle", "")
+        self.call_js("onAppUninstalled", app_id)
+        try:
+            installed = detect_installed_apps()
+            self.call_js("onInstalledAppsDetected", installed)
+        except Exception:
+            pass
+        return {"success": True}
 
     # ==========================================
     # Настройки и исключения
@@ -295,6 +370,11 @@ class AppBridge:
 
     def save_settings(self, settings_dict: dict) -> bool:
         return save_settings(settings_dict)
+
+    def update_settings_key(self, key: str, value: Any) -> bool:
+        settings = load_settings()
+        settings[key] = value
+        return save_settings(settings)
 
     def get_ignored_apps(self) -> list[str]:
         return get_ignored_update_apps()

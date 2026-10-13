@@ -27,6 +27,7 @@ _DEFAULT_SETTINGS = {
     "minimize_to_tray_on_close": True,
     "autostart_with_windows": False,
     "auto_check_app_updates": True,
+    "auto_clean_leftovers": None,
     "skipped_app_version": "",
 }
 

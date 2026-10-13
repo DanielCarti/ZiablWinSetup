@@ -577,15 +577,14 @@ def detect_installed_apps() -> dict[str, dict[str, Any]]:
     return results
 
 
-def clean_leftovers(app_id: str, app_info: dict[str, Any] | None = None) -> dict[str, Any]:
+def find_leftovers(app_id: str, app_info: dict[str, Any] | None = None) -> dict[str, list[str]]:
     """
-    Сканирует и безопасно удаляет остаточные файлы, папки, ярлыки и ключи реестра
-    после деинсталляции программы (глубокая очистка а-ля Uninstall Tool).
+    Сканирует систему на наличие остаточных папок, ярлыков и ключей реестра
+    без их фактического удаления (для показа пользователю в диалоге Uninstall Tool).
     """
-    cleaned: dict[str, list[str]] = {"dirs": [], "shortcuts": [], "registry": []}
+    found: dict[str, list[str]] = {"dirs": [], "shortcuts": [], "registry": []}
     app_name = (app_info.get("name") if app_info else "") or app_id
 
-    # Нормализованные ключевые слова для безопасного сопоставления
     keywords = set()
     for raw in [app_id, app_name]:
         clean = re.sub(r"[^\w\s-]", "", raw).strip().lower()
@@ -596,7 +595,7 @@ def clean_leftovers(app_id: str, app_info: dict[str, Any] | None = None) -> dict
                     keywords.add(part)
 
     if not keywords:
-        return cleaned
+        return found
 
     def is_safe_match(name: str) -> bool:
         lower = name.lower()
@@ -630,6 +629,7 @@ def clean_leftovers(app_id: str, app_info: dict[str, Any] | None = None) -> dict
     pf = Path(os.environ.get("ProgramFiles", "C:\\Program Files"))
     pfx86 = Path(os.environ.get("ProgramFiles(x86)", "C:\\Program Files (x86)"))
 
+    # 1. Поиск остаточных папок
     for base in [appdata, localappdata, progdata, pf, pfx86]:
         if not base.exists():
             continue
@@ -640,19 +640,27 @@ def clean_leftovers(app_id: str, app_info: dict[str, Any] | None = None) -> dict
         except Exception:
             pass
 
-    for c_dir in set(candidate_dirs):
-        if c_dir in protected_roots or not c_dir.exists():
-            continue
-        if len(c_dir.parts) < 3:
-            continue
-        try:
-            shutil.rmtree(c_dir, ignore_errors=True)
-            if not c_dir.exists():
-                cleaned["dirs"].append(str(c_dir))
-                logger.info(f"Очищены остатки папки: {c_dir}")
-        except Exception as e:
-            logger.debug(f"Не удалось удалить папку {c_dir}: {e}")
+    # Специальные пути для CLI/npm инструментов (например, opencode)
+    if app_id == "opencode":
+        npm_dir = appdata / "npm"
+        if npm_dir.exists():
+            try:
+                for script in ["opencode", "opencode.cmd", "opencode.ps1"]:
+                    sp = npm_dir / script
+                    if sp.exists():
+                        found["shortcuts"].append(str(sp))
+                nm = npm_dir / "node_modules" / "opencode-ai"
+                if nm.exists():
+                    candidate_dirs.append(nm)
+            except Exception:
+                pass
 
+    for c_dir in set(candidate_dirs):
+        if c_dir in protected_roots or not c_dir.exists() or len(c_dir.parts) < 3:
+            continue
+        found["dirs"].append(str(c_dir))
+
+    # 2. Поиск остаточных ярлыков
     shortcut_locations = [
         Path.home() / "Desktop",
         Path(os.environ.get("PUBLIC", "C:\\Users\\Public")) / "Desktop",
@@ -666,15 +674,11 @@ def clean_leftovers(app_id: str, app_info: dict[str, Any] | None = None) -> dict
         try:
             for lnk in s_loc.rglob("*.lnk"):
                 if is_safe_match(lnk.stem):
-                    try:
-                        lnk.unlink(missing_ok=True)
-                        cleaned["shortcuts"].append(str(lnk))
-                        logger.info(f"Удален остаточный ярлык: {lnk}")
-                    except Exception:
-                        pass
+                    found["shortcuts"].append(str(lnk))
         except Exception:
             pass
 
+    # 3. Поиск остаточных ключей реестра
     reg_roots = [
         (winreg.HKEY_CURRENT_USER, r"Software"),
         (winreg.HKEY_LOCAL_MACHINE, r"Software"),
@@ -682,32 +686,96 @@ def clean_leftovers(app_id: str, app_info: dict[str, Any] | None = None) -> dict
     ]
     for hkey, sub in reg_roots:
         try:
-            with winreg.OpenKey(hkey, sub, 0, winreg.KEY_READ | winreg.KEY_SET_VALUE) as parent_key:
+            with winreg.OpenKey(hkey, sub, 0, winreg.KEY_READ) as parent_key:
                 idx = 0
                 while True:
                     try:
                         kn = winreg.EnumKey(parent_key, idx)
                         if is_safe_match(kn):
-                            try:
-                                winreg.DeleteKey(parent_key, kn)
-                                cleaned["registry"].append(f"{sub}\\{kn}")
-                                logger.info(f"Удален остаточный ключ реестра: {sub}\\{kn}")
-                                continue
-                            except Exception:
-                                pass
+                            found["registry"].append(f"{sub}\\{kn}")
                         idx += 1
                     except OSError:
                         break
         except Exception:
             pass
 
+    return found
+
+
+def delete_leftovers(leftovers: dict[str, list[str]]) -> dict[str, list[str]]:
+    """
+    Безопасно удаляет указанные остаточные файлы, папки, ярлыки и ключи реестра.
+    """
+    cleaned: dict[str, list[str]] = {"dirs": [], "shortcuts": [], "registry": []}
+
+    protected_roots = {
+        Path("C:\\"),
+        Path(os.environ.get("SystemDrive", "C:") + "\\"),
+        Path(os.environ.get("ProgramFiles", "C:\\Program Files")),
+        Path(os.environ.get("ProgramFiles(x86)", "C:\\Program Files (x86)")),
+        Path(os.environ.get("APPDATA", "")),
+        Path(os.environ.get("LOCALAPPDATA", "")),
+        Path(os.environ.get("ProgramData", "C:\\ProgramData")),
+        Path.home(),
+        Path.home() / "Desktop",
+        Path.home() / "Downloads",
+        Path.home() / "Documents",
+    }
+
+    # Удаление папок
+    for d_str in leftovers.get("dirs", []):
+        p = Path(d_str)
+        if p.exists() and p not in protected_roots and len(p.parts) >= 3:
+            try:
+                shutil.rmtree(p, ignore_errors=True)
+                if not p.exists():
+                    cleaned["dirs"].append(d_str)
+                    logger.info(f"Удалены остатки папки: {d_str}")
+            except Exception as e:
+                logger.debug(f"Не удалось удалить папку {d_str}: {e}")
+
+    # Удаление ярлыков и скриптов
+    for s_str in leftovers.get("shortcuts", []):
+        p = Path(s_str)
+        if p.exists():
+            try:
+                p.unlink(missing_ok=True)
+                cleaned["shortcuts"].append(s_str)
+                logger.info(f"Удален остаточный файл/ярлык: {s_str}")
+            except Exception:
+                pass
+
+    # Удаление ключей реестра
+    for r_str in leftovers.get("registry", []):
+        parts = r_str.split("\\", 1)
+        if len(parts) == 2:
+            sub, kn = parts
+            for hkey in [winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE]:
+                try:
+                    with winreg.OpenKey(hkey, sub, 0, winreg.KEY_SET_VALUE) as parent_key:
+                        winreg.DeleteKey(parent_key, kn)
+                        cleaned["registry"].append(r_str)
+                        logger.info(f"Удален остаточный ключ реестра: {r_str}")
+                        break
+                except Exception:
+                    pass
+
     return cleaned
+
+
+def clean_leftovers(app_id: str, app_info: dict[str, Any] | None = None) -> dict[str, list[str]]:
+    """
+    Находит и сразу удаляет остатки программы.
+    """
+    found = find_leftovers(app_id, app_info)
+    return delete_leftovers(found)
 
 
 def uninstall_app(app_id: str) -> dict[str, Any]:
     """
     Запускает деинсталлятор для указанного приложения и ожидает его завершения.
-    После завершения запускает глубокую очистку остатков (папки, кэш, ярлыки, реестр).
+    Если официальный деинсталлятор отсутствует (например, portable/npm/winget):
+    пытается выполнить деинсталляцию через winget или npm, либо подготавливает очистку файлов.
     """
     detected = detect_installed_apps()
     app_info = detected.get(app_id)
@@ -716,38 +784,57 @@ def uninstall_app(app_id: str) -> dict[str, Any]:
         return {"success": False, "error": f"Приложение '{app_id}' не обнаружено в установленных."}
 
     cmd = app_info.get("uninstall_cmd") or app_info.get("quiet_uninstall")
-    if not cmd:
-        return {
-            "success": False,
-            "error": f"Не найдена строка деинсталляции для '{app_id}'. Удалите приложение через Параметры Windows.",
-        }
+    
+    # 1. Попытка деинсталляции через официальный UninstallString
+    if cmd:
+        logger.info(f"Запуск официального деинсталлятора {app_id}: {cmd}")
+        try:
+            subprocess.run(f'cmd.exe /c "{cmd}"', shell=False, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000))
+            time.sleep(1.0)
+        except Exception as e:
+            logger.warning(f"Ошибка вызова uninstaller {cmd}: {e}")
+    else:
+        # 2. Если UninstallString нет в реестре:
+        winget_id = None
+        from app.catalog import ALL_APPS
+        for a in ALL_APPS:
+            if a.id == app_id and a.winget_id:
+                winget_id = a.winget_id
+                break
+        
+        winget_uninstalled = False
+        if winget_id:
+            logger.info(f"Попытка удаления через winget: {winget_id}")
+            try:
+                w_res = subprocess.run(
+                    ["winget", "uninstall", "--id", winget_id, "--silent", "--accept-source-agreements"],
+                    capture_output=True,
+                    creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000),
+                    timeout=45
+                )
+                if w_res.returncode == 0:
+                    winget_uninstalled = True
+                    logger.info(f"Успешно удалено через winget: {winget_id}")
+            except Exception as ex:
+                logger.debug(f"Winget uninstall не удался: {ex}")
 
-    logger.info(f"Запуск деинсталляции {app_id}: {cmd}")
+        # Проверяем наличие специфического npm пакета (например, opencode)
+        if not winget_uninstalled and app_id == "opencode":
+            try:
+                subprocess.run(
+                    ["cmd.exe", "/c", "npm uninstall -g opencode-ai & npm uninstall -g opencode"],
+                    capture_output=True,
+                    creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000),
+                    timeout=30
+                )
+            except Exception:
+                pass
 
-    try:
-        # Выполняем деинсталлятор и ожидаем завершения
-        # Использование cmd.exe /c запускает установщик интерактивно в окне для пользователя
-        subprocess.run(f'cmd.exe /c "{cmd}"', shell=False, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000))
-        import time
-        time.sleep(1.0)
-
-        # Выполняем глубокую очистку остатков программы
-        leftovers = clean_leftovers(app_id, app_info)
-        summary_parts = []
-        if leftovers["dirs"]:
-            summary_parts.append(f"{len(leftovers['dirs'])} папок")
-        if leftovers["shortcuts"]:
-            summary_parts.append(f"{len(leftovers['shortcuts'])} ярлыков")
-        if leftovers["registry"]:
-            summary_parts.append(f"{len(leftovers['registry'])} записей реестра")
-
-        leftover_msg = f"Очищено остатков: {', '.join(summary_parts)}" if summary_parts else "Остаточных файлов не обнаружено"
-
-        return {
-            "success": True,
-            "message": f"Программа «{app_info.get('name', app_id)}» успешно удалена. {leftover_msg}.",
-            "leftovers": leftovers,
-        }
-    except Exception as e:
-        logger.error(f"Ошибка при деинсталляции: {e}", exc_info=True)
-        return {"success": False, "error": str(e)}
+    # 3. Находим остаточные файлы, папки, ярлыки и ключи реестра
+    leftovers = find_leftovers(app_id, app_info)
+    return {
+        "success": True,
+        "app_id": app_id,
+        "app_name": app_info.get("name", app_id),
+        "leftovers": leftovers
+    }
