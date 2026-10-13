@@ -2260,7 +2260,7 @@
         <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.77.04"/></svg>
         <span class="tab-label" id="tabLabelStartup">Автозагрузка</span>
       </button>
-      <button class="tab-btn" id="tabBtnSettings" onclick="switchMainTab('settings')" title="Настройки">
+      <button class="tab-btn" id="tabBtnSettings" onclick="openSettingsModal()" title="Настройки">
         <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         <span class="tab-label" id="tabLabelSettings">Настройки</span>
       </button>
@@ -2460,18 +2460,190 @@
       <!-- Startup Items List -->
       <div id="startupListContainer" class="startup-list"></div>
     </div>
+  </div>
 
-    <!-- View 5: Settings view -->
-    <div id="viewSettings" style="display: none; flex: 1; min-height: 0; width: 100%; flex-direction: column; overflow-y: auto; padding: 24px 20px 80px 20px; box-sizing: border-box; background: var(--bg-app);">
-      <div class="settings-view-wrapper">
-        <div style="margin-bottom: 8px;">
-          <h2 style="font-size: 20px; font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-            <span id="settingsViewTitle">Настройки ZiablWinSetup</span>
-          </h2>
-          <p style="font-size: 13px; color: var(--text-muted);" id="settingsViewSubtitle">Параметры масштабирования, путей распаковки, фонового режима и системных инструментов.</p>
+  <!-- Footer -->
+  <footer id="mainFooter">
+    <div class="footer-top">
+      <div class="selected-info-wrap" style="display: flex; align-items: center; gap: 12px; overflow: hidden; flex: 1; min-width: 0;">
+        <div class="selected-info" id="selectedCountDisplay" style="white-space: nowrap; font-weight: 600;">Выбрано: 0</div>
+        <div id="selectedIconsPreview" class="selected-icons-preview" style="display: flex; align-items: center; gap: 6px; overflow-x: auto; max-width: 520px; padding: 2px 0;"></div>
+      </div>
+      <div class="footer-actions">
+        <button class="footer-btn btn-primary" id="btnDownloadSelected" onclick="handleDownloadSelected()">📥 Скачать выбранное</button>
+        <button class="footer-btn btn-success" id="btnInstallAll" onclick="handleInstallAll()" disabled>⚙️ Установить все скачанные</button>
+      </div>
+    </div>
+
+    <div class="footer-progress-row" style="flex-direction: column; align-items: stretch; gap: 8px;">
+      <div class="overall-bar" style="width: 100%; height: 6px; border-radius: 3px; background: #2a2a2a; overflow: hidden;">
+        <div class="overall-fill" id="overallProgressFill" style="width: 0%; height: 100%; transition: width 0.25s;"></div>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="log-toggle" onclick="toggleLog()">
+          <span id="logArrow">▶</span> <span id="logLabel">Журнал событий</span>
         </div>
+        <div class="overall-status" id="overallStatusText" style="text-align: right; min-width: unset;">Готов к работе</div>
+      </div>
+    </div>
 
+    <div id="logBox"></div>
+  </footer>
+
+  <!-- Centered Confirmation Modal -->
+  <div id="confirmModal" class="modal-overlay" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header-area">
+        <div class="modal-icon-wrap">🗑️</div>
+        <div>
+          <div class="modal-title" id="modalTitle">Удаление приложения</div>
+          <div class="modal-desc" id="modalDesc">Вы действительно хотите запустить деинсталляцию?</div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn modal-btn-cancel" id="modalCancelBtn">Отмена</button>
+        <button class="modal-btn modal-btn-danger" id="modalConfirmBtn">Удалить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leftovers Cleaner Modal (Uninstall Tool Style) -->
+  <div id="leftoversModal" class="modal-overlay" style="display: none;">
+    <div class="modal-card" style="max-width: 540px; width: 92%;">
+      <div class="modal-header-area">
+        <div class="modal-icon-wrap" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; font-size: 26px;">🧹</div>
+        <div>
+          <div class="modal-title" id="leftoversModalTitle">Очистка остатков (Uninstall Tool)</div>
+          <div class="modal-desc" id="leftoversModalDesc">Стандартный деинсталлятор завершил работу. Обнаружены следующие оставшиеся элементы:</div>
+        </div>
+      </div>
+      <div id="leftoversListContainer" style="max-height: 220px; overflow-y: auto; background: rgba(0,0,0,0.3); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 12px; margin: 14px 0; font-size: 12px; display: flex; flex-direction: column; gap: 8px;">
+        <!-- Leftovers list rendered dynamically -->
+      </div>
+      <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-main); cursor: pointer; user-select: none; margin: 8px 0 16px 0;">
+        <input type="checkbox" id="leftoversRememberChoice" style="width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer;">
+        <span id="lblLeftoversRemember">Запомнить выбор (всегда очищать остатки автоматически)</span>
+      </label>
+      <div class="modal-actions">
+        <button class="modal-btn modal-btn-cancel" id="leftoversSkipBtn" onclick="handleLeftoversDecision(false)">Пропустить</button>
+        <button class="modal-btn modal-btn-danger" id="leftoversCleanBtn" onclick="handleLeftoversDecision(true)">Удалить остатки</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Program to Startup Modal -->
+  <div id="addStartupModal" class="modal-overlay" style="display: none;">
+    <div class="modal-card" style="max-width: 480px; width: 90%;">
+      <div class="modal-header-area">
+        <div class="modal-icon-wrap" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;">🚀</div>
+        <div style="flex: 1;">
+          <div class="modal-title" id="addStartupModalTitle">Добавить программу в автозапуск</div>
+          <div class="modal-desc" id="addStartupModalDesc">Программа будет автоматически запускаться при старте Windows.</div>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 14px; margin: 18px 0;">
+        <div>
+          <label style="font-size: 12px; font-weight: 500; color: var(--text-muted); display: block; margin-bottom: 6px;" id="lblAddStartupName">Название программы:</label>
+          <input type="text" id="addStartupName" placeholder="Например: Моя программа" style="width: 100%; height: 36px; padding: 0 12px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--text-main); font-size: 13px; box-sizing: border-box;">
+        </div>
+        <div>
+          <label style="font-size: 12px; font-weight: 500; color: var(--text-muted); display: block; margin-bottom: 6px;" id="lblAddStartupPath">Исполняемый файл (.exe / .lnk):</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="addStartupPath" placeholder="C:\Program Files\App\app.exe" style="flex: 1; height: 36px; padding: 0 12px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--text-main); font-size: 13px; box-sizing: border-box;">
+            <button class="btn-action btn-outline" id="btnBrowseStartup" onclick="browseStartupExe()" style="height: 36px; padding: 0 12px; font-size: 12px; white-space: nowrap;">📂 Обзор...</button>
+          </div>
+        </div>
+        <div>
+          <label style="font-size: 12px; font-weight: 500; color: var(--text-muted); display: block; margin-bottom: 6px;" id="lblAddStartupArgs">Параметры запуска (необязательно):</label>
+          <input type="text" id="addStartupArgs" placeholder="Например: --minimized или -silent" style="width: 100%; height: 36px; padding: 0 12px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--text-main); font-size: 13px; box-sizing: border-box;">
+        </div>
+        <div id="addStartupError" style="font-size: 12px; color: #ef4444; display: none;"></div>
+      </div>
+      <div class="modal-actions" style="justify-content: flex-end; gap: 10px;">
+        <button class="modal-btn modal-btn-cancel" id="btnCancelAddStartup" onclick="closeAddStartupModal()">Отмена</button>
+        <button class="modal-btn modal-btn-primary" id="btnSubmitAddStartup" onclick="submitAddStartupItem()" style="background: var(--accent); color: #fff;">Добавить</button>
+    </div>
+  </div>
+
+  <!-- Self-Updater Modal (Modern TG WS Proxy Style) -->
+  <div id="selfUpdateModal" class="modal-overlay" style="display: none;">
+    <div class="self-update-card">
+      <div class="self-update-header">
+        <div class="self-update-icon-wrap">🚀</div>
+        <div style="flex: 1;">
+          <div class="self-update-title" id="selfUpdateModalTitle">🎉 Доступно обновление ZiablWinSetup!</div>
+          <div class="self-update-subtitle" id="selfUpdateModalDesc">Вышла новая версия приложения с новыми возможностями и улучшениями.</div>
+        </div>
+        <button class="modal-close-btn" id="btnSelfUpdateClose" onclick="closeSelfUpdateModal()" title="Закрыть">✕</button>
+      </div>
+
+      <div class="self-update-ver-banner">
+        <div class="ver-pill">
+          <div class="ver-label" id="lblSelfUpdateCurrent">Текущая версия</div>
+          <div class="ver-value" id="selfUpdateCurrentVer">v1.3.2</div>
+        </div>
+        <div class="ver-arrow">→</div>
+        <div class="ver-pill ver-new">
+          <div class="ver-label" id="lblSelfUpdateNew">Новая версия</div>
+          <div class="ver-value">
+            <span id="selfUpdateNewVer">v1.3.0</span>
+            <span class="ver-badge-new">NEW</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="self-update-notes-title" id="selfUpdateNotesTitle">Что нового:</div>
+      <div class="self-update-notes-body" id="selfUpdateNotesBody">Загрузка информации об обновлении...</div>
+
+      <!-- Live Download & Install Progress Bar -->
+      <div id="selfUpdateProgressArea" style="display: none; margin-top: 14px;">
+        <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; color: var(--text-main);">
+          <span id="selfUpdateStatusText">Скачивание обновления...</span>
+          <span id="selfUpdatePctText" style="font-weight: 700; color: #38bdf8;">0%</span>
+        </div>
+        <div style="background: rgba(255,255,255,0.08); height: 8px; border-radius: 4px; overflow: hidden;">
+          <div id="selfUpdateProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #38bdf8, #22c55e); transition: width 0.2s ease; border-radius: 4px;"></div>
+        </div>
+        <div id="selfUpdateDetailText" style="font-size: 11px; color: var(--text-muted); margin-top: 4px; text-align: right;"></div>
+      </div>
+
+      <div class="self-update-actions" id="selfUpdateActions">
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button class="btn-action" id="btnSelfUpdateSkip" onclick="skipSelfUpdate()" style="background: transparent; border: 1px solid var(--border-subtle); color: var(--text-muted); padding: 7px 12px; font-size: 12px;" title="Не напоминать об этой версии">Пропустить</button>
+          <button class="btn-action" id="btnSelfUpdateGithub" onclick="openSelfUpdateGithub()" style="background: transparent; border: 1px solid var(--border-subtle); color: var(--text-muted); padding: 7px 12px; font-size: 12px;">GitHub</button>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button class="btn-action" id="btnSelfUpdateLater" onclick="closeSelfUpdateModal()" style="background: rgba(255,255,255,0.06); color: var(--text-main); padding: 7px 14px; font-size: 12px;">Позже</button>
+          <button class="btn-action btn-primary" id="btnSelfUpdateInstall" onclick="startSelfUpdate()" style="padding: 7px 16px; font-size: 12px; font-weight: 600; background: linear-gradient(135deg, #2563eb, #10b981); border: none;">⚡ Обновить и перезапустить</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dedicated No Update Confirmation Modal -->
+  <div id="noUpdateModal" class="modal-overlay" style="display: none;">
+    <div class="modal-card" style="max-width: 440px; text-align: center; padding: 24px;">
+      <div style="font-size: 40px; margin-bottom: 12px;">✅</div>
+      <div style="font-size: 16px; font-weight: 600; color: #f1f5f9; margin-bottom: 6px;" id="noUpdateModalTitle">У вас последняя версия!</div>
+      <div style="font-size: 13px; color: var(--text-muted); line-height: 1.45; margin-bottom: 20px;" id="noUpdateModalDesc">Вы используете актуальную версию ZiablWinSetup. Обновлений не требуется.</div>
+      <div style="display: flex; justify-content: center;">
+        <button class="modal-btn modal-btn-primary" onclick="closeNoUpdateModal()" style="padding: 7px 28px; font-size: 13px; background: var(--accent); color: #fff; font-weight: 600;">Отлично</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal (Windows 11 Fluent) -->
+  <div id="settingsModal" class="modal-overlay" style="display: none; z-index: 9998;">
+    <div class="settings-modal-card" style="width: 640px; max-width: 92vw; max-height: 88vh; display: flex; flex-direction: column; background: #1a1b1f; border: 1px solid var(--border-subtle); border-radius: 12px; box-shadow: 0 24px 50px rgba(0,0,0,0.85); overflow: hidden;">
+      <div class="settings-modal-header" style="padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between;">
+        <h3 style="margin: 0; font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px; color: #f1f5f9;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span id="settingsModalTitle">Настройки ZiablWinSetup</span>
+        </h3>
+        <button onclick="closeSettingsModal()" style="background:none; border:none; color:#94a3b8; font-size:20px; cursor:pointer; line-height: 1; padding: 4px;" title="Закрыть">✕</button>
+      </div>
+
+      <div class="settings-modal-body" style="padding: 16px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; flex: 1;">
         <!-- Card 1: UI & Scale -->
         <div class="settings-card">
           <div class="settings-card-header">
@@ -2647,178 +2819,51 @@
             </div>
           </div>
         </div>
+      </div>
 
-        <div style="font-size: 11.5px; color: var(--text-dim); text-align: center; opacity: 0.8; margin-top: 12px;" id="sidebarAppVerDisplay">ZiablWinSetup v1.4.14</div>
-      </div>
-    </div><!-- /viewSettings -->
-  </div>
-
-  <!-- Footer -->
-  <footer id="mainFooter">
-    <div class="footer-top">
-      <div class="selected-info-wrap" style="display: flex; align-items: center; gap: 12px; overflow: hidden; flex: 1; min-width: 0;">
-        <div class="selected-info" id="selectedCountDisplay" style="white-space: nowrap; font-weight: 600;">Выбрано: 0</div>
-        <div id="selectedIconsPreview" class="selected-icons-preview" style="display: flex; align-items: center; gap: 6px; overflow-x: auto; max-width: 520px; padding: 2px 0;"></div>
-      </div>
-      <div class="footer-actions">
-        <button class="footer-btn btn-primary" id="btnDownloadSelected" onclick="handleDownloadSelected()">📥 Скачать выбранное</button>
-        <button class="footer-btn btn-success" id="btnInstallAll" onclick="handleInstallAll()" disabled>⚙️ Установить все скачанные</button>
-      </div>
-    </div>
-
-    <div class="footer-progress-row" style="flex-direction: column; align-items: stretch; gap: 8px;">
-      <div class="overall-bar" style="width: 100%; height: 6px; border-radius: 3px; background: #2a2a2a; overflow: hidden;">
-        <div class="overall-fill" id="overallProgressFill" style="width: 0%; height: 100%; transition: width 0.25s;"></div>
-      </div>
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <div class="log-toggle" onclick="toggleLog()">
-          <span id="logArrow">▶</span> <span id="logLabel">Журнал событий</span>
-        </div>
-        <div class="overall-status" id="overallStatusText" style="text-align: right; min-width: unset;">Готов к работе</div>
-      </div>
-    </div>
-
-    <div id="logBox"></div>
-  </footer>
-
-  <!-- Centered Confirmation Modal -->
-  <div id="confirmModal" class="modal-overlay" style="display: none;">
-    <div class="modal-card">
-      <div class="modal-header-area">
-        <div class="modal-icon-wrap">🗑️</div>
-        <div>
-          <div class="modal-title" id="modalTitle">Удаление приложения</div>
-          <div class="modal-desc" id="modalDesc">Вы действительно хотите запустить деинсталляцию?</div>
-        </div>
-      </div>
-      <div class="modal-actions">
-        <button class="modal-btn modal-btn-cancel" id="modalCancelBtn">Отмена</button>
-        <button class="modal-btn modal-btn-danger" id="modalConfirmBtn">Удалить</button>
+      <div style="padding: 12px 20px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.2);">
+        <div style="font-size: 11.5px; color: var(--text-dim); opacity: 0.8;" id="sidebarAppVerDisplay">ZiablWinSetup v1.4.15</div>
+        <button class="btn-action btn-primary" onclick="closeSettingsModal()" style="padding: 6px 20px; font-size: 12px; font-weight: 600;">Готово</button>
       </div>
     </div>
   </div>
 
-  <!-- Leftovers Cleaner Modal (Uninstall Tool Style) -->
-  <div id="leftoversModal" class="modal-overlay" style="display: none;">
-    <div class="modal-card" style="max-width: 540px; width: 92%;">
-      <div class="modal-header-area">
-        <div class="modal-icon-wrap" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; font-size: 26px;">🧹</div>
-        <div>
-          <div class="modal-title" id="leftoversModalTitle">Очистка остатков (Uninstall Tool)</div>
-          <div class="modal-desc" id="leftoversModalDesc">Стандартный деинсталлятор завершил работу. Обнаружены следующие оставшиеся элементы:</div>
+  <!-- Exclusions Modal -->
+  <div id="exclusionsModal" class="modal-overlay" style="display: none; z-index: 10000;">
+    <div class="exclusions-modal-card" style="width: 560px; max-width: 92vw; height: 580px; max-height: 85vh; display: flex; flex-direction: column; background: #1c1c1f; border: 1px solid var(--border-subtle); border-radius: 12px; box-shadow: 0 24px 48px rgba(0,0,0,0.8); overflow: hidden;">
+      <div class="exclusions-modal-header" style="padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between;">
+        <h3 style="margin: 0; font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px; color: #f1f5f9;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span id="exclusionsModalTitle">Исключения из автообновлений</span>
+        </h3>
+        <button onclick="closeExclusionsModal()" style="background:none; border:none; color:#94a3b8; font-size:20px; cursor:pointer; line-height: 1; padding: 4px;" title="Закрыть">✕</button>
+      </div>
+      <div style="padding: 12px 20px 6px 20px; font-size: 12px; color: var(--text-muted); line-height: 1.4;" id="exclusionsModalDesc">
+        Отмеченные программы пропускаются при массовом обновлении («Обновить все») и не отвлекают уведомлениями.
+      </div>
+      <div style="padding: 6px 20px 8px 20px; display: flex; gap: 8px;">
+        <input type="text" id="exclusionsSearchInput" placeholder="Поиск программы..." oninput="onExclusionsSearch(this.value)" style="flex: 1; height: 34px; padding: 0 12px; background: rgba(0,0,0,0.35); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--text-main); font-size: 12.5px; box-sizing: border-box;">
+        <div style="display: flex; gap: 4px; background: rgba(255,255,255,0.06); padding: 3px; border-radius: var(--radius-sm);">
+          <button id="btnExclFilterAll" class="btn-browse" onclick="setExclusionsFilter('all')" style="padding: 4px 10px; font-size: 11px; background: var(--accent); color: #fff;">Все</button>
+          <button id="btnExclFilterInstalled" class="btn-browse" onclick="setExclusionsFilter('installed')" style="padding: 4px 10px; font-size: 11px; background: transparent; color: var(--text-main);">Установленные</button>
         </div>
       </div>
-      <div id="leftoversListContainer" style="max-height: 220px; overflow-y: auto; background: rgba(0,0,0,0.3); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 12px; margin: 14px 0; font-size: 12px; display: flex; flex-direction: column; gap: 8px;">
-        <!-- Leftovers list rendered dynamically -->
+      <div style="padding: 4px 20px 8px 20px; display: flex; gap: 8px; align-items: center; justify-content: space-between;">
+        <div style="display: flex; gap: 8px;">
+          <button class="btn-browse" onclick="selectAllExclusions()" style="padding: 5px 12px; font-size: 11px; display: inline-flex; align-items: center; gap: 5px;">
+            <span>☑️</span>
+            <span id="lblExclSelectAll">Выбрать все</span>
+          </button>
+          <button class="btn-browse" onclick="deselectAllExclusions()" style="padding: 5px 12px; font-size: 11px; display: inline-flex; align-items: center; gap: 5px;">
+            <span>⬜</span>
+            <span id="lblExclDeselectAll">Снять все</span>
+          </button>
+        </div>
+        <div id="exclusionsCountSummary" style="font-size: 12px; font-weight: 500; color: #facc15;"></div>
       </div>
-      <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-main); cursor: pointer; user-select: none; margin: 8px 0 16px 0;">
-        <input type="checkbox" id="leftoversRememberChoice" style="width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer;">
-        <span id="lblLeftoversRemember">Запомнить выбор (всегда очищать остатки автоматически)</span>
-      </label>
-      <div class="modal-actions">
-        <button class="modal-btn modal-btn-cancel" id="leftoversSkipBtn" onclick="handleLeftoversDecision(false)">Пропустить</button>
-        <button class="modal-btn modal-btn-danger" id="leftoversCleanBtn" onclick="handleLeftoversDecision(true)">Удалить остатки</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Add Program to Startup Modal -->
-  <div id="addStartupModal" class="modal-overlay" style="display: none;">
-    <div class="modal-card" style="max-width: 480px; width: 90%;">
-      <div class="modal-header-area">
-        <div class="modal-icon-wrap" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;">🚀</div>
-        <div style="flex: 1;">
-          <div class="modal-title" id="addStartupModalTitle">Добавить программу в автозапуск</div>
-          <div class="modal-desc" id="addStartupModalDesc">Программа будет автоматически запускаться при старте Windows.</div>
-        </div>
-      </div>
-      <div style="display: flex; flex-direction: column; gap: 14px; margin: 18px 0;">
-        <div>
-          <label style="font-size: 12px; font-weight: 500; color: var(--text-muted); display: block; margin-bottom: 6px;" id="lblAddStartupName">Название программы:</label>
-          <input type="text" id="addStartupName" placeholder="Например: Моя программа" style="width: 100%; height: 36px; padding: 0 12px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--text-main); font-size: 13px; box-sizing: border-box;">
-        </div>
-        <div>
-          <label style="font-size: 12px; font-weight: 500; color: var(--text-muted); display: block; margin-bottom: 6px;" id="lblAddStartupPath">Исполняемый файл (.exe / .lnk):</label>
-          <div style="display: flex; gap: 8px;">
-            <input type="text" id="addStartupPath" placeholder="C:\Program Files\App\app.exe" style="flex: 1; height: 36px; padding: 0 12px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--text-main); font-size: 13px; box-sizing: border-box;">
-            <button class="btn-action btn-outline" id="btnBrowseStartup" onclick="browseStartupExe()" style="height: 36px; padding: 0 12px; font-size: 12px; white-space: nowrap;">📂 Обзор...</button>
-          </div>
-        </div>
-        <div>
-          <label style="font-size: 12px; font-weight: 500; color: var(--text-muted); display: block; margin-bottom: 6px;" id="lblAddStartupArgs">Параметры запуска (необязательно):</label>
-          <input type="text" id="addStartupArgs" placeholder="Например: --minimized или -silent" style="width: 100%; height: 36px; padding: 0 12px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--text-main); font-size: 13px; box-sizing: border-box;">
-        </div>
-        <div id="addStartupError" style="font-size: 12px; color: #ef4444; display: none;"></div>
-      </div>
-      <div class="modal-actions" style="justify-content: flex-end; gap: 10px;">
-        <button class="modal-btn modal-btn-cancel" id="btnCancelAddStartup" onclick="closeAddStartupModal()">Отмена</button>
-        <button class="modal-btn modal-btn-primary" id="btnSubmitAddStartup" onclick="submitAddStartupItem()" style="background: var(--accent); color: #fff;">Добавить</button>
-    </div>
-  </div>
-
-  <!-- Self-Updater Modal (Modern TG WS Proxy Style) -->
-  <div id="selfUpdateModal" class="modal-overlay" style="display: none;">
-    <div class="self-update-card">
-      <div class="self-update-header">
-        <div class="self-update-icon-wrap">🚀</div>
-        <div style="flex: 1;">
-          <div class="self-update-title" id="selfUpdateModalTitle">🎉 Доступно обновление ZiablWinSetup!</div>
-          <div class="self-update-subtitle" id="selfUpdateModalDesc">Вышла новая версия приложения с новыми возможностями и улучшениями.</div>
-        </div>
-        <button class="modal-close-btn" id="btnSelfUpdateClose" onclick="closeSelfUpdateModal()" title="Закрыть">✕</button>
-      </div>
-
-      <div class="self-update-ver-banner">
-        <div class="ver-pill">
-          <div class="ver-label" id="lblSelfUpdateCurrent">Текущая версия</div>
-          <div class="ver-value" id="selfUpdateCurrentVer">v1.3.2</div>
-        </div>
-        <div class="ver-arrow">→</div>
-        <div class="ver-pill ver-new">
-          <div class="ver-label" id="lblSelfUpdateNew">Новая версия</div>
-          <div class="ver-value">
-            <span id="selfUpdateNewVer">v1.3.0</span>
-            <span class="ver-badge-new">NEW</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="self-update-notes-title" id="selfUpdateNotesTitle">Что нового:</div>
-      <div class="self-update-notes-body" id="selfUpdateNotesBody">Загрузка информации об обновлении...</div>
-
-      <!-- Live Download & Install Progress Bar -->
-      <div id="selfUpdateProgressArea" style="display: none; margin-top: 14px;">
-        <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; color: var(--text-main);">
-          <span id="selfUpdateStatusText">Скачивание обновления...</span>
-          <span id="selfUpdatePctText" style="font-weight: 700; color: #38bdf8;">0%</span>
-        </div>
-        <div style="background: rgba(255,255,255,0.08); height: 8px; border-radius: 4px; overflow: hidden;">
-          <div id="selfUpdateProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #38bdf8, #22c55e); transition: width 0.2s ease; border-radius: 4px;"></div>
-        </div>
-        <div id="selfUpdateDetailText" style="font-size: 11px; color: var(--text-muted); margin-top: 4px; text-align: right;"></div>
-      </div>
-
-      <div class="self-update-actions" id="selfUpdateActions">
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <button class="btn-action" id="btnSelfUpdateSkip" onclick="skipSelfUpdate()" style="background: transparent; border: 1px solid var(--border-subtle); color: var(--text-muted); padding: 7px 12px; font-size: 12px;" title="Не напоминать об этой версии">Пропустить</button>
-          <button class="btn-action" id="btnSelfUpdateGithub" onclick="openSelfUpdateGithub()" style="background: transparent; border: 1px solid var(--border-subtle); color: var(--text-muted); padding: 7px 12px; font-size: 12px;">GitHub</button>
-        </div>
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <button class="btn-action" id="btnSelfUpdateLater" onclick="closeSelfUpdateModal()" style="background: rgba(255,255,255,0.06); color: var(--text-main); padding: 7px 14px; font-size: 12px;">Позже</button>
-          <button class="btn-action btn-primary" id="btnSelfUpdateInstall" onclick="startSelfUpdate()" style="padding: 7px 16px; font-size: 12px; font-weight: 600; background: linear-gradient(135deg, #2563eb, #10b981); border: none;">⚡ Обновить и перезапустить</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Dedicated No Update Confirmation Modal -->
-  <div id="noUpdateModal" class="modal-overlay" style="display: none;">
-    <div class="modal-card" style="max-width: 440px; text-align: center; padding: 24px;">
-      <div style="font-size: 40px; margin-bottom: 12px;">✅</div>
-      <div style="font-size: 16px; font-weight: 600; color: #f1f5f9; margin-bottom: 6px;" id="noUpdateModalTitle">У вас последняя версия!</div>
-      <div style="font-size: 13px; color: var(--text-muted); line-height: 1.45; margin-bottom: 20px;" id="noUpdateModalDesc">Вы используете актуальную версию ZiablWinSetup. Обновлений не требуется.</div>
-      <div style="display: flex; justify-content: center;">
-        <button class="modal-btn modal-btn-primary" onclick="closeNoUpdateModal()" style="padding: 7px 28px; font-size: 13px; background: var(--accent); color: #fff; font-weight: 600;">Отлично</button>
+      <div class="exclusions-list" id="exclusionsListContainer" style="flex: 1; overflow-y: auto; padding: 8px 20px; display: flex; flex-direction: column; gap: 6px;"></div>
+      <div style="padding: 12px 20px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: flex-end; background: rgba(0,0,0,0.2);">
+        <button class="btn-action btn-primary" id="btnExclusionsCloseBottom" onclick="closeExclusionsModal()" style="padding: 7px 22px; font-size: 12.5px; font-weight: 600;">Готово</button>
       </div>
     </div>
   </div>
@@ -3496,7 +3541,7 @@
         });
       }
 
-      const updCount = Object.keys(availableUpdates || {}).length;
+      const updCount = typeof getActiveUpdatesCount === 'function' ? getActiveUpdatesCount() : Object.keys(availableUpdates || {}).length;
       if (updCount > 0) {
         const insertIdx = instCount > 0 ? 3 : 2;
         const s = appData.strings || {};
@@ -3596,12 +3641,17 @@
     // Настройки & Масштаб UI
     // ==========================================
     function openSettingsModal() {
-      switchMainTab('settings');
+      const modal = document.getElementById('settingsModal');
+      if (modal) modal.style.display = 'flex';
+      updateExclusionsBadge();
     }
+    window.openSettingsModal = openSettingsModal;
 
     function closeSettingsModal() {
-      switchMainTab('apps');
+      const modal = document.getElementById('settingsModal');
+      if (modal) modal.style.display = 'none';
     }
+    window.closeSettingsModal = closeSettingsModal;
 
     function setUiScale(val) {
       const num = Math.min(130, Math.max(75, parseInt(val) || 100));
@@ -3617,6 +3667,7 @@
         localStorage.setItem('ziabl_ui_scale', num.toString());
       } catch (e) {}
     }
+    window.setUiScale = setUiScale;
 
     function initUiScale() {
       try {
@@ -3626,12 +3677,48 @@
         }
       } catch (e) {}
     }
+    window.initUiScale = initUiScale;
 
     // ==========================================
-    // Исключения автообновления
+    // Исключения автообновления & Синхронизация
     // ==========================================
     let exclusionsSearchQuery = '';
     let exclusionsFilter = 'all'; // 'all' | 'installed'
+
+    function getActiveUpdatesCount() {
+      if (!availableUpdates) return 0;
+      const ignoredSet = new Set(appData.ignored_updates || []);
+      return Object.keys(availableUpdates).filter(id => !ignoredSet.has(id)).length;
+    }
+    window.getActiveUpdatesCount = getActiveUpdatesCount;
+
+    function syncUpdatesUi() {
+      const activeCount = getActiveUpdatesCount();
+      const badge = document.getElementById('updateBadge');
+      const banner = document.getElementById('updatesBanner');
+      const bannerText = document.getElementById('updatesBannerText');
+      const qaAll = document.getElementById('qaUpgradeAll');
+      const qaSel = document.getElementById('qaUpgradeSelected');
+
+      if (activeCount > 0) {
+        if (badge) { badge.textContent = activeCount; badge.style.display = 'inline-flex'; }
+        if (banner) banner.style.display = 'flex';
+        if (qaAll) qaAll.style.display = 'block';
+        if (qaSel) qaSel.style.display = 'block';
+        const tpl = (appData.strings && appData.strings.updates_available_banner) || '✨ Доступно обновлений: {count}';
+        if (bannerText) bannerText.textContent = tpl.replace('{count}', activeCount);
+      } else {
+        if (badge) badge.style.display = 'none';
+        if (banner) banner.style.display = 'none';
+        if (qaAll) qaAll.style.display = 'none';
+        if (qaSel) qaSel.style.display = 'none';
+        if (activeCategory === 'updates_available') {
+          activeCategory = 'all';
+        }
+      }
+      renderCategories();
+    }
+    window.syncUpdatesUi = syncUpdatesUi;
 
     function updateExclusionsBadge() {
       const badge = document.getElementById('exclusionsBadge');
@@ -3641,6 +3728,7 @@
         badge.style.display = count > 0 ? 'inline-block' : 'none';
       }
     }
+    window.updateExclusionsBadge = updateExclusionsBadge;
 
     function setExclusionsFilter(filter) {
       exclusionsFilter = filter;
@@ -3656,11 +3744,13 @@
       }
       renderExclusionsList();
     }
+    window.setExclusionsFilter = setExclusionsFilter;
 
     function onExclusionsSearch(val) {
       exclusionsSearchQuery = (val || '').trim().toLowerCase();
       renderExclusionsList();
     }
+    window.onExclusionsSearch = onExclusionsSearch;
 
     function getInstalledCatalogApps() {
       if (!appData || !appData.apps) return [];
@@ -3683,13 +3773,16 @@
       renderExclusionsList();
       modal.style.display = 'flex';
     }
+    window.openExclusionsModal = openExclusionsModal;
 
     function closeExclusionsModal() {
       const modal = document.getElementById('exclusionsModal');
       if (modal) modal.style.display = 'none';
       updateExclusionsBadge();
+      syncUpdatesUi();
       renderCards();
     }
+    window.closeExclusionsModal = closeExclusionsModal;
 
     async function toggleAppExclusion(appId) {
       if (!appData.ignored_updates) appData.ignored_updates = [];
@@ -3708,12 +3801,14 @@
         }
       }
       updateExclusionsBadge();
+      syncUpdatesUi();
       renderCards();
       const modal = document.getElementById('exclusionsModal');
       if (modal && modal.style.display !== 'none') {
         renderExclusionsList();
       }
     }
+    window.toggleAppExclusion = toggleAppExclusion;
 
     async function selectAllExclusions() {
       let targetApps = [];
@@ -3736,9 +3831,11 @@
         }
       }
       updateExclusionsBadge();
+      syncUpdatesUi();
       renderCards();
       renderExclusionsList();
     }
+    window.selectAllExclusions = selectAllExclusions;
 
     async function deselectAllExclusions() {
       let targetApps = [];
@@ -3759,9 +3856,11 @@
         }
       }
       updateExclusionsBadge();
+      syncUpdatesUi();
       renderCards();
       renderExclusionsList();
     }
+    window.deselectAllExclusions = deselectAllExclusions;
 
     function renderExclusionsList() {
       const container = document.getElementById('exclusionsListContainer');
@@ -3849,6 +3948,8 @@
           return matchesAppSearch(app, searchQuery);
         }
         if (activeCategory === 'updates_available') {
+          const ignoredSet = new Set(appData.ignored_updates || []);
+          if (ignoredSet.has(app.id)) return false;
           const isDoneInSession = appStatuses[app.id] && (appStatuses[app.id].status === 'done' || appStatuses[app.id].status === 'extracted');
           if (!availableUpdates || (!availableUpdates[app.id] && !isDoneInSession)) return false;
           return matchesAppSearch(app, searchQuery);
@@ -3933,7 +4034,8 @@
               </svg>
             </span>
             ${isInstalled ? `<span class="badge-installed" title="${instInfo.name || ''}">✓ ${s.status_installed || 'Установлено'}${verStr}</span>` : ''}
-            ${availableUpdates[app.id] ? `<span class="badge-update" title="Доступно обновление">⬆️ ${availableUpdates[app.id].available_version}</span>` : ''}
+            ${(availableUpdates[app.id] && !(appData.ignored_updates || []).includes(app.id)) ? `<span class="badge-update" title="Доступно обновление">⬆️ ${availableUpdates[app.id].available_version}</span>` : ''}
+            ${(availableUpdates[app.id] && (appData.ignored_updates || []).includes(app.id)) ? `<span class="badge-ignored" title="Исключено из автообновлений (доступна ${availableUpdates[app.id].available_version})" style="display: inline-flex; align-items: center; gap: 3px; background: rgba(234, 179, 8, 0.14); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.32); padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: 500;">🛡️ Исключено</span>` : ''}
             ${app.web_url ? `<a href="javascript:void(0)" onclick="openExternalUrl('${app.web_url}')" class="link-1progs-badge" title="Открыть страницу на 1progs.ru" style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #38bdf8; text-decoration: none; padding: 2px 7px; border-radius: 4px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.28); margin-left: 6px; cursor: pointer; font-weight: 500;">🌐 1progs.ru ↗</a>` : ''}
             ${notes ? `<span class="card-note" title="${notes}">ⓘ ${notes}</span>` : ''}
           </div>
@@ -4070,10 +4172,11 @@
         const isInstalled = (appData.installed_apps && appData.installed_apps[app.id]) || Boolean(availableUpdates[app.id]);
         if (isInstalled) {
           const hasUpdate = availableUpdates[app.id];
+          const isIgnored = (appData.ignored_updates || []).includes(app.id);
           if (app.installer_type === 'portable') {
             return `
               <div style="display: flex; gap: 6px; align-items: center;">
-                ${hasUpdate ? `<button class="btn-action btn-upgrade" onclick="upgradeSingle('${app.id}')" title="Обновить до ${hasUpdate.available_version}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> <span>${s.btn_upgrade || 'Обновить'}</span></button>` : ''}
+                ${hasUpdate && !isIgnored ? `<button class="btn-action btn-upgrade" onclick="upgradeSingle('${app.id}')" title="Обновить до ${hasUpdate.available_version}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> <span>${s.btn_upgrade || 'Обновить'}</span></button>` : (hasUpdate && isIgnored ? `<button class="btn-action btn-outline" onclick="upgradeSingle('${app.id}')" title="Обновить вручную (исключено из автообновлений)" style="padding: 0 10px; height: 32px; font-size: 11.5px; color: #facc15; border-color: rgba(234,179,8,0.35);"><span>🛡️ Вручную</span></button>` : '')}
                 <button class="btn-action btn-primary" onclick="launchApp('${app.id}')" title="${s.btn_launch || 'Запустить'}">🚀 ${s.btn_launch || 'Запустить'}</button>
                 <button class="btn-action btn-outline" onclick="openAppFolder('${app.id}')" title="Открыть папку" style="padding: 0 9px; height: 32px;">📁</button>
               </div>
@@ -4081,7 +4184,7 @@
           }
           return `
             <div style="display: flex; gap: 8px; align-items: center;">
-              ${hasUpdate ? `<button class="btn-action btn-upgrade" onclick="upgradeSingle('${app.id}')" title="Обновить до ${hasUpdate.available_version}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> <span>${s.btn_upgrade || 'Обновить'}</span></button>` : ''}
+              ${hasUpdate && !isIgnored ? `<button class="btn-action btn-upgrade" onclick="upgradeSingle('${app.id}')" title="Обновить до ${hasUpdate.available_version}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> <span>${s.btn_upgrade || 'Обновить'}</span></button>` : (hasUpdate && isIgnored ? `<button class="btn-action btn-outline" onclick="upgradeSingle('${app.id}')" title="Обновить вручную (исключено из автообновлений)" style="padding: 0 10px; height: 32px; font-size: 11.5px; color: #facc15; border-color: rgba(234,179,8,0.35);"><span>🛡️ Вручную</span></button>` : '')}
               <button class="btn-action btn-outline" onclick="reinstallSingle('${app.id}')" title="${s.btn_reinstall || 'Переустановить'}">${s.btn_reinstall || '🔄 Переустановить'}</button>
               <button class="btn-action btn-danger-outline" onclick="uninstallSingle('${app.id}')" title="${s.btn_uninstall || 'Удалить'}">${s.btn_uninstall || '🗑️ Удалить'}</button>
             </div>
@@ -4580,6 +4683,10 @@
     // ==========================================
 
     function switchMainTab(tab) {
+      if (tab === 'settings') {
+        openSettingsModal();
+        return;
+      }
       currentMainTab = tab;
       document.getElementById('tabBtnApps').classList.toggle('active', tab === 'apps');
       document.getElementById('tabBtnTweaks').classList.toggle('active', tab === 'tweaks');
@@ -4587,14 +4694,11 @@
       if (tabMetro) tabMetro.classList.toggle('active', tab === 'metro');
       const tabStartup = document.getElementById('tabBtnStartup');
       if (tabStartup) tabStartup.classList.toggle('active', tab === 'startup');
-      const tabSettings = document.getElementById('tabBtnSettings');
-      if (tabSettings) tabSettings.classList.toggle('active', tab === 'settings');
 
       const viewApps = document.getElementById('viewApps');
       const viewTweaks = document.getElementById('viewTweaks');
       const viewMetro = document.getElementById('viewMetro');
       const viewStartup = document.getElementById('viewStartup');
-      const viewSettings = document.getElementById('viewSettings');
       const footer = document.getElementById('mainFooter');
 
       if (tab === 'apps') {
@@ -4602,14 +4706,12 @@
         viewTweaks.style.display = 'none';
         if (viewMetro) viewMetro.style.display = 'none';
         if (viewStartup) viewStartup.style.display = 'none';
-        if (viewSettings) viewSettings.style.display = 'none';
         footer.style.display = 'flex';
       } else if (tab === 'tweaks') {
         viewApps.style.display = 'none';
         viewTweaks.style.display = 'flex';
         if (viewMetro) viewMetro.style.display = 'none';
         if (viewStartup) viewStartup.style.display = 'none';
-        if (viewSettings) viewSettings.style.display = 'none';
         footer.style.display = 'none';
         renderTweaks();
       } else if (tab === 'metro') {
@@ -4617,7 +4719,6 @@
         viewTweaks.style.display = 'none';
         if (viewMetro) viewMetro.style.display = 'flex';
         if (viewStartup) viewStartup.style.display = 'none';
-        if (viewSettings) viewSettings.style.display = 'none';
         footer.style.display = 'none';
         renderMetro();
       } else if (tab === 'startup') {
@@ -4625,18 +4726,11 @@
         viewTweaks.style.display = 'none';
         if (viewMetro) viewMetro.style.display = 'none';
         if (viewStartup) viewStartup.style.display = 'flex';
-        if (viewSettings) viewSettings.style.display = 'none';
         footer.style.display = 'none';
         renderStartup();
-      } else if (tab === 'settings') {
-        viewApps.style.display = 'none';
-        viewTweaks.style.display = 'none';
-        if (viewMetro) viewMetro.style.display = 'none';
-        if (viewStartup) viewStartup.style.display = 'none';
-        if (viewSettings) viewSettings.style.display = 'flex';
-        footer.style.display = 'none';
       }
     }
+    window.switchMainTab = switchMainTab;
 
     // ==========================================
     // Твики и фичи
@@ -5339,6 +5433,7 @@
         console.error('onToggleMinimizeToTray error:', err);
       }
     }
+    window.onToggleMinimizeToTray = onToggleMinimizeToTray;
 
     async function onToggleAppAutostart(enabled) {
       const chk = document.getElementById('chkAutostartApp');
@@ -5360,6 +5455,7 @@
         if (chk) chk.disabled = false;
       }
     }
+    window.onToggleAppAutostart = onToggleAppAutostart;
 
     window.onStartupItemsUpdated = function(items) {
       if (items && Array.isArray(items)) {
@@ -5452,7 +5548,6 @@
       if (btnText) btnText.textContent = (appData.strings && appData.strings.btn_check_updates) || 'Проверить обновления';
 
       availableUpdates = updates || {};
-      const count = Object.keys(availableUpdates).length;
 
       // Сбрасываем завершённые статусы 'done'/'extracted', чтобы обновлённые приложения
       // возвращались в нормальное установленное состояние и пропадали из списка обновлений
@@ -5464,26 +5559,17 @@
         });
       }
 
-      if (count > 0) {
-        if (badge) { badge.textContent = count; badge.style.display = 'inline-flex'; }
-        if (banner) banner.style.display = 'flex';
-        if (qaAll) qaAll.style.display = 'block';
-        if (qaSel) qaSel.style.display = 'block';
-        const tpl = (appData.strings && appData.strings.updates_available_banner) || '✨ Доступно обновлений: {count}';
-        if (bannerText) bannerText.textContent = tpl.replace('{count}', count);
-        addLog(`✨ Найдено доступных обновлений: ${count}`);
+      const activeCount = getActiveUpdatesCount();
+      const totalCount = Object.keys(availableUpdates).length;
+      if (activeCount > 0) {
+        addLog(`✨ Найдено доступных обновлений: ${activeCount}${totalCount > activeCount ? ` (исключено: ${totalCount - activeCount})` : ''}`);
+      } else if (totalCount > 0) {
+        addLog(`🛡️ Найдено обновлений: ${totalCount}, но все они находятся в списке исключений.`);
       } else {
-        if (badge) badge.style.display = 'none';
-        if (banner) banner.style.display = 'none';
-        if (qaAll) qaAll.style.display = 'none';
-        if (qaSel) qaSel.style.display = 'none';
-        if (activeCategory === 'updates_available') {
-          activeCategory = 'all';
-        }
         addLog('✅ Все установленные программы имеют последние версии!');
       }
 
-      renderCategories();
+      syncUpdatesUi();
       renderCards();
     };
 
@@ -5511,30 +5597,9 @@
       };
       appStatuses[appId] = { status: 'done', progress: 100, detail: '' };
 
-      const count = Object.keys(availableUpdates).length;
-      if (count === 0 && activeCategory === 'updates_available') {
-        activeCategory = 'all';
-      }
-      renderCategories();
-
-      const badge = document.getElementById('updateBadge');
-      const banner = document.getElementById('updatesBanner');
-      const bannerText = document.getElementById('updatesBannerText');
-      const qaAll = document.getElementById('qaUpgradeAll');
-      const qaSel = document.getElementById('qaUpgradeSelected');
-
-      if (count > 0) {
-        if (badge) { badge.textContent = count; badge.style.display = 'inline-flex'; }
-        if (banner) banner.style.display = 'flex';
-        if (qaAll) qaAll.style.display = 'block';
-        if (qaSel) qaSel.style.display = 'block';
-        const tpl = (appData.strings && appData.strings.updates_available_banner) || '✨ Доступно обновлений: {count}';
-        if (bannerText) bannerText.textContent = tpl.replace('{count}', count);
-      } else {
-        if (badge) badge.style.display = 'none';
-        if (banner) banner.style.display = 'none';
-        if (qaAll) qaAll.style.display = 'none';
-        if (qaSel) qaSel.style.display = 'none';
+      syncUpdatesUi();
+      const activeCount = getActiveUpdatesCount();
+      if (activeCount === 0) {
         const fill = document.getElementById('overallProgressFill');
         if (fill) fill.style.width = '100%';
         const statusTxt = document.getElementById('overallStatusText');
@@ -5570,6 +5635,7 @@
       const ids = allIds.filter(id => !ignoredSet.has(id));
       if (ids.length === 0) {
         addLog('ℹ️ Нет доступных обновлений (все программы в списке исключений или обновлены).');
+        showToast('Все доступные обновления находятся в списке исключений.', 'info');
         return;
       }
       ids.forEach(id => {
@@ -5579,6 +5645,7 @@
       addLog(`⬆️ Запуск массового обновления ${ids.length} программ...`);
       window.pywebview.api.upgrade_all(ids);
     }
+    window.handleUpgradeAll = handleUpgradeAll;
 
     function handleUpgradeSelected() {
       const s = appData.strings || {};
@@ -5591,9 +5658,10 @@
         if (b2) { b2.classList.add('btn-shake'); setTimeout(() => b2.classList.remove('btn-shake'), 500); }
         return;
       }
-      const selectedWithUpdates = Array.from(selectedApps).filter(id => Boolean(availableUpdates[id]));
+      const ignoredSet = new Set(appData.ignored_updates || []);
+      const selectedWithUpdates = Array.from(selectedApps).filter(id => Boolean(availableUpdates[id]) && !ignoredSet.has(id));
       if (selectedWithUpdates.length === 0) {
-        const msg = s.no_updates_in_selection || 'Среди выбранных приложений нет доступных обновлений.';
+        const msg = s.no_updates_in_selection || 'Среди выбранных приложений нет доступных обновлений (или они в списке исключений).';
         showToast(msg, 'warning');
         return;
       }
@@ -5604,6 +5672,7 @@
       addLog(`⬆️ Запуск обновления выбранных программ (${selectedWithUpdates.length})...`);
       window.pywebview.api.upgrade_selected(selectedWithUpdates);
     }
+    window.handleUpgradeSelected = handleUpgradeSelected;
 
     async function upgradeSingle(appId) {
       const up = availableUpdates[appId];
@@ -5617,6 +5686,7 @@
         console.error('Upgrade error:', e);
       }
     }
+    window.upgradeSingle = upgradeSingle;
 
     function openExternalUrl(url) {
       if (window.pywebview && window.pywebview.api && window.pywebview.api.open_url) {
@@ -5625,6 +5695,7 @@
         window.open(url, '_blank');
       }
     }
+    window.openExternalUrl = openExternalUrl;
 
     // ==========================================
     // ZiablWinSetup Self-Updater Logic
@@ -5866,7 +5937,7 @@
       const modal = document.getElementById('noUpdateModal');
       const desc = document.getElementById('noUpdateModalDesc');
       if (desc) {
-        desc.textContent = `У вас установлена самая последняя версия ZiablWinSetup (${version || 'v1.4.14'}). Обновлений не требуется.`;
+        desc.textContent = `У вас установлена самая последняя версия ZiablWinSetup (${version || 'v1.4.15'}). Обновлений не требуется.`;
       }
       if (modal) modal.style.display = 'flex';
     }
@@ -5887,6 +5958,7 @@
         console.error('onToggleAutoCheckAppUpdates error:', err);
       }
     }
+    window.onToggleAutoCheckAppUpdates = onToggleAutoCheckAppUpdates;
 
     async function onToggleAutoCleanLeftovers(checked) {
       try {
@@ -5898,6 +5970,7 @@
         console.error('onToggleAutoCleanLeftovers error:', err);
       }
     }
+    window.onToggleAutoCleanLeftovers = onToggleAutoCleanLeftovers;
 
     async function cleanDownloadedInstallersManual() {
       const btn = document.getElementById('btnCleanInstallers');
@@ -5966,7 +6039,7 @@
     };
 
     window.onAppUpdateNotFound = function(info) {
-      const cur = (info && info.current_version) ? ('v' + info.current_version) : 'v1.4.14';
+      const cur = (info && info.current_version) ? ('v' + info.current_version) : 'v1.4.15';
       const s = appData.strings || {};
       const tpl = s.self_update_no_updates || 'У вас установлена самая последняя версия ZiablWinSetup ({version})';
       showToast(tpl.replace('{version}', cur), 'success', 3500);
@@ -6036,45 +6109,7 @@
 
   </script>
 
-  <!-- Exclusions Modal -->
-  <div id="exclusionsModal" class="modal-overlay" style="display: none;">
-    <div class="exclusions-modal-card">
-      <div class="exclusions-modal-header">
-        <h3>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          <span id="exclusionsModalTitle">Исключения из автообновлений</span>
-        </h3>
-        <button onclick="closeExclusionsModal()" style="background:none; border:none; color:#888; font-size:18px; cursor:pointer;" title="Закрыть">✕</button>
-      </div>
-      <div style="padding: 10px 20px 4px 20px; font-size: 12px; color: var(--text-muted);" id="exclusionsModalDesc">
-        Отмеченные программы будут пропускаться при поиске и предложении обновлений.
-      </div>
-      <div style="padding: 4px 20px 8px 20px; display: flex; gap: 8px;">
-        <input type="text" id="exclusionsSearchInput" placeholder="Поиск программы..." oninput="onExclusionsSearch(this.value)" style="flex: 1; height: 32px; padding: 0 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--text-main); font-size: 12px; box-sizing: border-box;">
-        <div style="display: flex; gap: 4px; background: rgba(255,255,255,0.05); padding: 2px; border-radius: var(--radius-sm);">
-          <button id="btnExclFilterAll" class="btn-browse" onclick="setExclusionsFilter('all')" style="padding: 4px 10px; font-size: 11px; background: var(--accent); color: #fff;">Все</button>
-          <button id="btnExclFilterInstalled" class="btn-browse" onclick="setExclusionsFilter('installed')" style="padding: 4px 10px; font-size: 11px; background: transparent; color: var(--text-main);">Установленные</button>
-        </div>
-      </div>
-      <div style="padding: 4px 20px 8px 20px; display: flex; gap: 8px; align-items: center; justify-content: space-between;">
-        <div style="display: flex; gap: 8px;">
-          <button class="btn-browse" onclick="selectAllExclusions()" style="padding: 5px 12px; font-size: 11px; display: inline-flex; align-items: center; gap: 5px;">
-            <span>☑️</span>
-            <span id="lblExclSelectAll">Выбрать все</span>
-          </button>
-          <button class="btn-browse" onclick="deselectAllExclusions()" style="padding: 5px 12px; font-size: 11px; display: inline-flex; align-items: center; gap: 5px;">
-            <span>⬜</span>
-            <span id="lblExclDeselectAll">Снять все</span>
-          </button>
-        </div>
-        <div id="exclusionsCountSummary" style="font-size: 11.5px; color: var(--text-dim);"></div>
-      </div>
-      <div class="exclusions-list" id="exclusionsListContainer"></div>
-      <div style="padding: 12px 20px; border-top: 1px solid #333; display: flex; justify-content: flex-end;">
-        <button class="btn-action btn-primary" id="btnExclusionsCloseBottom" onclick="closeExclusionsModal()" style="padding: 6px 16px;">Готово</button>
-      </div>
-    </div>
-  </div>
+  <!-- Toast Notification -->
 
   <!-- Toast Notification -->
   <div id="appToast" class="toast-container">
