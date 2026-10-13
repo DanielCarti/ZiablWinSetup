@@ -239,15 +239,45 @@ class AppBridge:
         return STRINGS.get(lang, STRINGS["ru"])
 
     def toggle_language(self) -> dict[str, Any]:
-        """Переключает язык между ru и en и возвращает актуальные строки и твики."""
+        """Переключает язык между ru и en и возвращает актуальные строки, категории, софт и твики."""
         new_lang = "en" if i18n.lang == "ru" else "ru"
         i18n.set_language(new_lang)
         settings = load_settings()
         settings["language"] = new_lang
         save_settings(settings)
+
+        categories_data = [
+            {
+                "id": cid,
+                "name": i18n.cat_name(cid),
+                "name_ru": CATEGORY_NAMES.get("ru", {}).get(cid, cid),
+                "name_en": CATEGORY_NAMES.get("en", {}).get(cid, cid),
+                "count": sum(1 for a in get_catalog() if a.category == cid) if cid != "all" else len(get_catalog()),
+            }
+            for cid in CATEGORIES
+        ]
+        apps_data = [
+            {
+                "id": a.id,
+                "name": a.name,
+                "description": a.get_description(new_lang),
+                "description_en": a.description_en,
+                "notes": a.get_notes(new_lang),
+                "notes_en": a.notes_en,
+                "category": a.category,
+                "recommended": a.recommended,
+                "installer_type": a.installer_type,
+                "has_silent": bool(a.silent_args),
+                "web_url": a.web_url,
+            }
+            for a in get_catalog()
+        ]
+
         return {
             "lang": new_lang,
             "strings": STRINGS.get(new_lang, STRINGS["ru"]),
+            "categories": categories_data,
+            "apps": apps_data,
             "tweaks": get_all_tweaks(new_lang),
             "metro_apps": get_all_metro_apps(new_lang),
         }

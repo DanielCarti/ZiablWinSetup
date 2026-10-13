@@ -82,6 +82,13 @@ class SystemTrayManager:
             self._window.hide()
             self._is_visible = False
 
+            # Сбрасываем неиспользуемую память при сворачивании в трей
+            try:
+                from app.gui_webview import trim_app_memory
+                trim_app_memory()
+            except Exception:
+                pass
+
             if show_notify and not self._has_notified_tray and self._icon:
                 self._has_notified_tray = True
                 try:

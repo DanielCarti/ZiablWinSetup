@@ -169,29 +169,55 @@
       pointer-events: none;
     }
 
-    .btn-lang {
-      height: 34px;
-      padding: 0 12px;
+    /* Language Toggle Segmented Pill with Rectangular Country Flags */
+    .lang-switch-group {
+      display: inline-flex;
+      align-items: center;
       background: var(--bg-card);
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-sm);
-      color: var(--text-main);
-      font-size: 12px;
-      font-weight: 500;
+      padding: 2px;
+      gap: 3px;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      white-space: nowrap;
+      user-select: none;
+      height: 34px;
+      box-sizing: border-box;
+      transition: border-color 0.15s, background-color 0.15s;
       flex-shrink: 0;
-      min-width: 88px;
-      transition: background 0.15s, border-color 0.15s;
     }
-
-    .btn-lang:hover {
-      background: var(--bg-card-hover);
+    .lang-switch-group:hover {
       border-color: var(--border-light);
+      background: var(--bg-card-hover);
+    }
+    .lang-flag-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 0 8px;
+      height: 28px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      opacity: 0.55;
+      transition: all 0.15s ease;
+      box-sizing: border-box;
+    }
+    .lang-flag-pill.active {
+      opacity: 1;
+      color: #fff;
+      background: rgba(56, 189, 248, 0.16);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+    }
+    .rect-flag {
+      display: block;
+      border-radius: 2px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+      flex-shrink: 0;
+    }
+    .flag-code {
+      letter-spacing: 0.5px;
     }
 
     /* Main Container */
@@ -456,6 +482,77 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+
+    /* Question Mark Help Tooltip */
+    .app-help-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 17px;
+      height: 17px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: var(--text-dim);
+      cursor: help;
+      position: relative;
+      flex-shrink: 0;
+      transition: all 0.15s ease;
+      vertical-align: middle;
+      margin-left: 2px;
+    }
+    .app-help-icon:hover {
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.16);
+      border-color: rgba(56, 189, 248, 0.45);
+      transform: scale(1.12);
+      box-shadow: 0 0 8px rgba(56, 189, 248, 0.35);
+    }
+    .app-help-icon::after {
+      content: attr(data-desc);
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%) translateY(4px);
+      background: #181d26;
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.75);
+      color: #f1f5f9;
+      font-size: 12px;
+      font-weight: 400;
+      line-height: 1.45;
+      padding: 7px 11px;
+      border-radius: 6px;
+      white-space: normal;
+      width: max-content;
+      max-width: 320px;
+      pointer-events: none;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+      z-index: 1000;
+    }
+    .app-help-icon::before {
+      content: '';
+      position: absolute;
+      bottom: calc(100% + 2px);
+      left: 50%;
+      transform: translateX(-50%) translateY(4px);
+      border-width: 6px 5px 0 5px;
+      border-style: solid;
+      border-color: rgba(56, 189, 248, 0.4) transparent transparent transparent;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+      z-index: 1001;
+      pointer-events: none;
+    }
+    .app-help-icon:hover::after,
+    .app-help-icon:hover::before {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(-50%) translateY(0);
     }
 
     /* Category section dividers in All view */
@@ -2068,10 +2165,31 @@
         <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
         <input type="text" id="searchInput" placeholder="Поиск приложения..." oninput="onSearch()">
       </div>
-      <button class="btn-lang" onclick="toggleLanguage()" title="Switch Language / Сменить язык">
-        <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-        <span id="langBtnText">RU / EN</span>
-      </button>
+      <div class="lang-switch-group" onclick="toggleLanguage()" title="Сменить язык / Switch Language" role="button" tabindex="0">
+        <div class="lang-flag-pill active" id="flagPillRu" title="Русский">
+          <svg class="rect-flag" viewBox="0 0 640 480" width="19" height="13">
+            <rect width="640" height="480" rx="36" fill="#ffffff"/>
+            <path fill="#0039a6" d="M0 160h640v320H0z"/>
+            <path fill="#d52b1e" d="M0 320h640v160H0z"/>
+            <rect width="640" height="480" rx="36" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="20"/>
+          </svg>
+          <span class="flag-code">RU</span>
+        </div>
+        <div class="lang-flag-pill" id="flagPillEn" title="English">
+          <svg class="rect-flag" viewBox="0 0 60 30" width="19" height="13">
+            <clipPath id="flagUkClip"><rect width="60" height="30" rx="3"/></clipPath>
+            <g clip-path="url(#flagUkClip)">
+              <path d="M0 0h60v30H0z" fill="#012169"/>
+              <path d="M0 0L60 30M60 0L0 30" stroke="#fff" stroke-width="6"/>
+              <path d="M0 0L60 30M60 0L0 30" stroke="#C8102E" stroke-width="3.6"/>
+              <path d="M30 0v30M0 15h60" stroke="#fff" stroke-width="10"/>
+              <path d="M30 0v30M0 15h60" stroke="#C8102E" stroke-width="6"/>
+            </g>
+            <rect width="60" height="30" rx="3" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
+          </svg>
+          <span class="flag-code">EN</span>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -2287,7 +2405,7 @@
       </div>
       <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-main); cursor: pointer; user-select: none; margin: 8px 0 16px 0;">
         <input type="checkbox" id="leftoversRememberChoice" style="width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer;">
-        <span>Запомнить выбор (всегда очищать остатки автоматически)</span>
+        <span id="lblLeftoversRemember">Запомнить выбор (всегда очищать остатки автоматически)</span>
       </label>
       <div class="modal-actions">
         <button class="modal-btn modal-btn-cancel" id="leftoversSkipBtn" onclick="handleLeftoversDecision(false)">Пропустить</button>
@@ -2302,32 +2420,31 @@
       <div class="modal-header-area">
         <div class="modal-icon-wrap" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;">🚀</div>
         <div style="flex: 1;">
-          <div class="modal-title">Добавить программу в автозапуск</div>
-          <div class="modal-desc">Программа будет автоматически запускаться при старте Windows.</div>
+          <div class="modal-title" id="addStartupModalTitle">Добавить программу в автозапуск</div>
+          <div class="modal-desc" id="addStartupModalDesc">Программа будет автоматически запускаться при старте Windows.</div>
         </div>
       </div>
       <div style="display: flex; flex-direction: column; gap: 14px; margin: 18px 0;">
         <div>
-          <label style="font-size: 12px; font-weight: 500; color: var(--text-muted); display: block; margin-bottom: 6px;">Название программы:</label>
+          <label style="font-size: 12px; font-weight: 500; color: var(--text-muted); display: block; margin-bottom: 6px;" id="lblAddStartupName">Название программы:</label>
           <input type="text" id="addStartupName" placeholder="Например: Моя программа" style="width: 100%; height: 36px; padding: 0 12px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--text-main); font-size: 13px; box-sizing: border-box;">
         </div>
         <div>
-          <label style="font-size: 12px; font-weight: 500; color: var(--text-muted); display: block; margin-bottom: 6px;">Исполняемый файл (.exe / .lnk):</label>
+          <label style="font-size: 12px; font-weight: 500; color: var(--text-muted); display: block; margin-bottom: 6px;" id="lblAddStartupPath">Исполняемый файл (.exe / .lnk):</label>
           <div style="display: flex; gap: 8px;">
             <input type="text" id="addStartupPath" placeholder="C:\Program Files\App\app.exe" style="flex: 1; height: 36px; padding: 0 12px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--text-main); font-size: 13px; box-sizing: border-box;">
-            <button class="btn-action btn-outline" onclick="browseStartupExe()" style="height: 36px; padding: 0 12px; font-size: 12px; white-space: nowrap;">📂 Обзор...</button>
+            <button class="btn-action btn-outline" id="btnBrowseStartup" onclick="browseStartupExe()" style="height: 36px; padding: 0 12px; font-size: 12px; white-space: nowrap;">📂 Обзор...</button>
           </div>
         </div>
         <div>
-          <label style="font-size: 12px; font-weight: 500; color: var(--text-muted); display: block; margin-bottom: 6px;">Параметры запуска (необязательно):</label>
+          <label style="font-size: 12px; font-weight: 500; color: var(--text-muted); display: block; margin-bottom: 6px;" id="lblAddStartupArgs">Параметры запуска (необязательно):</label>
           <input type="text" id="addStartupArgs" placeholder="Например: --minimized или -silent" style="width: 100%; height: 36px; padding: 0 12px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--text-main); font-size: 13px; box-sizing: border-box;">
         </div>
         <div id="addStartupError" style="font-size: 12px; color: #ef4444; display: none;"></div>
       </div>
       <div class="modal-actions" style="justify-content: flex-end; gap: 10px;">
-        <button class="modal-btn modal-btn-cancel" onclick="closeAddStartupModal()">Отмена</button>
-        <button class="modal-btn modal-btn-primary" onclick="submitAddStartupItem()" style="background: var(--accent); color: #fff;">Добавить</button>
-      </div>
+        <button class="modal-btn modal-btn-cancel" id="btnCancelAddStartup" onclick="closeAddStartupModal()">Отмена</button>
+        <button class="modal-btn modal-btn-primary" id="btnSubmitAddStartup" onclick="submitAddStartupItem()" style="background: var(--accent); color: #fff;">Добавить</button>
     </div>
   </div>
 
@@ -2521,6 +2638,30 @@
       box.scrollTop = box.scrollHeight;
     }
 
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function updateLangPills() {
+      const pillRu = document.getElementById('flagPillRu');
+      const pillEn = document.getElementById('flagPillEn');
+      if (pillRu && pillEn) {
+        if (appData.lang === 'ru') {
+          pillRu.classList.add('active');
+          pillEn.classList.remove('active');
+        } else {
+          pillRu.classList.remove('active');
+          pillEn.classList.add('active');
+        }
+      }
+    }
+
     function initAppDefaults() {
       if (!appData || !appData.apps) return;
       appData.apps.forEach(app => {
@@ -2528,6 +2669,7 @@
         if (!appStatuses[app.id]) appStatuses[app.id] = { status: 'idle', progress: 0, detail: '' };
       });
       initUiScale();
+      updateLangPills();
       applyTranslations();
       renderCategories();
       renderCards();
@@ -2766,6 +2908,84 @@
       const chipTsk = document.getElementById('chipStartupTask');
       if (chipTsk && chipTsk.childNodes[0]) chipTsk.childNodes[0].nodeValue = (s.startup_tab_scheduler || 'Планировщик') + ' ';
 
+      // Startup add & sort & chips
+      const btnAddStText = document.getElementById('btnAddStartupItemText');
+      if (btnAddStText) btnAddStText.textContent = s.startup_add_btn || '+ Добавить программу';
+      const sortBtn = document.getElementById('btnStartupSort');
+      if (sortBtn) {
+        const sortSpan = sortBtn.querySelector('span');
+        if (sortSpan) sortSpan.textContent = s.startup_sort_label || '↕️ Сортировка:';
+      }
+      const lblSort = document.getElementById('lblStartupSort');
+      if (lblSort) {
+        lblSort.textContent = (typeof startupSortMode !== 'undefined' && startupSortMode === 'enabled_first') ? (s.startup_sort_enabled_first || 'Сначала вкл.') : (s.cat_all || 'Все');
+      }
+
+      const setChipText = (chipId, label, countId) => {
+        const chip = document.getElementById(chipId);
+        const countSpan = document.getElementById(countId);
+        if (chip && countSpan) {
+          const count = countSpan.textContent;
+          chip.innerHTML = `${label} (<span id="${countId}">${count}</span>)`;
+        }
+      };
+      setChipText('chipStartupAll', s.startup_filter_all || 'Все', 'countStartupAll');
+      setChipText('chipStartupEnabled', s.startup_filter_enabled || '🟢 Включено', 'countStartupEnabled');
+      setChipText('chipStartupDisabled', s.startup_filter_disabled || '⚪ Отключено', 'countStartupDisabled');
+      setChipText('chipStartupRegistry', s.startup_tab_registry || 'Реестр', 'countStartupRegistry');
+      setChipText('chipStartupFolder', s.startup_tab_folders || 'Папка', 'countStartupFolder');
+      setChipText('chipStartupTask', s.startup_tab_scheduler || 'Планировщик', 'countStartupTask');
+
+      // Add Startup Item Modal
+      const modalStTitle = document.getElementById('addStartupModalTitle');
+      if (modalStTitle) modalStTitle.textContent = s.startup_add_modal_title || 'Добавить программу в автозапуск';
+      const modalStDesc = document.getElementById('addStartupModalDesc');
+      if (modalStDesc) modalStDesc.textContent = s.startup_add_modal_desc || 'Программа будет автоматически запускаться при старте Windows.';
+      const lblStName = document.getElementById('lblAddStartupName');
+      if (lblStName) lblStName.textContent = s.startup_add_name_label || 'Название программы:';
+      const lblStPath = document.getElementById('lblAddStartupPath');
+      if (lblStPath) lblStPath.textContent = s.startup_add_path_label || 'Исполняемый файл (.exe / .lnk):';
+      const lblStArgs = document.getElementById('lblAddStartupArgs');
+      if (lblStArgs) lblStArgs.textContent = s.startup_add_args_label || 'Параметры запуска (необязательно):';
+      const btnStCancel = document.getElementById('btnCancelAddStartup');
+      if (btnStCancel) btnStCancel.textContent = s.btn_cancel || 'Отмена';
+      const btnStSubmit = document.getElementById('btnSubmitAddStartup');
+      if (btnStSubmit) btnStSubmit.textContent = s.startup_add_btn_confirm || 'Добавить';
+      const btnStBrowse = document.getElementById('btnBrowseStartup');
+      if (btnStBrowse) btnStBrowse.textContent = `📂 ${s.browse || 'Обзор...'}`;
+
+      // Leftovers Modal (Uninstall Tool)
+      const lTitle = document.getElementById('leftoversModalTitle');
+      if (lTitle) lTitle.textContent = s.leftovers_modal_title || 'Очистка остатков (Uninstall Tool)';
+      const lDesc = document.getElementById('leftoversModalDesc');
+      if (lDesc) lDesc.textContent = s.leftovers_modal_desc || 'Стандартный деинсталлятор завершил работу. Обнаружены следующие оставшиеся элементы:';
+      const lRem = document.getElementById('lblLeftoversRemember');
+      if (lRem) lRem.textContent = s.leftovers_remember_choice || 'Запомнить выбор (всегда очищать остатки автоматически)';
+      const lSkip = document.getElementById('leftoversSkipBtn');
+      if (lSkip) lSkip.textContent = s.leftovers_btn_skip || 'Пропустить';
+      const lClean = document.getElementById('leftoversCleanBtn');
+      if (lClean) lClean.textContent = s.leftovers_btn_clean || 'Удалить остатки';
+
+      // Settings modal additions
+      const lblAutoLeftovers = document.getElementById('lblAutoCleanLeftovers');
+      if (lblAutoLeftovers) lblAutoLeftovers.textContent = s.settings_auto_clean_leftovers || 'Автоочистка остатков после удаления';
+      const btnPathExeDir = document.getElementById('btnPathExeDir');
+      if (btnPathExeDir) btnPathExeDir.textContent = s.settings_path_exe_dir || '📁 Рядом';
+      const setDoneBtn = document.getElementById('btnSettingsDone');
+      if (setDoneBtn) setDoneBtn.textContent = s.btn_done || 'Готово';
+
+      // Exclusions Modal
+      const exclTitle = document.getElementById('exclusionsModalTitle');
+      if (exclTitle) exclTitle.textContent = s.exclusions_modal_title || 'Исключения из автообновлений';
+      const exclDesc = document.getElementById('exclusionsModalDesc');
+      if (exclDesc) exclDesc.textContent = s.exclusions_modal_desc || 'Отмеченные программы будут пропускаться при поиске и предложении обновлений.';
+      const exclDoneBtn = document.getElementById('btnExclusionsCloseBottom');
+      if (exclDoneBtn) exclDoneBtn.textContent = s.btn_done || 'Готово';
+
+      // Tweaks subtitle
+      const twSub = document.getElementById('tweaksSubtitle');
+      if (twSub) twSub.textContent = s.tweaks_subtitle || 'Полезные системные настройки Windows и оптимизации программ в один клик.';
+
       const lblTray = document.getElementById('lblMinimizeToTray');
       if (lblTray) lblTray.textContent = s.settings_minimize_to_tray || 'В трей при закрытии';
       const lblAuto = document.getElementById('lblAutostartApp');
@@ -2801,6 +3021,8 @@
           if (res) {
             appData.lang = res.lang || (appData.lang === 'ru' ? 'en' : 'ru');
             if (res.strings) appData.strings = res.strings;
+            if (res.categories) appData.categories = res.categories;
+            if (res.apps) appData.apps = res.apps;
             if (res.tweaks) appData.tweaks = res.tweaks;
             if (res.metro_apps) appData.metro_apps = res.metro_apps;
           }
@@ -2810,8 +3032,7 @@
             appData.strings = appData.strings_all[appData.lang];
           }
         }
-        const langText = document.getElementById('langBtnText');
-        if (langText) langText.textContent = appData.lang === 'ru' ? 'RU / EN' : 'EN / RU';
+        updateLangPills();
         applyTranslations();
         renderCategories();
         renderCards();
@@ -3290,7 +3511,14 @@
         info.className = 'card-info';
         info.innerHTML = `
           <div class="card-title">
-            ${app.name}
+            <span class="app-title-text">${app.name}</span>
+            <span class="app-help-icon" data-desc="${escapeHtml(desc || '')}" title="${escapeHtml(desc || '')}" onclick="event.stopPropagation();">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+              </svg>
+            </span>
             ${isInstalled ? `<span class="badge-installed" title="${instInfo.name || ''}">✓ ${s.status_installed || 'Установлено'}${verStr}</span>` : ''}
             ${availableUpdates[app.id] ? `<span class="badge-update" title="Доступно обновление">⬆️ ${availableUpdates[app.id].available_version}</span>` : ''}
             ${app.web_url ? `<a href="javascript:void(0)" onclick="openExternalUrl('${app.web_url}')" class="link-1progs-badge" title="Открыть страницу на 1progs.ru" style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #38bdf8; text-decoration: none; padding: 2px 7px; border-radius: 4px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.28); margin-left: 6px; cursor: pointer; font-weight: 500;">🌐 1progs.ru ↗</a>` : ''}
@@ -3649,7 +3877,7 @@
         } else {
           const selectedList = appData.apps.filter(a => selectedApps.has(a.id));
           preview.innerHTML = selectedList.map(a => `
-            <div class="selected-icon-item" title="${a.name} (нажмите, чтобы снять)" onclick="toggleSelect('${a.id}', false); renderCards();" style="cursor: pointer; width: 26px; height: 26px; border-radius: 6px; background: rgba(255,255,255,0.08); padding: 3px; display: inline-flex; align-items: center; justify-content: center; transition: all 0.15s; flex-shrink: 0; box-sizing: border-box;" onmouseover="this.style.transform='scale(1.15)'; this.style.background='rgba(239,68,68,0.25)';" onmouseout="this.style.transform='none'; this.style.background='rgba(255,255,255,0.08)';">
+            <div class="selected-icon-item" title="${a.name} (${appData.lang === 'ru' ? 'нажмите, чтобы снять' : 'click to deselect'})" onclick="toggleSelect('${a.id}', false); renderCards();" style="cursor: pointer; width: 26px; height: 26px; border-radius: 6px; background: rgba(255,255,255,0.08); padding: 3px; display: inline-flex; align-items: center; justify-content: center; transition: all 0.15s; flex-shrink: 0; box-sizing: border-box;" onmouseover="this.style.transform='scale(1.15)'; this.style.background='rgba(239,68,68,0.25)';" onmouseout="this.style.transform='none'; this.style.background='rgba(255,255,255,0.08)';">
               <img src="icons/${a.id}.svg" onerror="this.src='icons/default.svg'" alt="${a.name}" style="width: 20px; height: 20px; object-fit: contain;">
             </div>
           `).join('');
@@ -4165,7 +4393,16 @@
               <span style="display:none;">${app.icon || '📦'}</span>
             </div>
             <div class="metro-tile-info">
-              <div class="metro-tile-title">${app.name}</div>
+              <div class="metro-tile-title">
+                <span>${app.name}</span>
+                <span class="app-help-icon" data-desc="${escapeHtml(app.description || '')}" title="${escapeHtml(app.description || '')}" onclick="event.stopPropagation();">
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                  </svg>
+                </span>
+              </div>
               <div class="metro-tile-desc" title="${app.description}">${app.description}</div>
             </div>
           </div>
@@ -5244,7 +5481,7 @@
           <div style="display: flex; gap: 6px; margin-top: 4px;">
             <button class="btn-browse" id="btnBrowse" onclick="browseFolder()" style="flex: 1; padding: 5px 8px; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="Выбрать папку вручную">Обзор...</button>
             <button class="btn-browse" onclick="setPathDesktop()" style="flex: 1; padding: 5px 8px; font-size: 11px; white-space: nowrap;" title="Распаковывать на Рабочий стол">🖥️ Desktop</button>
-            <button class="btn-browse" onclick="setPathExeDir()" style="flex: 1; padding: 5px 8px; font-size: 11px; white-space: nowrap;" title="Распаковывать в папку рядом с программой">📁 Рядом</button>
+            <button class="btn-browse" id="btnPathExeDir" onclick="setPathExeDir()" style="flex: 1; padding: 5px 8px; font-size: 11px; white-space: nowrap;" title="Распаковывать в папку рядом с программой">📁 Рядом</button>
           </div>
         </div>
 
@@ -5293,7 +5530,7 @@
         <div style="font-size: 11px; color: var(--text-dim); text-align: center; opacity: 0.8; margin-top: 4px;" id="sidebarAppVerDisplay">ZiablWinSetup</div>
       </div>
       <div style="padding: 12px 20px; border-top: 1px solid #333; display: flex; justify-content: flex-end;">
-        <button class="btn-action btn-primary" onclick="closeSettingsModal()" style="padding: 6px 18px;">Готово</button>
+        <button class="btn-action btn-primary" id="btnSettingsDone" onclick="closeSettingsModal()" style="padding: 6px 18px;">Готово</button>
       </div>
     </div>
   </div>
@@ -5323,7 +5560,7 @@
       </div>
       <div class="exclusions-list" id="exclusionsListContainer"></div>
       <div style="padding: 12px 20px; border-top: 1px solid #333; display: flex; justify-content: flex-end;">
-        <button class="btn-action btn-primary" onclick="closeExclusionsModal()" style="padding: 6px 16px;">Готово</button>
+        <button class="btn-action btn-primary" id="btnExclusionsCloseBottom" onclick="closeExclusionsModal()" style="padding: 6px 16px;">Готово</button>
       </div>
     </div>
   </div>

@@ -18,6 +18,88 @@ from app.tray import SystemTrayManager
 logger = logging.getLogger("WinSetup")
 
 
+import ctypes
+from ctypes import wintypes
+import threading
+import time
+
+def trim_app_memory():
+    """Освобождает Working Set физической памяти для Python и всех дочерних процессов WebView2."""
+    try:
+        import gc
+        gc.collect()
+    except Exception:
+        pass
+
+    if sys.platform != "win32":
+        return
+
+    try:
+        class PROCESSENTRY32(ctypes.Structure):
+            _fields_ = [
+                ("dwSize", wintypes.DWORD),
+                ("cntUsage", wintypes.DWORD),
+                ("th32ProcessID", wintypes.DWORD),
+                ("th32DefaultHeapID", ctypes.c_size_t),
+                ("th32ModuleID", wintypes.DWORD),
+                ("cntThreads", wintypes.DWORD),
+                ("th32ParentProcessID", wintypes.DWORD),
+                ("pcPriClassBase", wintypes.LONG),
+                ("dwFlags", wintypes.DWORD),
+                ("szExeFile", ctypes.c_char * 260),
+            ]
+
+        k32 = ctypes.windll.kernel32
+        psapi = ctypes.windll.psapi
+
+        # Очищаем память текущего процесса (Python)
+        h_cur = k32.GetCurrentProcess()
+        psapi.EmptyWorkingSet(h_cur)
+
+        # Находим всех потомков текущего процесса (Edge WebView2)
+        current_pid = os.getpid()
+        snap = k32.CreateToolhelp32Snapshot(0x00000002, 0)
+        entry = PROCESSENTRY32()
+        entry.dwSize = ctypes.sizeof(PROCESSENTRY32)
+        parents = {}
+        if k32.Process32First(snap, ctypes.byref(entry)):
+            while True:
+                parents[entry.th32ProcessID] = entry.th32ParentProcessID
+                if not k32.Process32Next(snap, ctypes.byref(entry)):
+                    break
+        k32.CloseHandle(snap)
+
+        descendants = []
+        to_visit = [current_pid]
+        while to_visit:
+            curr = to_visit.pop(0)
+            for pid, ppid in parents.items():
+                if ppid == curr and pid not in descendants:
+                    descendants.append(pid)
+                    to_visit.append(pid)
+
+        # Очищаем Working Set всех дочерних процессов WebView2
+        for cpid in descendants:
+            h = k32.OpenProcess(0x1F0FFF, False, cpid)
+            if h:
+                psapi.EmptyWorkingSet(h)
+                k32.CloseHandle(h)
+    except Exception as e:
+        logger.debug(f"trim_app_memory error: {e}")
+
+
+def _start_memory_optimizer():
+    """Запускает периодическую очистку рабочей памяти приложения."""
+    def worker():
+        time.sleep(5)  # Ожидаем завершения начального рендеринга
+        trim_app_memory()
+        while True:
+            time.sleep(60)
+            trim_app_memory()
+    t = threading.Thread(target=worker, daemon=True)
+    t.start()
+
+
 def get_ui_path() -> Path:
     """Определяет путь к файлу index.html (работает как в исходниках, так и внутри PyInstaller bundle)."""
     if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
@@ -43,12 +125,15 @@ def run_app(start_in_tray: bool = False):
     html_path = get_ui_path()
     logger.info(f"Loading UI from: {html_path} (start_in_tray={start_in_tray})")
 
-    # Флаги Chromium для Edge WebView2: исключаем зависания при ресайзе/разворачивании окна
+    # Флаги Chromium для Edge WebView2: исключаем избыточное потребление RAM GPU-процессом
     os.environ["WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS"] = (
         "--disable-features=CalculateNativeWinOcclusion,ElasticOverscroll "
-        "--disable-backgrounding-occluded-windows "
-        "--disable-renderer-backgrounding "
-        "--disable-gpu-process-crash-limit"
+        "--disable-gpu-rasterization "
+        "--disable-gpu-memory-buffer-video-frames "
+        "--renderer-process-limit=1 "
+        "--enable-low-end-device-mode "
+        "--js-flags=--max-old-space-size=128 "
+        "--disable-backgrounding-occluded-windows=false"
     )
 
     # Разрешаем прямую загрузку файлов без запуска локального HTTP-сервера Bottle
@@ -131,6 +216,9 @@ def run_app(start_in_tray: bool = False):
 
     window.events.closing += on_closing
     window.events.closed += on_closed
+
+    # Запуск фонового сборщика памяти
+    _start_memory_optimizer()
 
     # Запуск с движком EdgeChromium (DirectX GPU) с сохраненным кэшем
     try:
