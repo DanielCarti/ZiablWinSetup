@@ -48,29 +48,16 @@ class PROCESSENTRY32(ctypes.Structure):
 
 
 def force_foreground_window(hwnd: int):
-    """Надежно выводит окно на передний план в Windows с обходом ограничений фокуса."""
+    """Надежно выводит окно на передний план в Windows."""
     if not hwnd:
         return
     try:
         user32 = ctypes.windll.user32
         user32.ShowWindow(hwnd, 9)  # SW_RESTORE
-        fore_hwnd = user32.GetForegroundWindow()
-        if fore_hwnd != hwnd:
-            fore_tid = user32.GetWindowThreadProcessId(fore_hwnd, None)
-            curr_tid = ctypes.windll.kernel32.GetCurrentThreadId()
-            if fore_tid != curr_tid:
-                user32.AttachThreadInput(curr_tid, fore_tid, True)
-                user32.SetForegroundWindow(hwnd)
-                user32.AttachThreadInput(curr_tid, fore_tid, False)
-            else:
-                user32.SetForegroundWindow(hwnd)
+        user32.SetForegroundWindow(hwnd)
         user32.BringWindowToTop(hwnd)
     except Exception:
-        try:
-            ctypes.windll.user32.ShowWindow(hwnd, 9)
-            ctypes.windll.user32.SetForegroundWindow(hwnd)
-        except Exception:
-            pass
+        pass
 
 
 def find_existing_app_window() -> int | None:

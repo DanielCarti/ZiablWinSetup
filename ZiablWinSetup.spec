@@ -1,7 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 from PyInstaller.utils.hooks import collect_all
 
-datas = [('app', 'app'), ('assets', 'assets')]
+datas = [('app/ui', 'app/ui'), ('assets', 'assets')]
 binaries = []
 hiddenimports = []
 
@@ -66,5 +66,6 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    version='file_version_info.txt',
     icon=['assets/icon.ico'],
 )
