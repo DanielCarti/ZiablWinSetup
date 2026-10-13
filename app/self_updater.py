@@ -64,6 +64,150 @@ def cleanup_old_files():
         logger.debug(f"Ошибка при очистке старых файлов обновления: {e}")
 
 
+def split_outside_parens(s: str) -> list[str]:
+    """Разбивает строку по запятым или точкам с запятой, игнорируя символы внутри скобок (..)."""
+    parts: list[str] = []
+    current: list[str] = []
+    depth = 0
+    for char in s:
+        if char == "(":
+            depth += 1
+            current.append(char)
+        elif char == ")":
+            if depth > 0:
+                depth -= 1
+            current.append(char)
+        elif char in (",", ";") and depth == 0:
+            part = "".join(current).strip()
+            if part:
+                parts.append(part)
+            current = []
+        else:
+            current.append(char)
+    part = "".join(current).strip()
+    if part:
+        parts.append(part)
+    return parts
+
+
+def parse_commit_to_bullets(msg: str) -> list[str]:
+    """
+    Преобразует текст коммита Git в форматированные пункты списка (bullets).
+    Распознает 'v1.x.x: item1, item2', 'feat: ...', 'fix: ...', сохраняя списки и описания.
+    """
+    lines = [line.strip() for line in msg.strip().splitlines() if line.strip()]
+    if not lines:
+        return []
+
+    first_line = lines[0]
+    bullets: list[str] = []
+
+    # Проверяем шаблон вида 'v1.4.11: desc' или 'feat(module): desc'
+    m = re.match(r"^(?:v\d+\.\d+\.\d+|feat|fix|release|chore|refactor)(?:\([^)]+\))?:\s*(.+)$", first_line, re.IGNORECASE)
+    if m:
+        content = m.group(1).strip()
+        raw_items = split_outside_parens(content)
+        if len(raw_items) > 1:
+            for item in raw_items:
+                clean_item = re.sub(r"^(?:and|и)\s+", "", item, flags=re.IGNORECASE).strip()
+                if clean_item:
+                    clean_item = clean_item[0].upper() + clean_item[1:]
+                    bullets.append(f"• {clean_item}")
+        else:
+            bullets.append(f"• {content}")
+    else:
+        bullets.append(f"• {first_line}")
+
+    # Добавляем остальные строки описания коммита, если они есть
+    for line in lines[1:]:
+        if line.startswith(("-", "*", "•")):
+            bullets.append(f"  {line}")
+        else:
+            bullets.append(f"  • {line}")
+
+    return bullets
+
+
+def fetch_git_changelog(current_version: str, target_tag: str, release_notes: str = "") -> str:
+    """
+    Подтягивает реальные изменения (коммиты) из GitHub API для отображения в диалоге обновления.
+    Если в release_notes уже есть подробный текст (не стандартная заглушка Full Changelog), использует его.
+    Иначе запрашивает compare API (разницу между текущей версией и новой) или список коммитов релиза.
+    """
+    # 1. Если в GitHub Release уже написан подробный человеческий текст (не просто ссылка Full Changelog)
+    cleaned_notes = re.sub(r"\*?\*?Full Changelog\*?\*?:?\s*https?://\S+", "", release_notes or "", flags=re.IGNORECASE).strip()
+    if len(cleaned_notes) > 25 and not cleaned_notes.startswith("http"):
+        return cleaned_notes
+
+    base_tag = current_version if current_version.startswith("v") else f"v{current_version}"
+    head_tag = target_tag if target_tag.startswith("v") else f"v{target_tag}"
+
+    headers = {
+        "User-Agent": f"ZiablWinSetup/{current_version}",
+        "Accept": "application/vnd.github.v3+json",
+    }
+
+    commits: list[dict[str, Any]] = []
+
+    # 2. Если версии отличаются, пытаемся запросить Compare API между установленной версией и новой
+    if base_tag != head_tag:
+        try:
+            compare_url = f"https://api.github.com/repos/{GITHUB_REPO}/compare/{base_tag}...{head_tag}"
+            logger.debug(f"Запрос различий между версиями: {compare_url}")
+            req = urllib.request.Request(compare_url, headers=headers)
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                commits = data.get("commits", [])
+        except Exception as e:
+            logger.debug(f"Compare API ({base_tag}...{head_tag}) недоступен: {e}")
+
+    # 3. Если Compare API не вернул коммиты (или тег не найден / версии совпадают), запрашиваем коммиты релиза
+    if not commits:
+        try:
+            commits_url = f"https://api.github.com/repos/{GITHUB_REPO}/commits?sha={head_tag}&per_page=5"
+            logger.debug(f"Запрос коммитов релиза: {commits_url}")
+            req = urllib.request.Request(commits_url, headers=headers)
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                commits = json.loads(resp.read().decode("utf-8"))
+        except Exception as e:
+            logger.debug(f"Запрос коммитов релиза ({head_tag}) завершился с ошибкой: {e}")
+
+    # 4. Если коммиты не удалось получить ни одним способом, отдаем очищенные заметки или понятное описание
+    if not commits:
+        return cleaned_notes or (
+            f"Вышла новая версия {head_tag}.\n"
+            "• Обновление системных компонентов и каталога программ\n"
+            "• Улучшение стабильности и оптимизация работы"
+        )
+
+    # 5. Разворачиваем список коммитов, чтобы самые свежие изменения были сверху
+    if base_tag != head_tag:
+        commits = list(reversed(commits))
+
+    # 6. Формируем красивый структурированный список изменений
+    out: list[str] = []
+    for c in commits:
+        msg = c.get("commit", {}).get("message", "").strip()
+        if not msg:
+            continue
+        first_line = msg.splitlines()[0]
+        v_match = re.search(r"(v\d+\.\d+\.\d+)", first_line)
+        header = f"✨ {v_match.group(1)}" if v_match else ""
+
+        bullets = parse_commit_to_bullets(msg)
+        if bullets:
+            if header and (len(commits) > 1 or not bullets[0].startswith("•")):
+                out.append(header)
+            out.extend(bullets)
+            if len(commits) > 1:
+                out.append("")
+
+    formatted = "\n".join(out).strip()
+    return formatted if formatted else (
+        f"✨ {head_tag}:\n• Обновление компонентов приложения и повышение стабильности."
+    )
+
+
 def check_for_app_update(current_version: str = __version__) -> dict[str, Any]:
     """
     Проверяет наличие новой версии ZiablWinSetup в GitHub Releases.
@@ -87,9 +231,16 @@ def check_for_app_update(current_version: str = __version__) -> dict[str, Any]:
         tag_name = data.get("tag_name", "").strip()
         latest_ver = tag_name.lstrip("vV").strip()
         release_title = data.get("name") or f"ZiablWinSetup v{latest_ver}"
-        release_notes = data.get("body", "").strip()
+        raw_release_notes = data.get("body", "").strip()
         published_at = data.get("published_at", "")
         html_url = data.get("html_url") or f"https://github.com/{GITHUB_REPO}/releases/latest"
+
+        # Получаем реальные изменения прямо из коммитов Git / GitHub
+        release_notes = fetch_git_changelog(
+            current_version=current_version,
+            target_tag=tag_name or latest_ver,
+            release_notes=raw_release_notes,
+        )
 
         # Ищем исполняемый файл ZiablWinSetup.exe среди ассетов
         assets = data.get("assets", [])
@@ -119,6 +270,7 @@ def check_for_app_update(current_version: str = __version__) -> dict[str, Any]:
             "tag_name": tag_name,
             "release_title": release_title,
             "release_notes": release_notes,
+            "body": release_notes,
             "download_url": download_url,
             "file_size": file_size,
             "published_at": published_at,
@@ -138,6 +290,11 @@ def check_for_app_update(current_version: str = __version__) -> dict[str, Any]:
                 latest_ver = tag_name.lstrip("vV").strip()
                 download_url = f"https://github.com/{GITHUB_REPO}/releases/download/{tag_name}/ZiablWinSetup.exe"
                 has_update = is_newer_version(latest_ver, current_version)
+                release_notes = fetch_git_changelog(
+                    current_version=current_version,
+                    target_tag=tag_name,
+                    release_notes="",
+                )
                 logger.info(f"Веб-проверка: версия v{latest_ver}, обновление доступно: {has_update}")
                 return {
                     "success": True,
@@ -146,7 +303,8 @@ def check_for_app_update(current_version: str = __version__) -> dict[str, Any]:
                     "latest_version": latest_ver,
                     "tag_name": tag_name,
                     "release_title": f"ZiablWinSetup v{latest_ver}",
-                    "release_notes": "Обновление стабильности и компонентов программы.",
+                    "release_notes": release_notes,
+                    "body": release_notes,
                     "download_url": download_url,
                     "file_size": 0,
                     "published_at": "",

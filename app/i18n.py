@@ -196,6 +196,7 @@ STRINGS: dict[Language, dict[str, str]] = {
         "self_update_restarting": "Обновление готово! Перезапуск приложения...",
         "self_update_no_updates": "У вас установлена самая последняя версия ZiablWinSetup ({version})",
         "self_update_checking": "Проверка обновлений ZiablWinSetup...",
+        "self_update_notes_title": "Что нового:",
         "settings_auto_check_app_updates": "Автопоиск обновлений программы при запуске",
         "btn_check_app_update": "Проверить обновление ZiablWinSetup",
 
@@ -419,6 +420,7 @@ STRINGS: dict[Language, dict[str, str]] = {
         "self_update_restarting": "Update ready! Restarting application...",
         "self_update_no_updates": "You are using the latest version of ZiablWinSetup ({version})",
         "self_update_checking": "Checking for ZiablWinSetup updates...",
+        "self_update_notes_title": "What's new:",
         "settings_auto_check_app_updates": "Auto-check for app updates on startup",
         "btn_check_app_update": "Check for ZiablWinSetup Update",
 

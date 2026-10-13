@@ -1877,16 +1877,15 @@
       margin-bottom: 6px;
     }
     .self-update-notes-body {
-      background: rgba(0, 0, 0, 0.3);
-      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 8px;
       padding: 12px 14px;
-      max-height: 150px;
+      max-height: 200px;
       overflow-y: auto;
       font-size: 12px;
       line-height: 1.5;
       color: #d1d5db;
-      white-space: pre-wrap;
       word-break: break-word;
     }
     .self-update-actions {
@@ -3000,6 +2999,8 @@
       if (suCurLbl) suCurLbl.textContent = s.self_update_current_ver || 'Текущая версия';
       const suNewLbl = document.getElementById('lblSelfUpdateNew');
       if (suNewLbl) suNewLbl.textContent = s.self_update_new_ver || 'Новая версия';
+      const suNotesTitle = document.getElementById('selfUpdateNotesTitle');
+      if (suNotesTitle) suNotesTitle.textContent = s.self_update_notes_title || 'Что нового:';
       const suBtnInst = document.getElementById('btnSelfUpdateInstall');
       if (suBtnInst && !isSelfUpdating) suBtnInst.textContent = s.self_update_btn_install || '⚡ Обновить и перезапустить';
       const suBtnLater = document.getElementById('btnSelfUpdateLater');
@@ -5203,23 +5204,72 @@
     // ZiablWinSetup Self-Updater Logic
     // ==========================================
 
+    function formatChangelogHtml(rawText) {
+      if (!rawText) {
+        return '<div style="color: var(--text-dim); font-style: italic;">Информация об изменениях недоступна.</div>';
+      }
+
+      const lines = rawText.split('\n');
+      let html = '';
+      let inList = false;
+
+      for (let rawLine of lines) {
+        const line = rawLine.trim();
+        if (!line) {
+          if (inList) { html += '</ul>'; inList = false; }
+          continue;
+        }
+
+        // Version header: e.g. "✨ v1.4.11:" or "## v1.4.11" or "v1.4.11:"
+        const verMatch = line.match(/^(?:[✨🔹🚀#*]*\s*)(v?\d+\.\d+\.\d+)(?::|\s|$)(.*)/i);
+        if (verMatch) {
+          if (inList) { html += '</ul>'; inList = false; }
+          const ver = verMatch[1];
+          const extra = verMatch[2].trim();
+          html += `<div style="font-weight: 700; color: var(--accent); margin-top: 8px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; font-size: 13px;">
+            <span style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 2px 7px; border-radius: 4px; font-size: 11px; border: 1px solid rgba(56, 189, 248, 0.3); font-family: monospace;">${escapeHtml(ver)}</span>
+            ${extra ? `<span>${escapeHtml(extra)}</span>` : ''}
+          </div>`;
+          continue;
+        }
+
+        // List item: •, -, *, or numbered
+        const listMatch = line.match(/^(?:[•\-*]|\d+\.)\s+(.+)$/);
+        if (listMatch) {
+          if (!inList) {
+            html += '<ul style="margin: 2px 0 6px 18px; padding: 0; list-style-type: disc;">';
+            inList = true;
+          }
+          html += `<li style="margin-bottom: 4px; color: var(--text-main); font-size: 12px; line-height: 1.45;">${escapeHtml(listMatch[1])}</li>`;
+          continue;
+        }
+
+        if (inList) { html += '</ul>'; inList = false; }
+        html += `<div style="margin-bottom: 4px; color: var(--text-main); font-size: 12px; line-height: 1.45;">${escapeHtml(line)}</div>`;
+      }
+
+      if (inList) { html += '</ul>'; }
+      return html;
+    }
+    window.formatChangelogHtml = formatChangelogHtml;
+
     function openSelfUpdateModal(updateInfo) {
       if (!updateInfo) return;
       currentAppUpdateInfo = updateInfo;
 
       const curElem = document.getElementById('selfUpdateCurrentVer');
-      if (curElem) curElem.textContent = 'v' + (updateInfo.current_version || '1.3.2');
+      if (curElem) curElem.textContent = 'v' + (updateInfo.current_version || '1.4.11');
 
       const newElem = document.getElementById('selfUpdateNewVer');
-      if (newElem) newElem.textContent = 'v' + (updateInfo.latest_version || '');
+      if (newElem) newElem.textContent = 'v' + (updateInfo.latest_version || updateInfo.tag_name || '');
 
       const notesElem = document.getElementById('selfUpdateNotesBody');
       if (notesElem) {
-        let notesText = (updateInfo.body || updateInfo.release_name || '').trim();
+        let notesText = (updateInfo.release_notes || updateInfo.body || updateInfo.release_title || '').trim();
         if (!notesText) {
-          notesText = 'Обновлены компоненты, расширен каталог программ и улучшена общая стабильность работы.';
+          notesText = '• Обновлены компоненты программы и улучшена общая стабильность работы.';
         }
-        notesElem.textContent = notesText;
+        notesElem.innerHTML = formatChangelogHtml(notesText);
       }
 
       // Reset progress & controls state
@@ -5265,6 +5315,18 @@
       const modal = document.getElementById('selfUpdateModal');
       if (modal) modal.style.display = 'none';
     }
+
+    async function showCurrentChangelog() {
+      try {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.get_current_changelog) {
+          const res = await window.pywebview.api.get_current_changelog();
+          if (res) openSelfUpdateModal(res);
+        }
+      } catch (err) {
+        console.error('showCurrentChangelog error:', err);
+      }
+    }
+    window.showCurrentChangelog = showCurrentChangelog;
 
     async function startSelfUpdate() {
       if (isSelfUpdating) return;

@@ -1308,6 +1308,14 @@ class AppBridge:
 
         threading.Thread(target=worker, daemon=True).start()
 
+    def get_current_changelog(self) -> dict[str, Any]:
+        """Возвращает метаданные релиза и список изменений Git для текущей или новой версии."""
+        try:
+            return check_for_app_update(current_version=__version__)
+        except Exception as e:
+            logger.error(f"Ошибка получения списка изменений: {e}")
+            return {"success": False, "error": str(e), "current_version": __version__}
+
     def apply_self_update(self, download_url: str):
         """Скачивает новую версию ZiablWinSetup и производит бесшовный перезапуск."""
         def worker():
