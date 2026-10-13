@@ -577,10 +577,137 @@ def detect_installed_apps() -> dict[str, dict[str, Any]]:
     return results
 
 
+def clean_leftovers(app_id: str, app_info: dict[str, Any] | None = None) -> dict[str, Any]:
+    """
+    Сканирует и безопасно удаляет остаточные файлы, папки, ярлыки и ключи реестра
+    после деинсталляции программы (глубокая очистка а-ля Uninstall Tool).
+    """
+    cleaned: dict[str, list[str]] = {"dirs": [], "shortcuts": [], "registry": []}
+    app_name = (app_info.get("name") if app_info else "") or app_id
+
+    # Нормализованные ключевые слова для безопасного сопоставления
+    keywords = set()
+    for raw in [app_id, app_name]:
+        clean = re.sub(r"[^\w\s-]", "", raw).strip().lower()
+        if len(clean) >= 3 and clean not in ("windows", "program", "system", "setup", "update", "temp", "install"):
+            keywords.add(clean)
+            for part in clean.split():
+                if len(part) >= 4 and part not in ("tool", "client", "edition", "pro", "free", "beta", "lite"):
+                    keywords.add(part)
+
+    if not keywords:
+        return cleaned
+
+    def is_safe_match(name: str) -> bool:
+        lower = name.lower()
+        return any(kw in lower for kw in keywords)
+
+    protected_roots = {
+        Path("C:\\"),
+        Path(os.environ.get("SystemDrive", "C:") + "\\"),
+        Path(os.environ.get("ProgramFiles", "C:\\Program Files")),
+        Path(os.environ.get("ProgramFiles(x86)", "C:\\Program Files (x86)")),
+        Path(os.environ.get("APPDATA", "")),
+        Path(os.environ.get("LOCALAPPDATA", "")),
+        Path(os.environ.get("ProgramData", "C:\\ProgramData")),
+        Path.home(),
+        Path.home() / "Desktop",
+        Path.home() / "Downloads",
+        Path.home() / "Documents",
+    }
+
+    candidate_dirs: list[Path] = []
+    if app_info and app_info.get("path"):
+        p = Path(app_info["path"])
+        if p.is_file():
+            candidate_dirs.append(p.parent)
+        elif p.is_dir():
+            candidate_dirs.append(p)
+
+    appdata = Path(os.environ.get("APPDATA", ""))
+    localappdata = Path(os.environ.get("LOCALAPPDATA", ""))
+    progdata = Path(os.environ.get("ProgramData", "C:\\ProgramData"))
+    pf = Path(os.environ.get("ProgramFiles", "C:\\Program Files"))
+    pfx86 = Path(os.environ.get("ProgramFiles(x86)", "C:\\Program Files (x86)"))
+
+    for base in [appdata, localappdata, progdata, pf, pfx86]:
+        if not base.exists():
+            continue
+        try:
+            for item in base.iterdir():
+                if item.is_dir() and item not in protected_roots and is_safe_match(item.name):
+                    candidate_dirs.append(item)
+        except Exception:
+            pass
+
+    for c_dir in set(candidate_dirs):
+        if c_dir in protected_roots or not c_dir.exists():
+            continue
+        if len(c_dir.parts) < 3:
+            continue
+        try:
+            shutil.rmtree(c_dir, ignore_errors=True)
+            if not c_dir.exists():
+                cleaned["dirs"].append(str(c_dir))
+                logger.info(f"Очищены остатки папки: {c_dir}")
+        except Exception as e:
+            logger.debug(f"Не удалось удалить папку {c_dir}: {e}")
+
+    shortcut_locations = [
+        Path.home() / "Desktop",
+        Path(os.environ.get("PUBLIC", "C:\\Users\\Public")) / "Desktop",
+        appdata / "Microsoft" / "Windows" / "Start Menu" / "Programs",
+        progdata / "Microsoft" / "Windows" / "Start Menu" / "Programs",
+    ]
+
+    for s_loc in shortcut_locations:
+        if not s_loc.exists():
+            continue
+        try:
+            for lnk in s_loc.rglob("*.lnk"):
+                if is_safe_match(lnk.stem):
+                    try:
+                        lnk.unlink(missing_ok=True)
+                        cleaned["shortcuts"].append(str(lnk))
+                        logger.info(f"Удален остаточный ярлык: {lnk}")
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
+    reg_roots = [
+        (winreg.HKEY_CURRENT_USER, r"Software"),
+        (winreg.HKEY_LOCAL_MACHINE, r"Software"),
+        (winreg.HKEY_LOCAL_MACHINE, r"Software\WOW6432Node"),
+    ]
+    for hkey, sub in reg_roots:
+        try:
+            with winreg.OpenKey(hkey, sub, 0, winreg.KEY_READ | winreg.KEY_SET_VALUE) as parent_key:
+                idx = 0
+                while True:
+                    try:
+                        kn = winreg.EnumKey(parent_key, idx)
+                        if is_safe_match(kn):
+                            try:
+                                winreg.DeleteKey(parent_key, kn)
+                                cleaned["registry"].append(f"{sub}\\{kn}")
+                                logger.info(f"Удален остаточный ключ реестра: {sub}\\{kn}")
+                                continue
+                            except Exception:
+                                pass
+                        idx += 1
+                    except OSError:
+                        break
+        except Exception:
+            pass
+
+    return cleaned
+
+
 def uninstall_app(app_id: str) -> dict[str, Any]:
     """
-    Запускает деинсталлятор для указанного приложения.
-    Поддерживает как классические EXE деинсталляторы, так и MSI/MsiExec.
+    Запускает деинсталлятор для указанного приложения и ожидает его завершения.
+    После завершения запускает глубокую очистку остатков (папки, кэш, ярлыки, реестр).
     """
     detected = detect_installed_apps()
     app_info = detected.get(app_id)
@@ -598,52 +725,29 @@ def uninstall_app(app_id: str) -> dict[str, Any]:
     logger.info(f"Запуск деинсталляции {app_id}: {cmd}")
 
     try:
-        # Проверяем, является ли команда вызовом msiexec или powershell
-        cmd_lower = cmd.lower()
-        if "msiexec" in cmd_lower or "powershell" in cmd_lower:
-            subprocess.Popen(cmd, shell=True)
-            return {"success": True, "message": "Запущен процесс деинсталляции."}
+        # Выполняем деинсталлятор и ожидаем завершения
+        # Использование cmd.exe /c запускает установщик интерактивно в окне для пользователя
+        subprocess.run(f'cmd.exe /c "{cmd}"', shell=False, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000))
+        import time
+        time.sleep(1.0)
 
-        # Парсим исполняемый файл и аргументы
-        # Часто строка в реестре имеет вид: "C:\Path\uninstall.exe" /arg1 /arg2
-        exe_path = ""
-        args = ""
+        # Выполняем глубокую очистку остатков программы
+        leftovers = clean_leftovers(app_id, app_info)
+        summary_parts = []
+        if leftovers["dirs"]:
+            summary_parts.append(f"{len(leftovers['dirs'])} папок")
+        if leftovers["shortcuts"]:
+            summary_parts.append(f"{len(leftovers['shortcuts'])} ярлыков")
+        if leftovers["registry"]:
+            summary_parts.append(f"{len(leftovers['registry'])} записей реестра")
 
-        if cmd.startswith('"'):
-            end_quote = cmd.find('"', 1)
-            if end_quote != -1:
-                exe_path = cmd[1:end_quote]
-                args = cmd[end_quote + 1:].strip()
-        else:
-            parts = cmd.split(maxsplit=1)
-            exe_path = parts[0]
-            args = parts[1] if len(parts) > 1 else ""
+        leftover_msg = f"Очищено остатков: {', '.join(summary_parts)}" if summary_parts else "Остаточных файлов не обнаружено"
 
-        # Запускаем через ShellExecuteW с запросом прав при необходимости
-        res = ctypes.windll.shell32.ShellExecuteW(
-            None,
-            "open",
-            exe_path,
-            args,
-            str(Path(exe_path).parent) if Path(exe_path).is_file() else None,
-            1,  # SW_SHOWNORMAL
-        )
-
-        if res <= 32:  # Код ошибки ShellExecute
-            # Пробуем с повышением прав runas
-            res_admin = ctypes.windll.shell32.ShellExecuteW(
-                None,
-                "runas",
-                exe_path,
-                args,
-                None,
-                1,
-            )
-            if res_admin <= 32:
-                # В крайнем случае shell=True
-                subprocess.Popen(cmd, shell=True)
-
-        return {"success": True, "message": "Процесс деинсталляции запущен."}
+        return {
+            "success": True,
+            "message": f"Программа «{app_info.get('name', app_id)}» успешно удалена. {leftover_msg}.",
+            "leftovers": leftovers,
+        }
     except Exception as e:
-        logger.error(f"Ошибка при запуске деинсталлятора: {e}", exc_info=True)
+        logger.error(f"Ошибка при деинсталляции: {e}", exc_info=True)
         return {"success": False, "error": str(e)}

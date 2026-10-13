@@ -38,14 +38,24 @@
       -webkit-user-select: none;
     }
 
+    html {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+    }
+
     body {
       font-family: 'Segoe UI Variable Text', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
       background-color: var(--bg-app);
       color: var(--text-main);
       overflow: hidden;
       height: 100vh;
-      min-width: 900px;
-      min-height: 600px;
+      width: 100vw;
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
       display: flex;
       flex-direction: column;
     }
@@ -161,7 +171,7 @@
 
     .btn-lang {
       height: 34px;
-      padding: 0 14px;
+      padding: 0 12px;
       background: var(--bg-card);
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-sm);
@@ -171,7 +181,11 @@
       cursor: pointer;
       display: flex;
       align-items: center;
+      justify-content: center;
       gap: 6px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      min-width: 88px;
       transition: background 0.15s, border-color 0.15s;
     }
 
@@ -185,7 +199,9 @@
       display: flex;
       flex: 1;
       min-height: 0;
+      height: 0;
       position: relative;
+      overflow: hidden;
     }
 
     /* Sidebar */
@@ -773,6 +789,9 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      overflow-y: auto;
+      padding: 30px 16px;
+      box-sizing: border-box;
       z-index: 9999;
       animation: fadeInModal 0.15s ease-out;
     }
@@ -790,6 +809,9 @@
     .modal-card {
       width: 440px;
       max-width: 90vw;
+      max-height: calc(100vh - 60px);
+      margin: auto;
+      overflow-y: auto;
       background: #242424;
       border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 12px;
@@ -1868,26 +1890,14 @@
     }
 
     /* Exclusions Modal */
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.7);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      backdrop-filter: blur(4px);
-    }
     .exclusions-modal-card {
       background: #202020;
       border: 1px solid #383838;
       border-radius: 12px;
       width: 540px;
       max-width: 90vw;
-      max-height: 80vh;
+      max-height: calc(100vh - 60px);
+      margin: auto;
       display: flex;
       flex-direction: column;
       box-shadow: 0 20px 40px rgba(0,0,0,0.6);
@@ -1962,7 +1972,8 @@
       border-radius: 12px;
       width: 520px;
       max-width: 92vw;
-      max-height: 85vh;
+      max-height: calc(100vh - 60px);
+      margin: auto;
       display: flex;
       flex-direction: column;
       box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
@@ -2140,12 +2151,12 @@
       </div>
 
       <!-- App Cards -->
-      <main id="appCardsContainer" style="flex: 1; overflow-y: auto;"></main>
+      <main id="appCardsContainer" style="flex: 1; overflow-y: auto; padding-bottom: 90px; box-sizing: border-box;"></main>
     </div>
     </div><!-- /viewApps -->
 
     <!-- View 2: Tweaks & Features view -->
-    <div id="viewTweaks" style="display: none; flex: 1; min-height: 0; width: 100%; flex-direction: column; overflow-y: auto; padding: 24px 32px; background: var(--bg-app);">
+    <div id="viewTweaks" style="display: none; flex: 1; min-height: 0; width: 100%; flex-direction: column; overflow-y: auto; padding: 24px 32px 100px 32px; box-sizing: border-box; background: var(--bg-app);">
       <div style="margin-bottom: 20px;">
         <h2 style="font-size: 20px; font-weight: 600; margin-bottom: 4px;" id="tweaksTitle">⚡ Твики и фичи</h2>
         <p style="font-size: 13px; color: var(--text-muted);" id="tweaksSubtitle">Полезные системные настройки Windows и оптимизации программ в один клик.</p>
@@ -2154,7 +2165,7 @@
     </div>
 
     <!-- View 3: Metro / UWP Apps view -->
-    <div id="viewMetro" style="display: none; flex: 1; min-height: 0; width: 100%; flex-direction: column; overflow-y: auto; padding: 24px 32px; background: var(--bg-app);">
+    <div id="viewMetro" style="display: none; flex: 1; min-height: 0; width: 100%; flex-direction: column; overflow-y: auto; padding: 24px 32px 100px 32px; box-sizing: border-box; background: var(--bg-app);">
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
         <div>
           <h2 style="font-size: 20px; font-weight: 600; margin-bottom: 4px;" id="metroTitle">🪟 Встроенные Metro / UWP приложения Windows</h2>
@@ -2172,7 +2183,7 @@
     </div>
 
     <!-- View 4: Startup Manager view -->
-    <div id="viewStartup" style="display: none; flex: 1; min-height: 0; width: 100%; flex-direction: column; overflow-y: auto; padding: 24px 32px; background: var(--bg-app);">
+    <div id="viewStartup" style="display: none; flex: 1; min-height: 0; width: 100%; flex-direction: column; overflow-y: auto; padding: 24px 32px 100px 32px; box-sizing: border-box; background: var(--bg-app);">
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
         <div>
           <h2 style="font-size: 20px; font-weight: 600; margin-bottom: 4px;" id="startupTitle">🚀 Управление автозагрузкой Windows</h2>
@@ -2180,6 +2191,10 @@
         </div>
         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
           <div class="metro-counter-badge" id="startupCounterBadge">Всего: 0 (Включено: 0)</div>
+          <button class="btn-action btn-primary" onclick="openAddStartupModal()" style="height: 32px; font-size: 12px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px;" title="Добавить исполняемый файл в автозагрузку Windows">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span>+ Добавить программу</span>
+          </button>
           <button class="btn-action btn-outline" id="btnRescanStartup" onclick="rescanStartupItems()" style="height: 32px; font-size: 12px; padding: 0 12px;">
             <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;margin-right:6px;"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
             <span id="btnRescanStartupText">Обновить список</span>
@@ -2214,7 +2229,10 @@
   <!-- Footer -->
   <footer id="mainFooter">
     <div class="footer-top">
-      <div class="selected-info" id="selectedCountDisplay">Выбрано: 0</div>
+      <div class="selected-info-wrap" style="display: flex; align-items: center; gap: 12px; overflow: hidden; flex: 1; min-width: 0;">
+        <div class="selected-info" id="selectedCountDisplay" style="white-space: nowrap; font-weight: 600;">Выбрано: 0</div>
+        <div id="selectedIconsPreview" class="selected-icons-preview" style="display: flex; align-items: center; gap: 6px; overflow-x: auto; max-width: 520px; padding: 2px 0;"></div>
+      </div>
       <div class="footer-actions">
         <button class="footer-btn btn-primary" id="btnDownloadSelected" onclick="handleDownloadSelected()">📥 Скачать выбранное</button>
         <button class="footer-btn btn-success" id="btnInstallAll" onclick="handleInstallAll()" disabled>⚙️ Установить все скачанные</button>
@@ -2249,6 +2267,41 @@
       <div class="modal-actions">
         <button class="modal-btn modal-btn-cancel" id="modalCancelBtn">Отмена</button>
         <button class="modal-btn modal-btn-danger" id="modalConfirmBtn">Удалить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Program to Startup Modal -->
+  <div id="addStartupModal" class="modal-overlay" style="display: none;">
+    <div class="modal-card" style="max-width: 480px; width: 90%;">
+      <div class="modal-header-area">
+        <div class="modal-icon-wrap" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;">🚀</div>
+        <div style="flex: 1;">
+          <div class="modal-title">Добавить программу в автозапуск</div>
+          <div class="modal-desc">Программа будет автоматически запускаться при старте Windows.</div>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 14px; margin: 18px 0;">
+        <div>
+          <label style="font-size: 12px; font-weight: 500; color: var(--text-muted); display: block; margin-bottom: 6px;">Название программы:</label>
+          <input type="text" id="addStartupName" placeholder="Например: Моя программа" style="width: 100%; height: 36px; padding: 0 12px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--text-main); font-size: 13px; box-sizing: border-box;">
+        </div>
+        <div>
+          <label style="font-size: 12px; font-weight: 500; color: var(--text-muted); display: block; margin-bottom: 6px;">Исполняемый файл (.exe / .lnk):</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="addStartupPath" placeholder="C:\Program Files\App\app.exe" style="flex: 1; height: 36px; padding: 0 12px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--text-main); font-size: 13px; box-sizing: border-box;">
+            <button class="btn-action btn-outline" onclick="browseStartupExe()" style="height: 36px; padding: 0 12px; font-size: 12px; white-space: nowrap;">📂 Обзор...</button>
+          </div>
+        </div>
+        <div>
+          <label style="font-size: 12px; font-weight: 500; color: var(--text-muted); display: block; margin-bottom: 6px;">Параметры запуска (необязательно):</label>
+          <input type="text" id="addStartupArgs" placeholder="Например: --minimized или -silent" style="width: 100%; height: 36px; padding: 0 12px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--text-main); font-size: 13px; box-sizing: border-box;">
+        </div>
+        <div id="addStartupError" style="font-size: 12px; color: #ef4444; display: none;"></div>
+      </div>
+      <div class="modal-actions" style="justify-content: flex-end; gap: 10px;">
+        <button class="modal-btn modal-btn-cancel" onclick="closeAddStartupModal()">Отмена</button>
+        <button class="modal-btn modal-btn-primary" onclick="submitAddStartupItem()" style="background: var(--accent); color: #fff;">Добавить</button>
       </div>
     </div>
   </div>
@@ -2810,6 +2863,8 @@
           return `<svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`;
         case 'gaming':
           return `<svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="6"/><path d="M6 12h4m-2-2v4"/><circle cx="15" cy="11" r="1"/><circle cx="17" cy="13" r="1"/></svg>`;
+        case 'recommended':
+          return `<svg class="cat-svg" viewBox="0 0 24 24" fill="#fbbf24" stroke="#f59e0b" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
         case 'office':
           return `<svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`;
         case 'installed':
@@ -2830,9 +2885,17 @@
       container.innerHTML = '';
 
       const cats = [...appData.categories];
+      const recCount = appData.apps.filter(a => a.recommended).length;
+      cats.splice(1, 0, {
+        id: 'recommended',
+        name_ru: '⭐ Рекомендуемые',
+        name_en: '⭐ Recommended',
+        count: recCount,
+      });
+
       const instCount = Object.keys(appData.installed_apps || {}).length;
       if (instCount > 0) {
-        cats.splice(1, 0, {
+        cats.splice(2, 0, {
           id: 'installed',
           name_ru: 'Установленные',
           name_en: 'Installed',
@@ -2842,7 +2905,7 @@
 
       const updCount = Object.keys(availableUpdates || {}).length;
       if (updCount > 0) {
-        const insertIdx = instCount > 0 ? 2 : 1;
+        const insertIdx = instCount > 0 ? 3 : 2;
         const s = appData.strings || {};
         cats.splice(insertIdx, 0, {
           id: 'updates_available',
@@ -2861,7 +2924,15 @@
         // Clean out any leftover emoji characters
         name = name.replace(/^[^\wЀ-ӿ]+\s*/, '').trim();
 
-        if (cat.id === 'installed') {
+        if (cat.id === 'recommended') {
+          div.innerHTML = `
+            <div class="cat-item-content">
+              ${getCategoryIconSvg(cat.id)}
+              <span style="color: #fbbf24; font-weight: 600;">${name}</span>
+            </div>
+            <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.35);">${cat.count !== undefined ? cat.count : ''}</span>
+          `;
+        } else if (cat.id === 'installed') {
           div.innerHTML = `
             <div class="cat-item-content">
               ${getCategoryIconSvg(cat.id)}
@@ -2943,7 +3014,10 @@
 
     function setUiScale(val) {
       const num = Math.min(130, Math.max(75, parseInt(val) || 100));
-      document.body.style.zoom = (num / 100).toString();
+      const factor = num / 100;
+      document.body.style.zoom = factor.toString();
+      document.body.style.height = `${(100 / factor)}vh`;
+      document.body.style.width = `${(100 / factor)}vw`;
       const slider = document.getElementById('uiScaleSlider');
       if (slider) slider.value = num;
       const display = document.getElementById('uiScaleDisplay');
@@ -3103,6 +3177,10 @@
       const s = appData.strings;
 
       const filtered = appData.apps.filter(app => {
+        if (activeCategory === 'recommended') {
+          if (!app.recommended) return false;
+          return matchesAppSearch(app, searchQuery);
+        }
         if (activeCategory === 'installed') {
           if (!appData.installed_apps || !appData.installed_apps[app.id]) return false;
           return matchesAppSearch(app, searchQuery);
@@ -3127,6 +3205,8 @@
           emptyDiv.innerHTML = '✨ Все установленные программы обновлены до актуальных версий!';
         } else if (activeCategory === 'installed') {
           emptyDiv.innerHTML = '🔍 Установленные приложения не обнаружены.';
+        } else if (activeCategory === 'recommended') {
+          emptyDiv.innerHTML = '⭐ Рекомендуемые приложения не найдены.';
         } else {
           emptyDiv.innerHTML = 'Ничего не найдено.';
         }
@@ -3184,6 +3264,7 @@
             ${app.name}
             ${isInstalled ? `<span class="badge-installed" title="${instInfo.name || ''}">✓ ${s.status_installed || 'Установлено'}${verStr}</span>` : ''}
             ${availableUpdates[app.id] ? `<span class="badge-update" title="Доступно обновление">⬆️ ${availableUpdates[app.id].available_version}</span>` : ''}
+            ${app.web_url ? `<a href="javascript:void(0)" onclick="openExternalUrl('${app.web_url}')" class="link-1progs-badge" title="Открыть страницу на 1progs.ru" style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #38bdf8; text-decoration: none; padding: 2px 7px; border-radius: 4px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.28); margin-left: 6px; cursor: pointer; font-weight: 500;">🌐 1progs.ru ↗</a>` : ''}
             ${notes ? `<span class="card-note" title="${notes}">ⓘ ${notes}</span>` : ''}
           </div>
           <div class="card-desc">${desc}</div>
@@ -3324,6 +3405,14 @@
             </div>
           `;
         }
+        if (app.id === 'driverbooster' && app.web_url) {
+          return `
+            <div style="display: flex; gap: 6px; align-items: center;">
+              <button class="btn-action btn-primary" onclick="downloadSingle('${app.id}')">${s.btn_download || '📥 Скачать'}</button>
+              <button class="btn-action btn-outline" onclick="openExternalUrl('${app.web_url}')" title="Открыть страницу на 1progs.ru" style="padding: 0 10px; height: 32px; font-size: 12px; white-space: nowrap;">🌐 1progs.ru</button>
+            </div>
+          `;
+        }
         return `<button class="btn-action btn-primary" onclick="downloadSingle('${app.id}')">${s.btn_download || '📥 Скачать'}</button>`;
       }
     }
@@ -3412,13 +3501,17 @@
     }
 
     function selectRecommended() {
+      activeCategory = 'recommended';
       selectedApps.clear();
       appData.apps.forEach(a => {
         const isInstalled = appData.installed_apps && appData.installed_apps[a.id];
         if (a.recommended && !isInstalled) selectedApps.add(a.id);
       });
+      renderCategories();
       renderCards();
       updateFooter();
+      const container = document.getElementById('appCardsContainer');
+      if (container) container.scrollTop = 0;
     }
 
     function selectAll() {
@@ -3442,11 +3535,26 @@
       const s = appData.strings;
       const count = selectedApps.size;
       const template = s.selected_count || 'Выбрано: {count}';
-      document.getElementById('selectedCountDisplay').textContent = template.replace('{count}', count);
+      const countEl = document.getElementById('selectedCountDisplay');
+      if (countEl) countEl.textContent = template.replace('{count}', count);
+
+      const preview = document.getElementById('selectedIconsPreview');
+      if (preview) {
+        if (count === 0) {
+          preview.innerHTML = '';
+        } else {
+          const selectedList = appData.apps.filter(a => selectedApps.has(a.id));
+          preview.innerHTML = selectedList.map(a => `
+            <div class="selected-icon-item" title="${a.name} (нажмите, чтобы снять)" onclick="toggleSelect('${a.id}', false); renderCards();" style="cursor: pointer; width: 26px; height: 26px; border-radius: 6px; background: rgba(255,255,255,0.08); padding: 3px; display: inline-flex; align-items: center; justify-content: center; transition: all 0.15s; flex-shrink: 0; box-sizing: border-box;" onmouseover="this.style.transform='scale(1.15)'; this.style.background='rgba(239,68,68,0.25)';" onmouseout="this.style.transform='none'; this.style.background='rgba(255,255,255,0.08)';">
+              <img src="icons/${a.id}.svg" onerror="this.src='icons/default.svg'" alt="${a.name}" style="width: 20px; height: 20px; object-fit: contain;">
+            </div>
+          `).join('');
+        }
+      }
 
       const hasDownloaded = Object.values(appStatuses).some(st => st.status === 'downloaded');
       const installAllBtn = document.getElementById('btnInstallAll');
-      installAllBtn.disabled = !hasDownloaded;
+      if (installAllBtn) installAllBtn.disabled = !hasDownloaded;
     }
 
     // Actions
@@ -3774,6 +3882,35 @@
     // ==========================================
     // Твики и фичи
     // ==========================================
+    function getTweakIconSvg(tweakId) {
+      switch (tweakId) {
+        case 'torrent_ads':
+          return `<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect width="24" height="24" rx="6" fill="rgba(239, 68, 68, 0.15)"/><circle cx="12" cy="12" r="7.5" stroke="#ef4444" stroke-width="2"/><line x1="6.7" y1="6.7" x2="17.3" y2="17.3" stroke="#ef4444" stroke-width="2"/><path d="M10 8l4 4-4 4" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+        case 'win11_classic_menu':
+          return `<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect width="24" height="24" rx="6" fill="rgba(14, 165, 233, 0.15)"/><path d="M4.5 5h6.5v6H4.5V5zm8.5 0H20v6h-7V5zm-8.5 8h6.5v6H4.5v-6zm8.5 0H20v6h-7v-6z" fill="#38bdf8"/></svg>`;
+        case 'taskbar_align_left':
+          return `<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect width="24" height="24" rx="6" fill="rgba(59, 130, 246, 0.15)"/><rect x="3" y="16" width="18" height="4" rx="1.5" fill="#3b82f6"/><rect x="5" y="7" width="5" height="5" rx="1" fill="#60a5fa"/><rect x="12" y="7" width="3" height="3" rx="0.5" fill="#94a3b8"/><rect x="16" y="7" width="3" height="3" rx="0.5" fill="#94a3b8"/><path d="M7 13.5l-2 2.5h4l-2-2.5z" fill="#38bdf8"/></svg>`;
+        case 'hide_taskbar_search':
+          return `<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect width="24" height="24" rx="6" fill="rgba(168, 85, 247, 0.15)"/><circle cx="11" cy="11" r="5" stroke="#c084fc" stroke-width="2"/><path d="M15 15l4 4" stroke="#c084fc" stroke-width="2" stroke-linecap="round"/><line x1="7" y1="7" x2="15" y2="15" stroke="#ef4444" stroke-width="2" stroke-linecap="round"/></svg>`;
+        case 'disable_indexing_ssd':
+          return `<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect width="24" height="24" rx="6" fill="rgba(16, 185, 129, 0.15)"/><rect x="4" y="6" width="16" height="12" rx="2" fill="#10b981"/><circle cx="8" cy="12" r="1.5" fill="#ffffff"/><circle cx="16" cy="12" r="1.5" fill="#ffffff"/><path d="M11 9h2v6h-2z" fill="#ffffff"/><path d="M7 19h10" stroke="#34d399" stroke-width="2" stroke-linecap="round"/></svg>`;
+        case 'show_file_ext':
+          return `<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect width="24" height="24" rx="6" fill="rgba(245, 158, 11, 0.15)"/><path d="M6 4h7l5 5v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" fill="#f59e0b"/><polygon points="13 4 13 9 18 9" fill="#fbbf24"/><text x="6" y="17.5" font-size="5.5" font-weight="900" fill="#1e293b" font-family="'Segoe UI', sans-serif">.EXE</text></svg>`;
+        case 'ultimate_perf':
+          return `<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect width="24" height="24" rx="6" fill="rgba(234, 179, 8, 0.15)"/><path d="M13 2L5 13h6l-1 9 9-11h-6l1-9z" fill="#eab308"/></svg>`;
+        case 'disable_start_ads':
+          return `<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect width="24" height="24" rx="6" fill="rgba(244, 63, 94, 0.15)"/><path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6z" stroke="#f43f5e" stroke-width="1.8"/><circle cx="12" cy="10" r="3" fill="#f43f5e"/><line x1="8" y1="18" x2="16" y2="18" stroke="#f43f5e" stroke-width="2" stroke-linecap="round"/><line x1="5" y1="5" x2="19" y2="15" stroke="#ffffff" stroke-width="2"/></svg>`;
+        case 'clean_steam_cache':
+          return `<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect width="24" height="24" rx="6" fill="rgba(30, 41, 59, 0.5)"/><circle cx="12" cy="12" r="8" stroke="#38bdf8" stroke-width="1.8"/><circle cx="12" cy="8" r="3" fill="#38bdf8"/><path d="M12 11l-3 3" stroke="#38bdf8" stroke-width="2"/><circle cx="8" cy="15" r="2" fill="#38bdf8"/><path d="M18 5l.8 1.6 1.8.8-1.8.8-.8 1.8-.8-1.8-1.8-.8 1.8-.8.8-1.6z" fill="#facc15"/></svg>`;
+        case 'clean_telegram_cache':
+          return `<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect width="24" height="24" rx="6" fill="rgba(14, 165, 233, 0.15)"/><circle cx="12" cy="12" r="9" fill="#0284c7"/><path d="M6.5 11.5l10.5-4-3 10-2.5-3-3 1-2-4z" fill="#ffffff"/><path d="M18 5l.8 1.6 1.8.8-1.8.8-.8 1.8-.8-1.8-1.8-.8 1.8-.8.8-1.6z" fill="#facc15"/></svg>`;
+        case 'clean_winsetup_installers':
+          return `<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect width="24" height="24" rx="6" fill="rgba(249, 115, 22, 0.15)"/><path d="M20 7l-8-4-8 4 8 4 8-4z" fill="#f97316"/><path d="M4 12l8 4 8-4" stroke="#f97316" stroke-width="1.8"/><path d="M4 17l8 4 8-4" stroke="#f97316" stroke-width="1.8"/><circle cx="18" cy="6" r="3" fill="#22c55e"/><path d="M17 6l1 1 2-2" stroke="#ffffff" stroke-width="1" stroke-linecap="round"/></svg>`;
+        default:
+          return `<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect width="24" height="24" rx="6" fill="rgba(148, 163, 184, 0.15)"/><circle cx="12" cy="12" r="3" stroke="#94a3b8" stroke-width="2"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="#94a3b8" stroke-width="1.5"/></svg>`;
+      }
+    }
+
     function renderTweaks() {
       const container = document.getElementById('tweaksGrid');
       if (!container) return;
@@ -3823,7 +3960,7 @@
         const disAttr = isUnavailable ? 'disabled' : '';
         card.innerHTML = `
           <div class="tweak-top">
-            <div class="tweak-icon-wrap">${tw.icon || '⚡'}</div>
+            <div class="tweak-icon-wrap">${getTweakIconSvg(tw.id)}</div>
             <div class="tweak-info">
               <div class="tweak-title">${tw.name}</div>
               <div class="tweak-desc">${tw.description}</div>
@@ -4360,6 +4497,68 @@
       } catch (err) {
         console.error('delete startup error:', err);
         showToast(`Ошибка: ${err}`, 'error');
+      }
+    }
+
+    function openAddStartupModal() {
+      document.getElementById('addStartupName').value = '';
+      document.getElementById('addStartupPath').value = '';
+      document.getElementById('addStartupArgs').value = '';
+      const err = document.getElementById('addStartupError');
+      if (err) { err.textContent = ''; err.style.display = 'none'; }
+      document.getElementById('addStartupModal').style.display = 'flex';
+    }
+
+    function closeAddStartupModal() {
+      document.getElementById('addStartupModal').style.display = 'none';
+    }
+
+    async function browseStartupExe() {
+      try {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.browse_executable_file) {
+          const filePath = await window.pywebview.api.browse_executable_file();
+          if (filePath) {
+            document.getElementById('addStartupPath').value = filePath;
+            const nameInput = document.getElementById('addStartupName');
+            if (!nameInput.value.trim()) {
+              const fileName = filePath.split(/[/\\]/).pop();
+              nameInput.value = fileName.replace(/\.[^/.]+$/, "");
+            }
+          }
+        }
+      } catch (e) {
+        console.error('browseStartupExe error:', e);
+      }
+    }
+
+    async function submitAddStartupItem() {
+      const name = document.getElementById('addStartupName').value.trim();
+      const path = document.getElementById('addStartupPath').value.trim();
+      const args = document.getElementById('addStartupArgs').value.trim();
+      const err = document.getElementById('addStartupError');
+
+      if (!name) {
+        if (err) { err.textContent = 'Укажите название программы'; err.style.display = 'block'; }
+        return;
+      }
+      if (!path) {
+        if (err) { err.textContent = 'Укажите или выберите исполняемый файл'; err.style.display = 'block'; }
+        return;
+      }
+
+      try {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.add_startup_item) {
+          const res = await window.pywebview.api.add_startup_item(name, path, args);
+          if (res && res.success) {
+            closeAddStartupModal();
+            showToast(res.message, 'success', 2500);
+            rescanStartupItems();
+          } else {
+            if (err) { err.textContent = res ? res.message : 'Ошибка добавления в автозапуск'; err.style.display = 'block'; }
+          }
+        }
+      } catch (e) {
+        if (err) { err.textContent = `Ошибка API: ${e}`; err.style.display = 'block'; }
       }
     }
 

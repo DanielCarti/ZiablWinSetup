@@ -268,14 +268,21 @@ class AppBridge:
         def worker():
             self.call_js("onAppStatus", app_id, "uninstalling", i18n.t("status_uninstalling"))
             self.call_js("onLog", i18n.t("log_start_uninstall", name=app.name))
-            res = uninstall_app(app)
-            if res.success:
+            res = uninstall_app(app_id)
+            if res.get("success"):
                 self.call_js("onAppStatus", app_id, "idle", "")
                 self.call_js("onAppUninstalled", app_id)
-                self.call_js("onLog", i18n.t("log_uninstalled", name=app.name))
+                msg = res.get("message") or i18n.t("log_uninstalled", name=app.name)
+                self.call_js("onLog", msg)
+                try:
+                    installed = detect_installed_apps()
+                    self.call_js("onInstalledAppsDetected", installed)
+                except Exception:
+                    pass
             else:
-                self.call_js("onAppStatus", app_id, "error", res.error)
-                self.call_js("onLog", i18n.t("log_uninstall_error", name=app.name, error=res.error))
+                err = res.get("error", "Неизвестная ошибка")
+                self.call_js("onAppStatus", app_id, "error", err)
+                self.call_js("onLog", i18n.t("log_uninstall_error", name=app.name, error=err))
 
         threading.Thread(target=worker, daemon=True).start()
 
@@ -1067,6 +1074,54 @@ class AppBridge:
             return {"success": success, "message": msg}
         except Exception as e:
             logger.error(f"Error opening folder for startup item {item_id}: {e}")
+            return {"success": False, "message": str(e)}
+
+    def browse_executable_file(self) -> str:
+        """Открывает диалог выбора исполняемого файла (.exe, .bat, .cmd, .lnk)."""
+        if self._window:
+            try:
+                res = self._window.create_file_dialog(
+                    webview.OPEN_DIALOG,
+                    allow_packages=False,
+                    file_types=("Исполняемые файлы (*.exe;*.bat;*.cmd;*.lnk)", "Все файлы (*.*)")
+                )
+                if res and len(res) > 0:
+                    return str(res[0])
+            except Exception as e:
+                logger.warning(f"Error opening file dialog via webview: {e}")
+
+        try:
+            ps_script = """
+            Add-Type -AssemblyName System.Windows.Forms
+            $f = New-Object System.Windows.Forms.OpenFileDialog
+            $f.Filter = "Исполняемые файлы (*.exe;*.bat;*.cmd;*.lnk)|*.exe;*.bat;*.cmd;*.lnk|Все файлы (*.*)|*.*"
+            $f.Title = "Выберите программу для автозагрузки"
+            if ($f.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
+                Write-Output $f.FileName
+            }
+            """
+            out = subprocess.run(
+                ["powershell", "-NoProfile", "-NonInteractive", "-Command", ps_script],
+                capture_output=True,
+                text=True,
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
+            ).stdout.strip()
+            return out
+        except Exception:
+            return ""
+
+    def add_startup_item(self, name: str, exe_path: str, args: str = "") -> dict[str, Any]:
+        """Добавляет программу в автозапуск пользователя."""
+        try:
+            success, msg = StartupManager.add_custom_item(name, exe_path, args)
+            if success:
+                self.call_js("onLog", f"🚀 Автозагрузка: {msg}")
+                self.rescan_startup_items()
+            else:
+                self.call_js("onLog", f"⚠️ Ошибка добавления в автозагрузку: {msg}")
+            return {"success": success, "message": msg}
+        except Exception as e:
+            logger.error(f"Error adding startup item {name}: {e}")
             return {"success": False, "message": str(e)}
 
     def is_app_autostart_active(self) -> bool:

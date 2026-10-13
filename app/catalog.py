@@ -531,11 +531,12 @@ def _build_catalog() -> list[AppEntry]:
         AppEntry(
             id="driverbooster",
             name="IObit Driver Booster",
-            description="Автоматическое сканирование и обновление устаревших драйверов Windows",
-            description_en="Automatic scanning and updating for outdated device drivers",
+            description="Автоматическое сканирование и обновление устаревших драйверов Windows (активированная версия на 1progs.ru)",
+            description_en="Automatic scanning and updating for outdated device drivers (via 1progs.ru)",
             category="gpu_drivers",
             winget_id="IObit.DriverBooster",
             silent_args=["/VERYSILENT"],
+            web_url="https://1progs.ru/driver-booster-pro/",
         ),
         AppEntry(
             id="nvidiabroadcast",

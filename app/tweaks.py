@@ -14,7 +14,7 @@ import sys
 import winreg
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable
 
 from app.utils import get_clean_env
 
@@ -98,17 +98,58 @@ def _is_torrent_available() -> bool:
 # 1. ТВИК: Отключение рекламы в uTorrent и BitTorrent
 # ==========================================
 
-_TORRENT_AD_KEYS = [
-    b"offers.left_rail_offer_enabled",
-    b"offers.sponsored_torrent_offer_enabled",
-    b"gui.show_plus_upsell",
-    b"gui.show_notices",
-    b"offers.content_offer_autoexec",
-    b"bt.enable_pulse",
-    b"offers.featured_content_badge_enabled",
-    b"offers.featured_content_notifications_enabled",
-    b"offers.featured_content_rss_enabled",
-]
+def _bdecode(data: bytes):
+    """Декодирует данные формата Bencode в структуры Python."""
+    def decode_val(idx: int):
+        b = data[idx:idx+1]
+        if b == b"i":
+            end = data.index(b"e", idx)
+            return int(data[idx+1:end]), end + 1
+        elif b == b"l":
+            res = []
+            idx += 1
+            while data[idx:idx+1] != b"e":
+                val, idx = decode_val(idx)
+                res.append(val)
+            return res, idx + 1
+        elif b == b"d":
+            res = {}
+            idx += 1
+            while data[idx:idx+1] != b"e":
+                key, idx = decode_val(idx)
+                val, idx = decode_val(idx)
+                res[key] = val
+            return res, idx + 1
+        elif b.isdigit():
+            colon = data.index(b":", idx)
+            length = int(data[idx:colon])
+            start = colon + 1
+            return data[start:start+length], start + length
+        raise ValueError(f"Unknown bencode byte {b} at {idx}")
+    val, _ = decode_val(0)
+    return val
+
+
+def _bencode(val: Any) -> bytes:
+    """Кодирует структуры Python в формат Bencode."""
+    if isinstance(val, int):
+        return b"i" + str(val).encode("ascii") + b"e"
+    elif isinstance(val, bytes):
+        return str(len(val)).encode("ascii") + b":" + val
+    elif isinstance(val, str):
+        b = val.encode("utf-8")
+        return str(len(b)).encode("ascii") + b":" + b
+    elif isinstance(val, list):
+        return b"l" + b"".join(_bencode(x) for x in val) + b"e"
+    elif isinstance(val, dict):
+        items = sorted(val.items(), key=lambda kv: kv[0] if isinstance(kv[0], bytes) else str(kv[0]).encode("utf-8"))
+        res = [b"d"]
+        for k, v in items:
+            res.append(_bencode(k))
+            res.append(_bencode(v))
+        res.append(b"e")
+        return b"".join(res)
+    raise TypeError(f"Unsupported bencode type {type(val)}")
 
 
 def _check_torrent_ads_applied() -> bool:
@@ -120,16 +161,17 @@ def _check_torrent_ads_applied() -> bool:
             checked_any = True
             try:
                 data = settings_file.read_bytes()
-                # Если хотя бы один флаг рекламы активен (i1e) — твик не применен
-                if b"offers.left_rail_offer_enabledi1e" in data or b"offers.sponsored_torrent_offer_enabledi1e" in data:
-                    return False
-                # Если флаг явно выключен (i0e) — считаем примененным
-                if b"offers.left_rail_offer_enabledi0e" in data:
-                    continue
-                return False
+                d = _bdecode(data)
+                if isinstance(d, dict):
+                    # Если adUrl пустой и основные флаги рекламы сброшены в 0
+                    ad_url = d.get(b"offers.adUrl", None)
+                    left_rail = d.get(b"offers.left_rail_offer_enabled", 1)
+                    upsell = d.get(b"gui.show_plus_upsell", 1)
+                    if ad_url == b"" or (left_rail == 0 and upsell == 0):
+                        return True
             except Exception:
                 pass
-    return checked_any
+    return False
 
 
 def _apply_torrent_ads() -> tuple[bool, str]:
@@ -144,22 +186,47 @@ def _apply_torrent_ads() -> tuple[bool, str]:
         if settings_file.exists():
             try:
                 data = settings_file.read_bytes()
-                # Бэкап создаем только если в исходнике реклама еще не была выключена
                 bak_file = c_dir / "settings.dat.bak"
-                if b"offers.left_rail_offer_enabledi1e" in data:
+                if not bak_file.exists():
                     shutil.copy2(settings_file, bak_file)
 
-                new_data = data
-                for k in _TORRENT_AD_KEYS:
-                    new_data = new_data.replace(k + b"i1e", k + b"i0e")
-                settings_file.write_bytes(new_data)
+                d = _bdecode(data)
+                if not isinstance(d, dict):
+                    continue
+
+                # Отключаем все рекламные URL и баннеры
+                d[b"offers.adUrl"] = b""
+                d[b"offers.featured_content_url"] = b""
+                d[b"offers.tronTV_url"] = b""
+                d[b"offers.left_rail_offer_enabled"] = 0
+                d[b"offers.sponsored_torrent_offer_enabled"] = 0
+                d[b"gui.show_plus_upsell"] = 0
+                d[b"gui.plus_upsell_foreground"] = 0
+                d[b"gui.show_notices"] = 0
+                d[b"offers.content_offer_autoexec"] = 0
+                d[b"bt.enable_pulse"] = 0
+                d[b"offers.featured_content_badge_enabled"] = 0
+                d[b"offers.featured_content_notifications_enabled"] = 0
+                d[b"offers.featured_content_rss_enabled"] = 0
+                # Удаляем старый .fileguard хеш, чтобы клиент принял измененные настройки и пересчитал хеш
+                d.pop(b".fileguard", None)
+
+                encoded = _bencode(d)
+                settings_file.write_bytes(encoded)
 
                 old_file = c_dir / "settings.dat.old"
                 if old_file.exists():
-                    old_data = old_file.read_bytes()
-                    for k in _TORRENT_AD_KEYS:
-                        old_data = old_data.replace(k + b"i1e", k + b"i0e")
-                    old_file.write_bytes(old_data)
+                    try:
+                        old_d = _bdecode(old_file.read_bytes())
+                        if isinstance(old_d, dict):
+                            old_d[b"offers.adUrl"] = b""
+                            old_d[b"offers.left_rail_offer_enabled"] = 0
+                            old_d[b"offers.sponsored_torrent_offer_enabled"] = 0
+                            old_d[b"gui.show_plus_upsell"] = 0
+                            old_d.pop(b".fileguard", None)
+                            old_file.write_bytes(_bencode(old_d))
+                    except Exception:
+                        pass
 
                 found_clients.append(client)
             except Exception as e:
@@ -181,19 +248,7 @@ def _revert_torrent_ads() -> tuple[bool, str]:
         settings_file = c_dir / "settings.dat"
         bak_file = c_dir / "settings.dat.bak"
 
-        # Проверяем, валиден ли бэкап (содержит ли включенную рекламу)
-        valid_bak = False
         if bak_file.exists():
-            try:
-                bdata = bak_file.read_bytes()
-                if b"offers.left_rail_offer_enabledi1e" in bdata:
-                    valid_bak = True
-                else:
-                    bak_file.unlink(missing_ok=True)
-            except Exception:
-                pass
-
-        if valid_bak:
             try:
                 shutil.copy2(bak_file, settings_file)
                 bak_file.unlink(missing_ok=True)
@@ -202,23 +257,21 @@ def _revert_torrent_ads() -> tuple[bool, str]:
             except Exception:
                 pass
 
-        # Если бэкапа нет или он был поврежден — напрямую переключаем все ключи в i1e
         if settings_file.exists():
             try:
                 data = settings_file.read_bytes()
-                new_data = data
-                for k in _TORRENT_AD_KEYS:
-                    new_data = new_data.replace(k + b"i0e", k + b"i1e")
-                settings_file.write_bytes(new_data)
-
-                old_file = c_dir / "settings.dat.old"
-                if old_file.exists():
-                    old_data = old_file.read_bytes()
-                    for k in _TORRENT_AD_KEYS:
-                        old_data = old_data.replace(k + b"i0e", k + b"i1e")
-                    old_file.write_bytes(old_data)
-
-                restored.append(client)
+                d = _bdecode(data)
+                if isinstance(d, dict):
+                    d[b"offers.adUrl"] = b"https://video.rainberrytv.com/utclassic/wrapper.html?bucket=classic-row+display"
+                    d[b"offers.featured_content_url"] = b"http://trontv.com/#!/?p=classic"
+                    d[b"offers.tronTV_url"] = b"http://trontv.com/#!/?p=classic"
+                    d[b"offers.left_rail_offer_enabled"] = 1
+                    d[b"offers.sponsored_torrent_offer_enabled"] = 1
+                    d[b"gui.show_plus_upsell"] = 1
+                    d[b"gui.plus_upsell_foreground"] = 1
+                    d.pop(b".fileguard", None)
+                    settings_file.write_bytes(_bencode(d))
+                    restored.append(client)
             except Exception:
                 pass
 
@@ -770,10 +823,10 @@ def _apply_taskbar_search_hidden() -> tuple[bool, str]:
 def _revert_taskbar_search_hidden() -> tuple[bool, str]:
     try:
         with winreg.CreateKey(winreg.HKEY_CURRENT_USER, _SEARCHBOX_KEY) as key:
-            default_val = 1 if _is_win11() else 2
-            winreg.SetValueEx(key, "SearchboxTaskbarMode", 0, winreg.REG_DWORD, default_val)
+            # Режим 2 — полноценное «Поле поиска» (Search box)
+            winreg.SetValueEx(key, "SearchboxTaskbarMode", 0, winreg.REG_DWORD, 2)
         _restart_explorer()
-        return True, "Отображение поиска на панели задач восстановлено."
+        return True, "Отображение поиска (поле поиска) на панели задач восстановлено."
     except Exception as e:
         return False, f"Ошибка изменения реестра: {e}"
 

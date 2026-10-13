@@ -1,12 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
   <defs>
-    <linearGradient id="tl" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#2196F3"/>
-      <stop offset="100%" stop-color="#0D47A1"/>
+    <linearGradient id="tlBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0288D1"/>
+      <stop offset="100%" stop-color="#01579B"/>
     </linearGradient>
+    <linearGradient id="tlGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFD54F"/>
+      <stop offset="100%" stop-color="#FFA000"/>
+    </linearGradient>
+    <filter id="tlShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="1.5" flood-opacity="0.3"/>
+    </filter>
   </defs>
-  <rect width="48" height="48" rx="10" fill="url(#tl)"/>
-  <rect x="12" y="12" width="24" height="8" rx="2" fill="#ffffff"/>
-  <rect x="20" y="18" width="8" height="18" rx="2" fill="#ffffff"/>
-  <rect x="26" y="30" width="10" height="6" rx="2" fill="#ffffff"/>
+  <!-- Background Shield -->
+  <rect x="4" y="4" width="40" height="40" rx="10" fill="url(#tlBg)"/>
+  <rect x="4" y="4" width="40" height="40" rx="10" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>
+  <!-- Minecraft Block / Badge Motif -->
+  <path d="M12 14h24v6H27v18h-6V20H12v-6z" fill="#FFFFFF" filter="url(#tlShadow)"/>
+  <!-- Gold Accent Wings / Sword Notch -->
+  <path d="M21 26h6v4h-6z" fill="url(#tlGold)"/>
+  <path d="M27 32h9v4h-9z" fill="url(#tlGold)"/>
+  <path d="M12 20h4v6h-4z" fill="#B3E5FC"/>
 </svg>

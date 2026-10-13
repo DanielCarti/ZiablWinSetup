@@ -813,3 +813,27 @@ class StartupManager:
                     return False, str(e)
 
         return False, f"Файл не найден на диске: {file_path}"
+
+    @classmethod
+    def add_custom_item(cls, name: str, exe_path: str, args: str = "") -> tuple[bool, str]:
+        """Добавляет исполняемый файл в автозагрузку пользователя (HKCU Run)."""
+        name = name.strip()
+        exe_path = exe_path.strip().strip('"')
+        args = args.strip()
+
+        if not name:
+            return False, "Укажите название программы."
+        if not exe_path or not os.path.exists(exe_path):
+            return False, f"Указанный файл не существует: {exe_path}"
+
+        full_cmd = f'"{exe_path}"'
+        if args:
+            full_cmd += f" {args}"
+
+        sub_key = r"Software\Microsoft\Windows\CurrentVersion\Run"
+        try:
+            with winreg.CreateKey(winreg.HKEY_CURRENT_USER, sub_key) as key:
+                winreg.SetValueEx(key, name, 0, winreg.REG_SZ, full_cmd)
+            return True, f"Программа «{name}» успешно добавлена в автозапуск!"
+        except Exception as e:
+            return False, f"Не удалось добавить запись в реестр: {e}"
