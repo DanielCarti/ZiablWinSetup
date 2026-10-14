@@ -50,6 +50,8 @@ from app.autostart import is_app_autostart_enabled, set_app_autostart
 from app.startup_manager import StartupManager
 from app.version import __version__, GITHUB_REPO
 from app.self_updater import check_for_app_update, download_and_apply_update
+from app.backup_restore import export_apps_backup, import_apps_backup, install_winget_package_sync, get_default_backup_dir
+from app.registry_cleaner import scan_registry_issues, clean_registry_issues, get_backups_dir
 
 logger = logging.getLogger("WinSetup")
 
@@ -92,6 +94,7 @@ class AppBridge:
         self._installed_apps: dict[str, dict[str, Any]] = {}
         self._available_updates: dict[str, dict[str, Any]] = {}
         self._pending_leftovers: dict[str, dict[str, list[str]]] = {}
+        self._last_registry_issues: dict[str, Any] = {}
         self._app_data: dict[str, Any] | None = None
         self._tray_manager: Any = None
         self._is_quitting = False
@@ -355,7 +358,7 @@ class AppBridge:
         threading.Thread(target=worker, daemon=True).start()
         return {"success": True, "message": "Процесс деинсталляции запущен"}
 
-    def clean_pending_leftovers(self, app_id: str, do_clean: bool, remember: bool) -> dict[str, Any]:
+    def clean_pending_leftovers(self, app_id: str, do_clean: bool, remember: bool, selected_leftovers: dict[str, list[str]] | None = None) -> dict[str, Any]:
         """Обрабатывает выбор пользователя из диалогового окна Uninstall Tool."""
         app = self._catalog_map.get(app_id)
         app_name = app.name if app else app_id
@@ -368,17 +371,21 @@ class AppBridge:
             status_text = "включена" if do_clean else "отключена"
             self.call_js("onLog", f"⚙️ Автоматическая очистка остатков {status_text} (выбор запомнен).")
 
-        if do_clean and leftovers:
-            cleaned = delete_leftovers(leftovers)
-            summary_parts = []
-            if cleaned["dirs"]:
-                summary_parts.append(f"{len(cleaned['dirs'])} папок")
-            if cleaned["shortcuts"]:
-                summary_parts.append(f"{len(cleaned['shortcuts'])} ярлыков")
-            if cleaned["registry"]:
-                summary_parts.append(f"{len(cleaned['registry'])} записей реестра")
-            msg = f"Очищено остатков: {', '.join(summary_parts)}" if summary_parts else "Остатки очищены"
-            self.call_js("onLog", f"🧹 Программа «{app_name}» полностью удалена. {msg}.")
+        if do_clean:
+            target = selected_leftovers if (selected_leftovers is not None) else leftovers
+            if target and (target.get("dirs") or target.get("shortcuts") or target.get("registry")):
+                cleaned = delete_leftovers(target)
+                summary_parts = []
+                if cleaned.get("dirs"):
+                    summary_parts.append(f"{len(cleaned['dirs'])} папок")
+                if cleaned.get("shortcuts"):
+                    summary_parts.append(f"{len(cleaned['shortcuts'])} ярлыков")
+                if cleaned.get("registry"):
+                    summary_parts.append(f"{len(cleaned['registry'])} записей реестра")
+                msg = f"Очищено остатков: {', '.join(summary_parts)}" if summary_parts else "Остатки очищены"
+                self.call_js("onLog", f"🧹 Программа «{app_name}» полностью удалена. {msg}.")
+            else:
+                self.call_js("onLog", f"ℹ️ Выделение со всех остатков «{app_name}» снято, файлы сохранены.")
         else:
             self.call_js("onLog", f"ℹ️ Очистка остатков программы «{app_name}» пропущена пользователем.")
 
@@ -426,6 +433,117 @@ class AppBridge:
         res = set_ignored_update_apps(app_ids)
         self.call_js("onLog", f"🛡️ Обновлен список исключений автообновления: {len(res)} приложений.")
         return res
+
+    # ==========================================
+    # Резервное копирование и восстановление программ
+    # ==========================================
+
+    def export_apps_backup_dialog(self) -> dict[str, Any]:
+        """Диалог сохранения файла и экспорт резервной копии программ."""
+        chosen_path = None
+        if self._window:
+            try:
+                import datetime
+                today_str = datetime.date.today().strftime("%Y-%m-%d")
+                def_name = f"ZiablWinSetup_Backup_{today_str}.ziablbackup"
+                res = self._window.create_file_dialog(
+                    webview.SAVE_DIALOG,
+                    save_filename=def_name,
+                    file_types=("ZiablWinSetup Backup (*.ziablbackup;*.json)", "All Files (*.*)"),
+                )
+                if res and len(res) > 0:
+                    chosen_path = res[0]
+                elif res is not None and len(res) == 0:
+                    return {"cancelled": True}
+            except Exception as e:
+                logger.debug(f"Save backup file dialog error: {e}")
+
+        result = export_apps_backup(chosen_path)
+        if result.get("success"):
+            self.call_js("onLog", f"💾 {result.get('message')}")
+        return result
+
+    def import_apps_backup_dialog(self) -> dict[str, Any]:
+        """Диалог выбора файла и чтение резервной копии программ."""
+        chosen_path = None
+        if self._window:
+            try:
+                res = self._window.create_file_dialog(
+                    webview.OPEN_DIALOG,
+                    file_types=("ZiablWinSetup Backup (*.ziablbackup;*.json)", "JSON Files (*.json)", "All Files (*.*)"),
+                )
+                if res and len(res) > 0:
+                    chosen_path = res[0]
+                else:
+                    return {"cancelled": True}
+            except Exception as e:
+                logger.error(f"Error opening backup file dialog: {e}")
+                return {"success": False, "message": str(e)}
+
+        if not chosen_path:
+            return {"cancelled": True}
+
+        result = import_apps_backup(chosen_path)
+        if result.get("success"):
+            stats = result.get("stats", {})
+            self.call_js("onLog", f"📥 Загружен бэкап «{result.get('filename')}»: {stats.get('catalog_total', 0)} программ каталога, {stats.get('system_total', 0)} программ системы.")
+        return result
+
+    def install_backup_winget(self, winget_id: str) -> dict[str, Any]:
+        """Установка сторонней программы из бэкапа через winget."""
+        def worker():
+            self.call_js("onLog", f"📦 Установка {winget_id} через winget...")
+            res = install_winget_package_sync(winget_id)
+            if res.get("success"):
+                self.call_js("onLog", f"✅ {res.get('message')}")
+            else:
+                self.call_js("onLog", f"❌ {res.get('message')}")
+            self.call_js("onBackupWingetFinished", winget_id, res.get("success", False), res.get("message", ""))
+
+        threading.Thread(target=worker, daemon=True).start()
+        return {"success": True, "message": "Установка запущена в фоне"}
+
+    def open_external_browser_search(self, query: str):
+        """Открывает поиск в веб-браузере по названию программы."""
+        import urllib.parse
+        encoded = urllib.parse.quote_plus(query)
+        webbrowser.open(f"https://www.google.com/search?q={encoded}+download")
+
+    # ==========================================
+    # Очистка и оптимизация реестра (CCleaner style)
+    # ==========================================
+
+    def scan_registry_cleaner(self) -> dict[str, Any]:
+        """Сканирует реестр на предмет устаревших/мусорных записей."""
+        issues = scan_registry_issues()
+        self._last_registry_issues = {item["id"]: item for item in issues}
+        self.call_js("onLog", f"🔍 Реестр просканирован. Найдено проблем: {len(issues)}.")
+        return {"success": True, "issues": issues, "count": len(issues)}
+
+    def clean_registry_selected(self, selected_ids: list[str]) -> dict[str, Any]:
+        """Очищает выбранные записи реестра с обязательным бэкапом."""
+        selected_items = [self._last_registry_issues[iid] for iid in selected_ids if iid in self._last_registry_issues]
+        if not selected_items:
+            return {"success": False, "message": "Нет записей для очистки"}
+
+        res = clean_registry_issues(selected_items)
+        if res.get("success"):
+            for iid in selected_ids:
+                self._last_registry_issues.pop(iid, None)
+            self.call_js("onLog", f"🧹 {res.get('message')}")
+        else:
+            self.call_js("onLog", f"❌ Ошибка очистки реестра: {res.get('message')}")
+        return res
+
+    def open_backups_directory(self) -> dict[str, Any]:
+        """Открывает папку с созданными резервными копиями в Проводнике."""
+        try:
+            b_dir = get_backups_dir()
+            if sys.platform == "win32":
+                os.startfile(str(b_dir))
+            return {"success": True, "path": str(b_dir)}
+        except Exception as e:
+            return {"success": False, "message": str(e)}
 
     # ==========================================
     # Путь для распаковки портативных версий

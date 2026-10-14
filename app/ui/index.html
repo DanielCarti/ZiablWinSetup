@@ -507,16 +507,17 @@
       background: rgba(56, 189, 248, 0.16);
       border-color: rgba(56, 189, 248, 0.45);
       transform: scale(1.08);
+      z-index: 10000;
     }
     .app-help-icon::after {
       content: attr(data-desc);
       position: absolute;
-      bottom: calc(100% + 7px);
+      top: calc(100% + 8px);
       left: 50%;
-      transform: translateX(-50%) translateY(4px);
+      transform: translateX(-50%) translateY(-4px);
       background: #1e2430;
       border: 1px solid rgba(56, 189, 248, 0.35);
-      box-shadow: none;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
       color: #f1f5f9;
       font-size: 12px;
       font-weight: 400;
@@ -525,26 +526,26 @@
       border-radius: 6px;
       white-space: normal;
       width: max-content;
-      max-width: 320px;
+      max-width: 290px;
       pointer-events: none;
       opacity: 0;
       visibility: hidden;
       transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
-      z-index: 1000;
+      z-index: 10000;
     }
     .app-help-icon::before {
       content: '';
       position: absolute;
-      bottom: calc(100% + 2px);
+      top: calc(100% + 3px);
       left: 50%;
-      transform: translateX(-50%) translateY(4px);
-      border-width: 5px 5px 0 5px;
+      transform: translateX(-50%) translateY(-4px);
+      border-width: 0 5px 5px 5px;
       border-style: solid;
-      border-color: #1e2430 transparent transparent transparent;
+      border-color: transparent transparent #1e2430 transparent;
       opacity: 0;
       visibility: hidden;
       transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
-      z-index: 1001;
+      z-index: 10001;
       pointer-events: none;
     }
     .app-help-icon:hover::after,
@@ -2509,24 +2510,31 @@
 
   <!-- Leftovers Cleaner Modal (Uninstall Tool Style) -->
   <div id="leftoversModal" class="modal-overlay" style="display: none;">
-    <div class="modal-card" style="max-width: 540px; width: 92%;">
+    <div class="modal-card" style="max-width: 560px; width: 92%;">
       <div class="modal-header-area">
         <div class="modal-icon-wrap" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; font-size: 26px;">🧹</div>
         <div>
           <div class="modal-title" id="leftoversModalTitle">Очистка остатков (Uninstall Tool)</div>
-          <div class="modal-desc" id="leftoversModalDesc">Стандартный деинсталлятор завершил работу. Обнаружены следующие оставшиеся элементы:</div>
+          <div class="modal-desc" id="leftoversModalDesc">Стандартный деинсталлятор завершил работу. Выберите элементы, которые требуется удалить:</div>
         </div>
       </div>
-      <div id="leftoversListContainer" style="max-height: 220px; overflow-y: auto; background: rgba(0,0,0,0.3); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 12px; margin: 14px 0; font-size: 12px; display: flex; flex-direction: column; gap: 8px;">
-        <!-- Leftovers list rendered dynamically -->
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 12px; margin-bottom: 4px;">
+        <span style="font-size: 12px; font-weight: 600; color: var(--text-main);">Обнаруженные остатки:</span>
+        <div style="display: flex; gap: 6px;">
+          <button type="button" class="btn-browse" onclick="setAllLeftoversChecked(true)" style="padding: 3px 8px; font-size: 11px;">☑️ Выбрать все</button>
+          <button type="button" class="btn-browse" onclick="setAllLeftoversChecked(false)" style="padding: 3px 8px; font-size: 11px;">⬜ Снять все</button>
+        </div>
       </div>
-      <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-main); cursor: pointer; user-select: none; margin: 8px 0 16px 0;">
+      <div id="leftoversListContainer" style="max-height: 250px; overflow-y: auto; background: rgba(0,0,0,0.3); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 10px; margin-bottom: 12px; font-size: 12px; display: flex; flex-direction: column; gap: 4px;">
+        <!-- Leftovers list rendered dynamically with checkboxes -->
+      </div>
+      <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-main); cursor: pointer; user-select: none; margin: 4px 0 16px 0;">
         <input type="checkbox" id="leftoversRememberChoice" style="width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer;">
         <span id="lblLeftoversRemember">Запомнить выбор (всегда очищать остатки автоматически)</span>
       </label>
       <div class="modal-actions">
         <button class="modal-btn modal-btn-cancel" id="leftoversSkipBtn" onclick="handleLeftoversDecision(false)">Пропустить</button>
-        <button class="modal-btn modal-btn-danger" id="leftoversCleanBtn" onclick="handleLeftoversDecision(true)">Удалить остатки</button>
+        <button class="modal-btn modal-btn-danger" id="leftoversCleanBtn" onclick="handleLeftoversDecision(true)">Удалить выбранные</button>
       </div>
     </div>
   </div>
@@ -2734,13 +2742,29 @@
             <div class="settings-row-left">
               <div class="settings-row-icon" style="background: rgba(56, 189, 248, 0.1); color: #38bdf8;">🔄</div>
               <div>
-                <div class="settings-row-title" id="lblAutoCheckAppUpdates">Автопоиск обновлений</div>
+                <div class="settings-row-title" id="lblAutoCheckAppUpdates">Автопоиск обновлений ZiablWinSetup</div>
                 <div class="settings-row-desc">Автоматически проверять наличие новой версии ZiablWinSetup при запуске</div>
               </div>
             </div>
             <div class="settings-row-right">
               <label class="toggle-switch">
-                <input type="checkbox" id="chkAutoCheckAppUpdates" onchange="onToggleAutoCheckAppUpdates(this.checked)" checked>
+                <input type="checkbox" id="chkAutoCheckSelfUpdate" onchange="onToggleAutoCheckSelfUpdates(this.checked)" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="settings-row">
+            <div class="settings-row-left">
+              <div class="settings-row-icon" style="background: rgba(34, 197, 94, 0.1); color: #22c55e;">⬆️</div>
+              <div>
+                <div class="settings-row-title" id="lblAutoCheckSoftwareUpdates">Автопоиск обновлений программ</div>
+                <div class="settings-row-desc">Фоновая проверка свежих версий установленных в Windows программ при старте</div>
+              </div>
+            </div>
+            <div class="settings-row-right">
+              <label class="toggle-switch">
+                <input type="checkbox" id="chkAutoCheckSoftwareUpdates" onchange="onToggleAutoCheckSoftwareUpdates(this.checked)" checked>
                 <span class="toggle-slider"></span>
               </label>
             </div>
@@ -2768,6 +2792,41 @@
           <div class="settings-card-header">
             <span>🛠️</span>
             <span id="lblToolsGroupTitle">Инструменты и обслуживание</span>
+          </div>
+
+          <div class="settings-row">
+            <div class="settings-row-left">
+              <div class="settings-row-icon" style="background: rgba(168, 85, 247, 0.1); color: #c084fc;">💾</div>
+              <div>
+                <div class="settings-row-title">Резервная копия и восстановление программ</div>
+                <div class="settings-row-desc">Экспорт списка установленного ПО для восстановления после переустановки Windows</div>
+              </div>
+            </div>
+            <div class="settings-row-right" style="display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end;">
+              <button class="btn-action btn-outline" onclick="exportAppsBackup()" style="display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; font-size: 11.5px;" title="Создать резервную копию установленных программ">
+                <span>💾</span>
+                <span>Создать бэкап</span>
+              </button>
+              <button class="btn-action btn-primary" onclick="importAppsBackup()" style="display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; font-size: 11.5px;" title="Импортировать программы из файла бэкапа">
+                <span>📥</span>
+                <span>Восстановить</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="settings-row">
+            <div class="settings-row-left">
+              <div class="settings-row-icon" style="background: rgba(239, 68, 68, 0.1); color: #f87171;">🧹</div>
+              <div>
+                <div class="settings-row-title">Очистка реестра Windows (CCleaner)</div>
+                <div class="settings-row-desc">Поиск недействительных записей, битых деинсталляторов с авто-бэкапом .reg</div>
+              </div>
+            </div>
+            <div class="settings-row-right">
+              <button class="btn-action btn-outline" onclick="openRegistryCleanerModal()" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; font-size: 12px;" title="Открыть инструмент очистки реестра">
+                <span>🧹 Очистить реестр</span>
+              </button>
+            </div>
           </div>
 
           <div class="settings-row">
@@ -2823,7 +2882,7 @@
       </div>
 
       <div style="padding: 12px 20px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.2);">
-        <div style="font-size: 11.5px; color: var(--text-dim); opacity: 0.8;" id="sidebarAppVerDisplay">ZiablWinSetup v1.4.16</div>
+        <div style="font-size: 11.5px; color: var(--text-dim); opacity: 0.8;" id="sidebarAppVerDisplay">ZiablWinSetup v1.4.17</div>
         <button class="btn-action btn-primary" onclick="closeSettingsModal()" style="padding: 6px 20px; font-size: 12px; font-weight: 600;">Готово</button>
       </div>
     </div>
@@ -2865,6 +2924,131 @@
       <div class="exclusions-list" id="exclusionsListContainer" style="flex: 1; overflow-y: auto; padding: 8px 20px; display: flex; flex-direction: column; gap: 6px;"></div>
       <div style="padding: 12px 20px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: flex-end; background: rgba(0,0,0,0.2);">
         <button class="btn-action btn-primary" id="btnExclusionsCloseBottom" onclick="closeExclusionsModal()" style="padding: 7px 22px; font-size: 12.5px; font-weight: 600;">Готово</button>
+      </div>
+  <!-- Backup & Restore Modal -->
+  <div id="backupRestoreModal" class="modal-overlay" style="display: none; z-index: 10000;" onclick="if(event.target === this) closeBackupRestoreModal()">
+    <div class="modal-card" style="width: 740px; max-width: 95vw; height: 680px; max-height: 90vh; display: flex; flex-direction: column; background: #18181b; border: 1px solid var(--border-subtle); border-radius: 12px; box-shadow: 0 24px 48px rgba(0,0,0,0.85); overflow: hidden; padding: 0;">
+      <!-- Header -->
+      <div style="padding: 16px 22px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.02);">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(168, 85, 247, 0.18); color: #c084fc; display: flex; align-items: center; justify-content: center; font-size: 16px;">💾</div>
+          <div>
+            <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #f1f5f9;">Восстановление программ из резервной копии</h3>
+            <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;" id="backupRestoreMeta">Резервная копия не выбрана</div>
+          </div>
+        </div>
+        <button onclick="closeBackupRestoreModal()" style="background:none; border:none; color:#94a3b8; font-size:20px; cursor:pointer; line-height: 1; padding: 4px;" title="Закрыть">✕</button>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div style="display: flex; gap: 8px; padding: 10px 22px; background: rgba(0,0,0,0.25); border-bottom: 1px solid rgba(255,255,255,0.06);">
+        <button id="btnBackupTabCatalog" class="btn-browse" onclick="switchBackupTab('catalog')" style="padding: 6px 14px; font-size: 12px; background: var(--accent); color: #fff; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+          <span>📦 Каталог ZiablWinSetup</span>
+          <span id="badgeBackupCatalogCount" style="background: rgba(255,255,255,0.25); padding: 1px 6px; border-radius: 8px; font-size: 11px;">0</span>
+        </button>
+        <button id="btnBackupTabSystem" class="btn-browse" onclick="switchBackupTab('system')" style="padding: 6px 14px; font-size: 12px; background: transparent; color: var(--text-main); font-weight: 500; display: inline-flex; align-items: center; gap: 6px;">
+          <span>🌐 Другие программы системы</span>
+          <span id="badgeBackupSystemCount" style="background: rgba(255,255,255,0.1); padding: 1px 6px; border-radius: 8px; font-size: 11px;">0</span>
+        </button>
+      </div>
+
+      <!-- Tab 1: Catalog Apps -->
+      <div id="backupTabCatalog" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 14px 22px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 10px; flex-wrap: wrap;">
+          <div style="font-size: 12.5px; color: var(--text-muted);">
+            Программы из резервной копии, доступные для автоматической пакетной установки:
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <button class="btn-browse" onclick="setAllBackupCatalogChecked(true)" style="padding: 4px 10px; font-size: 11px;">☑️ Выбрать все</button>
+            <button class="btn-browse" onclick="setAllBackupCatalogChecked(false)" style="padding: 4px 10px; font-size: 11px;">⬜ Снять все</button>
+          </div>
+        </div>
+        <div id="backupCatalogList" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 4px;"></div>
+      </div>
+
+      <!-- Tab 2: System Non-Catalog Apps -->
+      <div id="backupTabSystem" style="flex: 1; display: none; flex-direction: column; overflow: hidden; padding: 14px 22px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 10px; flex-wrap: wrap;">
+          <div style="font-size: 12px; color: var(--text-muted); line-height: 1.4;">
+            Программы, не входящие в стандартный каталог. Устанавливайте через Winget или находите официальные сайты:
+          </div>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+            <button class="btn-browse" onclick="installAllBackupWinget()" style="padding: 4px 10px; font-size: 11px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);">⚡ Установить всё через Winget</button>
+            <button class="btn-browse" onclick="copySystemAppsListToClipboard()" style="padding: 4px 10px; font-size: 11px;">📋 Скопировать список</button>
+            <button class="btn-browse" onclick="suggestAppsToCatalog()" style="padding: 4px 10px; font-size: 11px;">💡 Предложить в каталог</button>
+          </div>
+        </div>
+        <div id="backupSystemList" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 4px;"></div>
+      </div>
+
+      <!-- Footer -->
+      <div style="padding: 12px 22px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.25);">
+        <div id="backupRestoreSummary" style="font-size: 12px; color: #a855f7; font-weight: 500;"></div>
+        <div style="display: flex; gap: 8px;">
+          <button class="modal-btn modal-btn-cancel" onclick="closeBackupRestoreModal()" style="padding: 6px 16px; font-size: 12px;">Закрыть</button>
+          <button class="btn-action btn-primary" id="btnApplyBackupCatalog" onclick="applyBackupCatalogSelection()" style="padding: 7px 20px; font-size: 12.5px; font-weight: 600;">🚀 Установить выбранные в ZiablWinSetup</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Registry Cleaner Modal (CCleaner Style) -->
+  <div id="registryCleanerModal" class="modal-overlay" style="display: none; z-index: 10000;" onclick="if(event.target === this) closeRegistryCleanerModal()">
+    <div class="modal-card" style="width: 780px; max-width: 95vw; height: 680px; max-height: 90vh; display: flex; flex-direction: column; background: #18181b; border: 1px solid var(--border-subtle); border-radius: 12px; box-shadow: 0 24px 48px rgba(0,0,0,0.85); overflow: hidden; padding: 0;">
+      <!-- Header -->
+      <div style="padding: 16px 22px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.02);">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(239, 68, 68, 0.18); color: #f87171; display: flex; align-items: center; justify-content: center; font-size: 16px;">🧹</div>
+          <div>
+            <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #f1f5f9;">Очистка и оптимизация реестра Windows</h3>
+            <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">Поиск недействительных путей, удалённых деинсталляторов и устаревшего кэша</div>
+          </div>
+        </div>
+        <button onclick="closeRegistryCleanerModal()" style="background:none; border:none; color:#94a3b8; font-size:20px; cursor:pointer; line-height: 1; padding: 4px;" title="Закрыть">✕</button>
+      </div>
+
+      <!-- Controls & Filter Toolbar -->
+      <div style="padding: 12px 22px; background: rgba(0,0,0,0.25); border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+          <button class="btn-action btn-primary" id="btnScanRegistry" onclick="startScanRegistry()" style="height: 32px; font-size: 12px; padding: 0 14px; display: inline-flex; align-items: center; gap: 6px;">
+            <span id="scanRegistryIcon">🔍</span>
+            <span id="lblScanRegistryBtn">Сканировать реестр</span>
+          </button>
+          <div style="display: flex; gap: 4px; background: rgba(255,255,255,0.06); padding: 3px; border-radius: var(--radius-sm);">
+            <button class="btn-browse active" id="chipRegAll" onclick="setRegFilter('all')" style="padding: 4px 8px; font-size: 11px;">Все (<span id="countRegAll">0</span>)</button>
+            <button class="btn-browse" id="chipRegUninst" onclick="setRegFilter('uninstall')" style="padding: 4px 8px; font-size: 11px;">Деинсталляция (<span id="countRegUninst">0</span>)</button>
+            <button class="btn-browse" id="chipRegAuto" onclick="setRegFilter('autostart')" style="padding: 4px 8px; font-size: 11px;">Автозапуск (<span id="countRegAuto">0</span>)</button>
+            <button class="btn-browse" id="chipRegAppPaths" onclick="setRegFilter('app_paths')" style="padding: 4px 8px; font-size: 11px;">App Paths (<span id="countRegAppPaths">0</span>)</button>
+            <button class="btn-browse" id="chipRegMui" onclick="setRegFilter('muicache')" style="padding: 4px 8px; font-size: 11px;">MuiCache (<span id="countRegMui">0</span>)</button>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 6px;">
+          <button class="btn-browse" onclick="setAllRegistryChecked(true)" style="padding: 4px 9px; font-size: 11px;">☑️ Все</button>
+          <button class="btn-browse" onclick="setAllRegistryChecked(false)" style="padding: 4px 9px; font-size: 11px;">⬜ Снять</button>
+        </div>
+      </div>
+
+      <!-- Issues List -->
+      <div style="flex: 1; overflow-y: auto; padding: 14px 22px;" id="registryIssuesContainer">
+        <div style="text-align: center; color: var(--text-dim); padding: 80px 20px; font-size: 13.5px;">
+          Нажмите кнопку <b>«Сканировать реестр»</b> для поиска устаревших записей.<br>
+          <span style="font-size: 12px; color: #10b981; margin-top: 8px; display: inline-block;">🛡️ Перед любым удалением автоматически создается .reg файл для быстрого отката.</span>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div style="padding: 12px 22px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.25);">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <button class="btn-action btn-outline" onclick="openBackupsFolder()" style="height: 32px; font-size: 11.5px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px;" title="Открыть папку с созданными .reg резервными копиями">
+            <span>📁 Папка бэкапов</span>
+          </button>
+          <span id="registryCleanStatusText" style="font-size: 12px; color: #10b981;"></span>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="modal-btn modal-btn-cancel" onclick="closeRegistryCleanerModal()" style="padding: 6px 16px; font-size: 12px;">Закрыть</button>
+          <button class="modal-btn modal-btn-danger" id="btnCleanRegistryIssues" onclick="cleanSelectedRegistryIssues()" style="padding: 7px 22px; font-size: 12.5px; font-weight: 600;" disabled>🛡️ Исправить выбранные с бэкапом</button>
+        </div>
       </div>
     </div>
   </div>
@@ -3090,8 +3274,12 @@
             if (verDisplay) verDisplay.textContent = `ZiablWinSetup v${data.app_version}`;
           }
           if (data.settings && typeof data.settings.auto_check_app_updates === 'boolean') {
-            const chkAutoCheck = document.getElementById('chkAutoCheckAppUpdates');
-            if (chkAutoCheck) chkAutoCheck.checked = data.settings.auto_check_app_updates;
+            const chkSelf = document.getElementById('chkAutoCheckSelfUpdate');
+            if (chkSelf) chkSelf.checked = data.settings.auto_check_app_updates;
+          }
+          if (data.settings && typeof data.settings.auto_check_software_updates === 'boolean') {
+            const chkSoft = document.getElementById('chkAutoCheckSoftwareUpdates');
+            if (chkSoft) chkSoft.checked = data.settings.auto_check_software_updates;
           }
           if (data.settings && typeof data.settings.auto_clean_leftovers === 'boolean') {
             const chkLeft = document.getElementById('chkAutoCleanLeftovers');
@@ -3106,11 +3294,24 @@
         addLog(`Система готова. Всего программ: ${appData.apps.length}, обнаружено установленных в Windows: ${instCount}`);
 
         // Фоновый автопоиск обновления самого приложения ZiablWinSetup
-        setTimeout(() => {
-          if (window.pywebview && window.pywebview.api && window.pywebview.api.check_self_update) {
-            window.pywebview.api.check_self_update(false);
-          }
-        }, 1500);
+        const checkSelf = (!data || !data.settings || data.settings.auto_check_app_updates !== false);
+        if (checkSelf) {
+          setTimeout(() => {
+            if (window.pywebview && window.pywebview.api && window.pywebview.api.check_self_update) {
+              window.pywebview.api.check_self_update(false);
+            }
+          }, 1500);
+        }
+
+        // Фоновый автопоиск обновлений установленных программ каталога
+        const checkSoft = (!data || !data.settings || data.settings.auto_check_software_updates !== false);
+        if (checkSoft) {
+          setTimeout(() => {
+            if (typeof triggerCheckUpdates === 'function') {
+              triggerCheckUpdates();
+            }
+          }, 2500);
+        }
       } catch (e) {
         console.error('Bridge init error:', e);
       }
@@ -3388,7 +3589,9 @@
       const suBtnGh = document.getElementById('btnSelfUpdateGithub');
       if (suBtnGh) suBtnGh.textContent = s.self_update_btn_github || 'GitHub';
       const suChkLbl = document.getElementById('lblAutoCheckAppUpdates');
-      if (suChkLbl) suChkLbl.textContent = s.settings_auto_check_app_updates || 'Автопоиск обновлений';
+      if (suChkLbl) suChkLbl.textContent = appData.lang === 'ru' ? 'Автопоиск обновлений ZiablWinSetup' : 'Auto check ZiablWinSetup updates';
+      const suSoftChkLbl = document.getElementById('lblAutoCheckSoftwareUpdates');
+      if (suSoftChkLbl) suSoftChkLbl.textContent = appData.lang === 'ru' ? 'Автопоиск обновлений программ' : 'Auto check software updates';
       const suBtnCheckLbl = document.getElementById('lblCheckSelfUpdateBtn');
       if (suBtnCheckLbl) suBtnCheckLbl.textContent = s.btn_check_app_update || 'Обновление программы';
     }
@@ -3609,6 +3812,7 @@
       activeCategory = catId;
       renderCategories();
       renderCards();
+      updateFooter();
       document.getElementById('appCardsContainer').scrollTop = 0;
     }
 
@@ -3966,7 +4170,10 @@
       if (filtered.length === 0) {
         const emptyDiv = document.createElement('div');
         emptyDiv.style.cssText = 'padding: 80px 20px; text-align: center; color: var(--text-dim); font-size: 14px; width: 100%; background: transparent;';
-        if (activeCategory === 'updates_available') {
+        if (searchQuery) {
+          const safeQ = escapeHtml(searchQuery);
+          emptyDiv.innerHTML = `🔍 Ничего не найдено по запросу «<b>${safeQ}</b>».`;
+        } else if (activeCategory === 'updates_available') {
           emptyDiv.innerHTML = '✨ Все установленные программы обновлены до актуальных версий!';
         } else if (activeCategory === 'installed') {
           emptyDiv.innerHTML = '🔍 Установленные приложения не обнаружены.';
@@ -4276,6 +4483,11 @@
 
     let currentLeftoversAppId = null;
 
+    function setAllLeftoversChecked(checked) {
+      document.querySelectorAll('#leftoversListContainer .leftover-cb').forEach(cb => { cb.checked = checked; });
+    }
+    window.setAllLeftoversChecked = setAllLeftoversChecked;
+
     window.onShowLeftoversModal = function(appId, appName, leftovers) {
       currentLeftoversAppId = appId;
       const overlay = document.getElementById('leftoversModal');
@@ -4286,7 +4498,7 @@
 
       if (chk) chk.checked = false;
       if (title) title.textContent = `Очистка остатков «${appName}»`;
-      if (desc) desc.textContent = `Стандартный деинсталлятор завершил работу. Обнаружены следующие оставшиеся элементы:`;
+      if (desc) desc.textContent = `Стандартный деинсталлятор завершил работу. Выберите элементы, которые требуется удалить:`;
 
       let html = '';
       const dirs = (leftovers && leftovers.dirs) || [];
@@ -4294,28 +4506,49 @@
       const reg = (leftovers && leftovers.registry) || [];
 
       if (dirs.length > 0) {
-        html += `<div style="font-weight: 600; color: #38bdf8; margin-bottom: 2px;">📁 Папки и файлы (${dirs.length}):</div>`;
+        html += `<div style="font-weight: 600; color: #38bdf8; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+          <span>📁</span><span>Папки и файлы (${dirs.length}):</span>
+        </div>`;
         dirs.forEach(d => {
-          html += `<div style="color: var(--text-muted); word-break: break-all; padding-left: 14px; font-size: 11px;">• ${d}</div>`;
+          html += `
+            <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer; user-select: none; font-size: 11.5px; padding: 4px 6px; border-radius: 4px; background: rgba(255,255,255,0.03); margin-bottom: 2px;">
+              <input type="checkbox" checked class="leftover-cb" data-type="dirs" data-val="${escapeHtml(d)}" style="accent-color: var(--accent); margin-top: 2px; cursor: pointer;">
+              <span style="word-break: break-all; color: var(--text-main);">${escapeHtml(d)}</span>
+            </label>
+          `;
         });
       }
 
       if (shortcuts.length > 0) {
-        html += `<div style="font-weight: 600; color: #f59e0b; margin-top: 6px; margin-bottom: 2px;">📄 Ярлыки и скрипты (${shortcuts.length}):</div>`;
+        html += `<div style="font-weight: 600; color: #f59e0b; margin-top: 8px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+          <span>📄</span><span>Ярлыки и скрипты (${shortcuts.length}):</span>
+        </div>`;
         shortcuts.forEach(s => {
-          html += `<div style="color: var(--text-muted); word-break: break-all; padding-left: 14px; font-size: 11px;">• ${s}</div>`;
+          html += `
+            <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer; user-select: none; font-size: 11.5px; padding: 4px 6px; border-radius: 4px; background: rgba(255,255,255,0.03); margin-bottom: 2px;">
+              <input type="checkbox" checked class="leftover-cb" data-type="shortcuts" data-val="${escapeHtml(s)}" style="accent-color: var(--accent); margin-top: 2px; cursor: pointer;">
+              <span style="word-break: break-all; color: var(--text-main);">${escapeHtml(s)}</span>
+            </label>
+          `;
         });
       }
 
       if (reg.length > 0) {
-        html += `<div style="font-weight: 600; color: #a855f7; margin-top: 6px; margin-bottom: 2px;">🔑 Записи реестра (${reg.length}):</div>`;
+        html += `<div style="font-weight: 600; color: #a855f7; margin-top: 8px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+          <span>🔑</span><span>Записи реестра (${reg.length}):</span>
+        </div>`;
         reg.forEach(r => {
-          html += `<div style="color: var(--text-muted); word-break: break-all; padding-left: 14px; font-size: 11px;">• ${r}</div>`;
+          html += `
+            <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer; user-select: none; font-size: 11.5px; padding: 4px 6px; border-radius: 4px; background: rgba(255,255,255,0.03); margin-bottom: 2px;">
+              <input type="checkbox" checked class="leftover-cb" data-type="registry" data-val="${escapeHtml(r)}" style="accent-color: var(--accent); margin-top: 2px; cursor: pointer;">
+              <span style="word-break: break-all; color: var(--text-main);">${escapeHtml(r)}</span>
+            </label>
+          `;
         });
       }
 
       if (!html) {
-        html = '<div style="color: var(--text-muted);">Остаточных файлов не обнаружено.</div>';
+        html = '<div style="color: var(--text-muted); text-align: center; padding: 12px;">Остаточных файлов не обнаружено.</div>';
       }
 
       if (container) container.innerHTML = html;
@@ -4328,11 +4561,24 @@
       const remember = chk ? chk.checked : false;
       const appId = currentLeftoversAppId;
 
+      let selected = null;
+      if (doClean) {
+        selected = { dirs: [], shortcuts: [], registry: [] };
+        const container = document.getElementById('leftoversListContainer');
+        if (container) {
+          container.querySelectorAll('.leftover-cb:checked').forEach(cb => {
+            const t = cb.dataset.type;
+            const v = cb.dataset.val;
+            if (selected[t]) selected[t].push(v);
+          });
+        }
+      }
+
       if (overlay) overlay.style.display = 'none';
 
       if (appId && window.pywebview && window.pywebview.api) {
         try {
-          await window.pywebview.api.clean_pending_leftovers(appId, doClean, remember);
+          await window.pywebview.api.clean_pending_leftovers(appId, doClean, remember, selected);
         } catch (e) {
           console.error('clean_pending_leftovers error:', e);
         }
@@ -4402,8 +4648,14 @@
       }
 
       const hasDownloaded = Object.values(appStatuses).some(st => st.status === 'downloaded');
+      const isUpdatesView = (activeCategory === 'updates_available');
+      const downloadBtn = document.getElementById('btnDownloadSelected');
       const installAllBtn = document.getElementById('btnInstallAll');
-      if (installAllBtn) installAllBtn.disabled = !hasDownloaded;
+      if (downloadBtn) downloadBtn.style.display = isUpdatesView ? 'none' : '';
+      if (installAllBtn) {
+        installAllBtn.style.display = isUpdatesView ? 'none' : '';
+        installAllBtn.disabled = !hasDownloaded;
+      }
     }
 
     // Actions
@@ -5458,6 +5710,512 @@
     }
     window.onToggleAppAutostart = onToggleAppAutostart;
 
+    async function onToggleAutoCheckSelfUpdates(enabled) {
+      try {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.update_settings_key) {
+          await window.pywebview.api.update_settings_key('auto_check_app_updates', enabled);
+          showToast(enabled ? 'Автопоиск обновлений ZiablWinSetup включен' : 'Автопоиск обновлений ZiablWinSetup отключен', 'info', 2000);
+        }
+      } catch (err) {
+        console.error('onToggleAutoCheckSelfUpdates error:', err);
+      }
+    }
+    window.onToggleAutoCheckSelfUpdates = onToggleAutoCheckSelfUpdates;
+
+    async function onToggleAutoCheckSoftwareUpdates(enabled) {
+      try {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.update_settings_key) {
+          await window.pywebview.api.update_settings_key('auto_check_software_updates', enabled);
+          showToast(enabled ? 'Автопоиск обновлений программ включен' : 'Автопоиск обновлений программ отключен', 'info', 2000);
+        }
+      } catch (err) {
+        console.error('onToggleAutoCheckSoftwareUpdates error:', err);
+      }
+    }
+    window.onToggleAutoCheckSoftwareUpdates = onToggleAutoCheckSoftwareUpdates;
+
+    async function onToggleAutoCleanLeftovers(enabled) {
+      try {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.update_settings_key) {
+          await window.pywebview.api.update_settings_key('auto_clean_leftovers', enabled);
+          showToast(enabled ? 'Автоочистка остатков включена' : 'Автоочистка остатков отключена', 'info', 2000);
+        }
+      } catch (err) {
+        console.error('onToggleAutoCleanLeftovers error:', err);
+      }
+    }
+    window.onToggleAutoCleanLeftovers = onToggleAutoCleanLeftovers;
+
+    // ==========================================
+    // Резервное копирование и восстановление программ
+    // ==========================================
+    let currentBackupData = null;
+
+    async function exportAppsBackup() {
+      try {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.export_apps_backup_dialog) {
+          showToast('Создание резервной копии программ...', 'info', 2000);
+          const res = await window.pywebview.api.export_apps_backup_dialog();
+          if (res && res.success) {
+            showToast(`✅ Бэкап успешно создан! (${res.filename})`, 'success', 4000);
+          } else if (res && !res.cancelled) {
+            showToast(res.message || 'Ошибка создания бэкапа', 'error');
+          }
+        }
+      } catch (err) {
+        console.error('exportAppsBackup error:', err);
+        showToast(`Ошибка: ${err}`, 'error');
+      }
+    }
+    window.exportAppsBackup = exportAppsBackup;
+
+    async function importAppsBackup() {
+      try {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.import_apps_backup_dialog) {
+          const res = await window.pywebview.api.import_apps_backup_dialog();
+          if (res && res.success) {
+            openBackupRestoreModal(res);
+          } else if (res && !res.cancelled) {
+            showToast(res.message || 'Не удалось прочитать бэкап', 'error');
+          }
+        }
+      } catch (err) {
+        console.error('importAppsBackup error:', err);
+        showToast(`Ошибка: ${err}`, 'error');
+      }
+    }
+    window.importAppsBackup = importAppsBackup;
+
+    function openBackupRestoreModal(data) {
+      currentBackupData = data;
+      const modal = document.getElementById('backupRestoreModal');
+      const meta = document.getElementById('backupRestoreMeta');
+      if (meta) {
+        meta.textContent = `Файл: ${data.filename} • Создан: ${data.created_at || 'ранее'} • ПК: ${data.machine_name || 'Windows PC'}`;
+      }
+      const bCat = document.getElementById('badgeBackupCatalogCount');
+      if (bCat) bCat.textContent = data.catalog_apps ? data.catalog_apps.length : 0;
+      const bSys = document.getElementById('badgeBackupSystemCount');
+      if (bSys) bSys.textContent = data.system_apps ? data.system_apps.length : 0;
+
+      switchBackupTab('catalog');
+      renderBackupCatalogList();
+      renderBackupSystemList();
+      if (modal) modal.style.display = 'flex';
+    }
+    window.openBackupRestoreModal = openBackupRestoreModal;
+
+    function closeBackupRestoreModal() {
+      const modal = document.getElementById('backupRestoreModal');
+      if (modal) modal.style.display = 'none';
+      currentBackupData = null;
+    }
+    window.closeBackupRestoreModal = closeBackupRestoreModal;
+
+    function switchBackupTab(tab) {
+      const tabCat = document.getElementById('backupTabCatalog');
+      const tabSys = document.getElementById('backupTabSystem');
+      const btnCat = document.getElementById('btnBackupTabCatalog');
+      const btnSys = document.getElementById('btnBackupTabSystem');
+
+      if (tab === 'catalog') {
+        if (tabCat) tabCat.style.display = 'flex';
+        if (tabSys) tabSys.style.display = 'none';
+        if (btnCat) { btnCat.style.background = 'var(--accent)'; btnCat.style.color = '#fff'; }
+        if (btnSys) { btnSys.style.background = 'transparent'; btnSys.style.color = 'var(--text-main)'; }
+      } else {
+        if (tabCat) tabCat.style.display = 'none';
+        if (tabSys) tabSys.style.display = 'flex';
+        if (btnCat) { btnCat.style.background = 'transparent'; btnCat.style.color = 'var(--text-main)'; }
+        if (btnSys) { btnSys.style.background = 'var(--accent)'; btnSys.style.color = '#fff'; }
+      }
+    }
+    window.switchBackupTab = switchBackupTab;
+
+    function renderBackupCatalogList() {
+      const container = document.getElementById('backupCatalogList');
+      if (!container || !currentBackupData || !currentBackupData.catalog_apps) return;
+      const list = currentBackupData.catalog_apps;
+
+      if (list.length === 0) {
+        container.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 40px 20px;">В резервной копии не найдено программ из каталога.</div>';
+        return;
+      }
+
+      container.innerHTML = list.map(app => {
+        const isInst = Boolean(app.already_installed);
+        const chkAttr = (!isInst && app.checked !== false) ? 'checked' : '';
+        const disAttr = isInst ? 'disabled' : '';
+        const statusBadge = isInst 
+          ? '<span style="background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); font-size: 11px; padding: 2px 8px; border-radius: 6px; font-weight: 500;">✓ Уже установлено</span>'
+          : '<span style="background: rgba(56,189,248,0.15); color: #38bdf8; border: 1px solid rgba(56,189,248,0.3); font-size: 11px; padding: 2px 8px; border-radius: 6px;">Будет установлено</span>';
+
+        return `
+          <label style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: 8px; cursor: ${isInst ? 'default' : 'pointer'}; transition: background 0.15s;" onmouseover="if(!${isInst}) this.style.background='rgba(255,255,255,0.06)'" onmouseout="if(!${isInst}) this.style.background='rgba(255,255,255,0.03)'">
+            <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+              <input type="checkbox" class="backup-catalog-cb" data-id="${app.id}" ${chkAttr} ${disAttr} onchange="onBackupCatalogCbChange('${app.id}', this.checked)" style="width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer;">
+              <img src="icons/${app.id}.svg" onerror="this.src='icons/default.svg'" style="width: 28px; height: 28px; object-fit: contain; flex-shrink: 0;">
+              <div style="min-width: 0;">
+                <div style="font-weight: 600; color: #f1f5f9; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                  <span>${escapeHtml(app.name)}</span>
+                  ${app.backup_version ? `<span style="font-size: 11px; color: var(--text-dim); font-weight: 400;">(${escapeHtml(app.backup_version)})</span>` : ''}
+                </div>
+                <div style="font-size: 11px; color: var(--text-muted);">${escapeHtml(app.category || '')}</div>
+              </div>
+            </div>
+            <div>${statusBadge}</div>
+          </label>
+        `;
+      }).join('');
+      updateBackupSummary();
+    }
+
+    function onBackupCatalogCbChange(appId, checked) {
+      if (!currentBackupData || !currentBackupData.catalog_apps) return;
+      const item = currentBackupData.catalog_apps.find(a => a.id === appId);
+      if (item) item.checked = checked;
+      updateBackupSummary();
+    }
+    window.onBackupCatalogCbChange = onBackupCatalogCbChange;
+
+    function setAllBackupCatalogChecked(checked) {
+      if (!currentBackupData || !currentBackupData.catalog_apps) return;
+      currentBackupData.catalog_apps.forEach(a => {
+        if (!a.already_installed) a.checked = checked;
+      });
+      document.querySelectorAll('#backupCatalogList .backup-catalog-cb:not(:disabled)').forEach(cb => {
+        cb.checked = checked;
+      });
+      updateBackupSummary();
+    }
+    window.setAllBackupCatalogChecked = setAllBackupCatalogChecked;
+
+    function updateBackupSummary() {
+      const summary = document.getElementById('backupRestoreSummary');
+      if (!summary || !currentBackupData || !currentBackupData.catalog_apps) return;
+      const count = currentBackupData.catalog_apps.filter(a => !a.already_installed && a.checked !== false).length;
+      summary.textContent = `К установке выбрано: ${count} программ каталога`;
+    }
+
+    function applyBackupCatalogSelection() {
+      if (!currentBackupData || !currentBackupData.catalog_apps) return;
+      const toSelect = currentBackupData.catalog_apps.filter(a => !a.already_installed && a.checked !== false);
+      if (toSelect.length === 0) {
+        showToast('Не выбрано ни одной программы для установки.', 'info', 2500);
+        return;
+      }
+      toSelect.forEach(a => selectedApps.add(a.id));
+      renderCards();
+      updateFooter();
+      closeBackupRestoreModal();
+      closeSettingsModal();
+      switchMainTab('apps');
+      showToast(`Выбрано ${toSelect.length} программ из бэкапа. Готово к установке!`, 'success', 3500);
+      addLog(`📥 Из бэкапа добавлено в очередь установки ${toSelect.length} программ: ${toSelect.map(a => a.name).join(', ')}.`);
+    }
+    window.applyBackupCatalogSelection = applyBackupCatalogSelection;
+
+    function renderBackupSystemList() {
+      const container = document.getElementById('backupSystemList');
+      if (!container || !currentBackupData || !currentBackupData.system_apps) return;
+      const list = currentBackupData.system_apps;
+
+      if (list.length === 0) {
+        container.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 40px 20px;">Сторонних программ не обнаружено.</div>';
+        return;
+      }
+
+      container.innerHTML = list.map(app => {
+        const isInst = Boolean(app.already_installed);
+        const hasWinget = Boolean(app.winget_id);
+        const wingetBtn = hasWinget && !isInst
+          ? `<button class="btn-browse" onclick="installBackupWingetSingle('${escapeHtml(app.winget_id)}')" style="padding: 4px 10px; font-size: 11px; background: rgba(56,189,248,0.15); color: #38bdf8; border: 1px solid rgba(56,189,248,0.3);">📦 Winget (${escapeHtml(app.winget_id)})</button>`
+          : '';
+        const searchBtn = `<button class="btn-browse" onclick="openExternalSearch('${escapeHtml(app.name)}')" style="padding: 4px 8px; font-size: 11px;" title="Найти сайт программы в Google">🔍 Поиск</button>`;
+        const instBadge = isInst ? '<span style="font-size: 11px; color: #4ade80;">✓ Установлено</span>' : '';
+
+        return `
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: 8px; gap: 10px;">
+            <div style="min-width: 0;">
+              <div style="font-weight: 500; color: #f1f5f9; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                ${escapeHtml(app.name)}
+                ${app.backup_version ? `<span style="font-size: 11px; color: var(--text-dim); margin-left: 6px;">(${escapeHtml(app.backup_version)})</span>` : ''}
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+              ${instBadge}
+              ${wingetBtn}
+              ${searchBtn}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function installBackupWingetSingle(wingetId) {
+      if (!wingetId) return;
+      showToast(`Установка ${wingetId} через Winget...`, 'info', 3000);
+      try {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.install_backup_winget) {
+          await window.pywebview.api.install_backup_winget(wingetId);
+        }
+      } catch (e) {
+        showToast(`Ошибка: ${e}`, 'error');
+      }
+    }
+    window.installBackupWingetSingle = installBackupWingetSingle;
+
+    async function installAllBackupWinget() {
+      if (!currentBackupData || !currentBackupData.system_apps) return;
+      const wingetApps = currentBackupData.system_apps.filter(a => a.winget_id && !a.already_installed);
+      if (wingetApps.length === 0) {
+        showToast('Нет программ с найденными Winget ID для автоматической установки.', 'info', 3000);
+        return;
+      }
+      showToast(`Запуск фоновой установки ${wingetApps.length} программ через Winget...`, 'info', 4000);
+      for (const app of wingetApps) {
+        await installBackupWingetSingle(app.winget_id);
+      }
+    }
+    window.installAllBackupWinget = installAllBackupWinget;
+
+    function openExternalSearch(name) {
+      if (window.pywebview && window.pywebview.api && window.pywebview.api.open_external_browser_search) {
+        window.pywebview.api.open_external_browser_search(name);
+      } else {
+        window.open(`https://www.google.com/search?q=${encodeURIComponent(name)}+download`, '_blank');
+      }
+    }
+    window.openExternalSearch = openExternalSearch;
+
+    function copySystemAppsListToClipboard() {
+      if (!currentBackupData || !currentBackupData.system_apps) return;
+      const lines = currentBackupData.system_apps.map(a => `• ${a.name} ${a.backup_version ? `(${a.backup_version})` : ''}`).join('\n');
+      navigator.clipboard.writeText(lines).then(() => {
+        showToast('Список сторонних программ скопирован в буфер обмена!', 'success', 2500);
+      }).catch(() => {
+        showToast('Не удалось скопировать в буфер', 'error');
+      });
+    }
+    window.copySystemAppsListToClipboard = copySystemAppsListToClipboard;
+
+    function suggestAppsToCatalog() {
+      const url = 'https://github.com/DanielCarti/WinSetup/issues/new?title=Предложение+программы&body=Предлагаю+добавить+следующие+программы+в+каталог:';
+      window.open(url, '_blank');
+    }
+    window.suggestAppsToCatalog = suggestAppsToCatalog;
+
+    // ==========================================
+    // Очистка реестра Windows (CCleaner Style)
+    // ==========================================
+    let registryIssues = [];
+    let currentRegFilter = 'all';
+
+    function openRegistryCleanerModal() {
+      const modal = document.getElementById('registryCleanerModal');
+      if (modal) modal.style.display = 'flex';
+      if (registryIssues.length === 0) {
+        startScanRegistry();
+      }
+    }
+    window.openRegistryCleanerModal = openRegistryCleanerModal;
+
+    function closeRegistryCleanerModal() {
+      const modal = document.getElementById('registryCleanerModal');
+      if (modal) modal.style.display = 'none';
+    }
+    window.closeRegistryCleanerModal = closeRegistryCleanerModal;
+
+    async function startScanRegistry() {
+      const btn = document.getElementById('btnScanRegistry');
+      const icon = document.getElementById('scanRegistryIcon');
+      const lbl = document.getElementById('lblScanRegistryBtn');
+      const container = document.getElementById('registryIssuesContainer');
+
+      if (btn) btn.disabled = true;
+      if (icon) icon.textContent = '⏳';
+      if (lbl) lbl.textContent = 'Сканирование...';
+      if (container) {
+        container.innerHTML = `
+          <div style="text-align: center; color: var(--text-dim); padding: 80px 20px;">
+            <div style="font-size: 24px; margin-bottom: 8px;">🔍</div>
+            <div>Сканирование реестра Windows на предмет мусорных и неактуальных записей...</div>
+          </div>
+        `;
+      }
+
+      try {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.scan_registry_cleaner) {
+          const res = await window.pywebview.api.scan_registry_cleaner();
+          if (res && res.success) {
+            registryIssues = res.issues || [];
+            updateRegCounts();
+            renderRegistryIssues();
+            const btnClean = document.getElementById('btnCleanRegistryIssues');
+            if (btnClean) btnClean.disabled = (registryIssues.length === 0);
+          }
+        }
+      } catch (err) {
+        console.error('startScanRegistry error:', err);
+        showToast(`Ошибка сканирования реестра: ${err}`, 'error');
+      } finally {
+        if (btn) btn.disabled = false;
+        if (icon) icon.textContent = '🔍';
+        if (lbl) lbl.textContent = 'Сканировать реестр';
+      }
+    }
+    window.startScanRegistry = startScanRegistry;
+
+    function updateRegCounts() {
+      const cAll = document.getElementById('countRegAll');
+      const cUninst = document.getElementById('countRegUninst');
+      const cAuto = document.getElementById('countRegAuto');
+      const cAppPaths = document.getElementById('countRegAppPaths');
+      const cMui = document.getElementById('countRegMui');
+
+      if (cAll) cAll.textContent = registryIssues.length;
+      if (cUninst) cUninst.textContent = registryIssues.filter(i => i.category === 'uninstall').length;
+      if (cAuto) cAuto.textContent = registryIssues.filter(i => i.category === 'autostart').length;
+      if (cAppPaths) cAppPaths.textContent = registryIssues.filter(i => i.category === 'app_paths').length;
+      if (cMui) cMui.textContent = registryIssues.filter(i => i.category === 'muicache').length;
+    }
+
+    function setRegFilter(filter) {
+      currentRegFilter = filter;
+      const chips = ['chipRegAll', 'chipRegUninst', 'chipRegAuto', 'chipRegAppPaths', 'chipRegMui'];
+      chips.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          const match = (id === 'chipRegAll' && filter === 'all') ||
+                        (id === 'chipRegUninst' && filter === 'uninstall') ||
+                        (id === 'chipRegAuto' && filter === 'autostart') ||
+                        (id === 'chipRegAppPaths' && filter === 'app_paths') ||
+                        (id === 'chipRegMui' && filter === 'muicache');
+          el.style.background = match ? 'var(--accent)' : 'transparent';
+          el.style.color = match ? '#fff' : 'var(--text-main)';
+        }
+      });
+      renderRegistryIssues();
+    }
+    window.setRegFilter = setRegFilter;
+
+    function renderRegistryIssues() {
+      const container = document.getElementById('registryIssuesContainer');
+      if (!container) return;
+
+      const filtered = registryIssues.filter(i => currentRegFilter === 'all' || i.category === currentRegFilter);
+
+      if (filtered.length === 0) {
+        if (registryIssues.length === 0) {
+          container.innerHTML = `
+            <div style="text-align: center; color: #10b981; padding: 80px 20px; font-size: 14px;">
+              <div style="font-size: 32px; margin-bottom: 8px;">✨</div>
+              <b>Реестр чист!</b> Ошибочных и мусорных записей не обнаружено.
+            </div>
+          `;
+        } else {
+          container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 60px 20px;">В выбранной категории записей не найдено.</div>';
+        }
+        return;
+      }
+
+      container.innerHTML = filtered.map(issue => {
+        const isChecked = issue.checked !== false;
+        let catColor = '#38bdf8';
+        if (issue.category === 'uninstall') catColor = '#f87171';
+        else if (issue.category === 'autostart') catColor = '#f59e0b';
+        else if (issue.category === 'app_paths') catColor = '#a855f7';
+        else if (issue.category === 'muicache') catColor = '#10b981';
+
+        return `
+          <label style="display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: 8px; margin-bottom: 6px; cursor: pointer; transition: background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+            <input type="checkbox" class="reg-issue-cb" data-id="${issue.id}" ${isChecked ? 'checked' : ''} onchange="onRegistryIssueCheck('${issue.id}', this.checked)" style="accent-color: var(--accent); margin-top: 3px; cursor: pointer;">
+            <div style="flex: 1; min-width: 0;">
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span style="font-weight: 600; color: #f1f5f9; font-size: 13px;">${escapeHtml(issue.title)}</span>
+                <span style="font-size: 10.5px; padding: 1px 6px; border-radius: 4px; background: ${catColor}22; color: ${catColor}; border: 1px solid ${catColor}44;">${escapeHtml(issue.category_title || issue.category)}</span>
+              </div>
+              <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 3px; word-break: break-all;">${escapeHtml(issue.detail)}</div>
+              <div style="font-size: 10.5px; color: var(--text-dim); margin-top: 2px; font-family: monospace; word-break: break-all;">${escapeHtml(issue.root_key)}\\${escapeHtml(issue.subkey_path)}</div>
+            </div>
+          </label>
+        `;
+      }).join('');
+    }
+
+    function onRegistryIssueCheck(issueId, checked) {
+      const it = registryIssues.find(i => i.id === issueId);
+      if (it) it.checked = checked;
+      const checkedCount = registryIssues.filter(i => i.checked !== false).length;
+      const btnClean = document.getElementById('btnCleanRegistryIssues');
+      if (btnClean) btnClean.disabled = (checkedCount === 0);
+    }
+    window.onRegistryIssueCheck = onRegistryIssueCheck;
+
+    function setAllRegistryChecked(checked) {
+      const filtered = registryIssues.filter(i => currentRegFilter === 'all' || i.category === currentRegFilter);
+      filtered.forEach(i => { i.checked = checked; });
+      document.querySelectorAll('#registryIssuesContainer .reg-issue-cb').forEach(cb => { cb.checked = checked; });
+      const checkedCount = registryIssues.filter(i => i.checked !== false).length;
+      const btnClean = document.getElementById('btnCleanRegistryIssues');
+      if (btnClean) btnClean.disabled = (checkedCount === 0);
+    }
+    window.setAllRegistryChecked = setAllRegistryChecked;
+
+    async function cleanSelectedRegistryIssues() {
+      const toClean = registryIssues.filter(i => i.checked !== false);
+      if (toClean.length === 0) {
+        showToast('Не выбрано ни одной записи для очистки.', 'info');
+        return;
+      }
+
+      const confirmed = confirm(`Будет безопасно очищено ${toClean.length} записей реестра.\n\nПеред удалением будет автоматически создан файл отката (.reg) в папке Документы.\nПродолжить?`);
+      if (!confirmed) return;
+
+      const btn = document.getElementById('btnCleanRegistryIssues');
+      const statusText = document.getElementById('registryCleanStatusText');
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Очистка и создание бэкапа...'; }
+
+      try {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.clean_registry_selected) {
+          const ids = toClean.map(i => i.id);
+          const res = await window.pywebview.api.clean_registry_selected(ids);
+          if (res && res.success) {
+            registryIssues = registryIssues.filter(i => !ids.includes(i.id));
+            updateRegCounts();
+            renderRegistryIssues();
+            if (statusText) {
+              statusText.textContent = `✓ Очищено: ${res.cleaned_count} шт. (Бэкап: ${res.backup_filename})`;
+              setTimeout(() => { statusText.textContent = ''; }, 6000);
+            }
+            showToast(`✅ ${res.message}`, 'success', 5000);
+          } else {
+            showToast(res ? res.message : 'Ошибка очистки', 'error');
+          }
+        }
+      } catch (err) {
+        console.error('cleanSelectedRegistryIssues error:', err);
+        showToast(`Ошибка: ${err}`, 'error');
+      } finally {
+        if (btn) {
+          btn.disabled = (registryIssues.length === 0);
+          btn.textContent = '🛡️ Исправить выбранные с бэкапом';
+        }
+      }
+    }
+    window.cleanSelectedRegistryIssues = cleanSelectedRegistryIssues;
+
+    async function openBackupsFolder() {
+      try {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.open_backups_directory) {
+          await window.pywebview.api.open_backups_directory();
+        }
+      } catch (err) {
+        console.error('openBackupsFolder error:', err);
+      }
+    }
+    window.openBackupsFolder = openBackupsFolder;
+
     window.onStartupItemsUpdated = function(items) {
       if (items && Array.isArray(items)) {
         startupItems = items;
@@ -5938,7 +6696,7 @@
       const modal = document.getElementById('noUpdateModal');
       const desc = document.getElementById('noUpdateModalDesc');
       if (desc) {
-        desc.textContent = `У вас установлена самая последняя версия ZiablWinSetup (${version || 'v1.4.16'}). Обновлений не требуется.`;
+        desc.textContent = `У вас установлена самая последняя версия ZiablWinSetup (${version || 'v1.4.17'}). Обновлений не требуется.`;
       }
       if (modal) modal.style.display = 'flex';
     }
@@ -6040,7 +6798,7 @@
     };
 
     window.onAppUpdateNotFound = function(info) {
-      const cur = (info && info.current_version) ? ('v' + info.current_version) : 'v1.4.16';
+      const cur = (info && info.current_version) ? ('v' + info.current_version) : 'v1.4.17';
       const s = appData.strings || {};
       const tpl = s.self_update_no_updates || 'У вас установлена самая последняя версия ZiablWinSetup ({version})';
       showToast(tpl.replace('{version}', cur), 'success', 3500);
