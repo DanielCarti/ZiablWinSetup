@@ -19,10 +19,12 @@ import os
 import re
 import subprocess
 import winreg
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
 
 logger = logging.getLogger("WinSetup")
+shlwapi = getattr(ctypes.windll, "shlwapi", None)
 
 # Ключи реестра Windows для автозапуска
 REG_RUN_LOCATIONS = [
@@ -54,6 +56,14 @@ REG_RUN_LOCATIONS = [
         "is_disabled": True,
     },
     {
+        "root": winreg.HKEY_CURRENT_USER,
+        "root_name": "HKCU",
+        "sub_key": r"Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run",
+        "approved_sub_key": None,
+        "source_type": "registry_user",
+        "label": "Реестр (HKCU Policies Run)",
+    },
+    {
         "root": winreg.HKEY_LOCAL_MACHINE,
         "root_name": "HKLM",
         "sub_key": r"Software\Microsoft\Windows\CurrentVersion\Run",
@@ -83,6 +93,14 @@ REG_RUN_LOCATIONS = [
     {
         "root": winreg.HKEY_LOCAL_MACHINE,
         "root_name": "HKLM",
+        "sub_key": r"Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run",
+        "approved_sub_key": None,
+        "source_type": "registry_machine",
+        "label": "Реестр (HKLM Policies Run)",
+    },
+    {
+        "root": winreg.HKEY_LOCAL_MACHINE,
+        "root_name": "HKLM",
         "sub_key": r"Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Run",
         "approved_sub_key": r"Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run32",
         "source_type": "registry_machine",
@@ -106,6 +124,14 @@ REG_RUN_LOCATIONS = [
         "source_type": "registry_machine",
         "label": "Реестр (HKLM 32-bit RunOnce, откл.)",
         "is_disabled": True,
+    },
+    {
+        "root": winreg.HKEY_LOCAL_MACHINE,
+        "root_name": "HKLM",
+        "sub_key": r"Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run",
+        "approved_sub_key": None,
+        "source_type": "registry_machine",
+        "label": "Реестр (HKLM 32-bit Policies Run)",
     },
 ]
 
@@ -146,6 +172,12 @@ def extract_executable_path(command: str) -> str:
     # 2. Если весь путь существует без аргументов
     if os.path.exists(expanded):
         return expanded
+
+    # 2.1 Специальная обработка служб-оберток (например Wallpaper Engine: wallpaperservice32.exe -p "...\wallpaper32.exe")
+    if "wallpaperservice" in expanded.lower():
+        m_target = re.search(r'([A-Za-z]:\\[^:\*\?\"\<\>\|]*?wallpaper\d*\.exe)\b', expanded, re.IGNORECASE)
+        if m_target and os.path.exists(m_target.group(1)):
+            return m_target.group(1)
 
     # 3. Ищем первое совпадение .exe
     m = re.search(r"([A-Za-z]:\\[^:\*\?\"\<\>\|]*?\.exe)\b", expanded, re.IGNORECASE)
@@ -463,6 +495,315 @@ def extract_file_icon_base64(filepath: str) -> str:
         return ""
 
 
+def _resolve_resource_string(res_str: str) -> str:
+    """Разрешает строки ресурсов вида @{Package?ms-resource://...} или ms-resource:..."""
+    if not res_str or not shlwapi:
+        return res_str
+    if not (res_str.startswith("@") or res_str.startswith("ms-resource:")):
+        return res_str
+    buf = ctypes.create_unicode_buffer(1024)
+    try:
+        if shlwapi.SHLoadIndirectString(res_str, buf, 1024, None) == 0 and buf.value:
+            return buf.value.strip()
+    except Exception:
+        pass
+    return res_str
+
+
+def _find_package_info(family_name: str) -> dict[str, Any]:
+    """Находит сведения о пакете UWP (папка, манифест, exe, логотип, издатель) по имени семейства."""
+    parts = family_name.split("_")
+    if len(parts) != 2:
+        return {}
+    name_prefix, pub_id = parts[0], parts[1]
+    packages_key = r"Software\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\PackageRepository\Packages"
+
+    manifest_folder = None
+    best_folder = None
+    try:
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, packages_key) as k:
+            num_keys, _, _ = winreg.QueryInfoKey(k)
+            for i in range(num_keys):
+                sub = winreg.EnumKey(k, i)
+                # Пропускаем сплит-пакеты ресурсов (_split.)
+                if "_split." in sub:
+                    continue
+                if sub.startswith(name_prefix + "_") and sub.endswith("_" + pub_id):
+                    try:
+                        with winreg.OpenKey(k, sub) as pk:
+                            p, _ = winreg.QueryValueEx(pk, "Path")
+                            if os.path.exists(p):
+                                best_folder = p
+                                if os.path.exists(os.path.join(p, "AppxManifest.xml")):
+                                    manifest_folder = p
+                                    break
+                    except OSError:
+                        pass
+    except Exception:
+        pass
+
+    folder = manifest_folder or best_folder
+    if not folder:
+        return {}
+
+    info: dict[str, Any] = {
+        "folder": folder,
+        "display_name": "",
+        "publisher": "",
+        "exe_path": "",
+        "logo_path": "",
+        "task_names": {},
+    }
+
+    mf_path = os.path.join(folder, "AppxManifest.xml")
+    if os.path.exists(mf_path):
+        try:
+            tree = ET.parse(mf_path)
+            root = tree.getroot()
+            props = root.find("{http://schemas.microsoft.com/appx/manifest/foundation/windows10}Properties")
+            if props is not None:
+                for c in props:
+                    t = c.tag.split("}")[-1]
+                    if t == "PublisherDisplayName" and c.text:
+                        info["publisher"] = c.text
+                    elif t == "DisplayName" and c.text:
+                        info["display_name"] = c.text
+                    elif t == "Logo" and c.text:
+                        info["logo_path"] = os.path.join(folder, c.text)
+
+            for app in root.iter("{http://schemas.microsoft.com/appx/manifest/foundation/windows10}Application"):
+                ex = app.attrib.get("Executable")
+                if ex:
+                    full_ex = os.path.normpath(os.path.join(folder, ex))
+                    if os.path.exists(full_ex) and not info["exe_path"]:
+                        info["exe_path"] = full_ex
+                for elem in app.iter():
+                    if elem.tag.endswith("StartupTask"):
+                        tid = elem.attrib.get("TaskId")
+                        dn = elem.attrib.get("DisplayName")
+                        if tid and dn:
+                            info["task_names"][tid] = dn
+        except Exception as e:
+            logger.debug(f"Ошибка парсинга AppxManifest {mf_path}: {e}")
+
+    return info
+
+
+def _scan_uwp_startup_items() -> list[dict[str, Any]]:
+    """Сканирует элементы автозапуска современных UWP/Store приложений (windows.startupTask)."""
+    items: list[dict[str, Any]] = []
+    base_key = r"Software\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\SystemAppData"
+    hkey = winreg.HKEY_CURRENT_USER
+
+    try:
+        with winreg.OpenKey(hkey, base_key) as k:
+            n_pkgs, _, _ = winreg.QueryInfoKey(k)
+            for i in range(n_pkgs):
+                pkg_family = winreg.EnumKey(k, i)
+                pkg_path = f"{base_key}\\{pkg_family}"
+
+                # Проверяем SplashScreen для локализованного имени
+                splash_name = ""
+                splash_path = f"{pkg_path}\\SplashScreen"
+                try:
+                    with winreg.OpenKey(hkey, splash_path) as spk:
+                        n_sp, _, _ = winreg.QueryInfoKey(spk)
+                        for s_i in range(n_sp):
+                            app_sub = winreg.EnumKey(spk, s_i)
+                            try:
+                                with winreg.OpenKey(spk, app_sub) as apk:
+                                    raw_app_name, _ = winreg.QueryValueEx(apk, "AppName")
+                                    resolved = _resolve_resource_string(raw_app_name)
+                                    if resolved and not resolved.startswith("@") and not resolved.startswith("ms-resource:"):
+                                        splash_name = resolved
+                                        break
+                            except OSError:
+                                pass
+                except OSError:
+                    pass
+
+                try:
+                    with winreg.OpenKey(hkey, pkg_path) as pk:
+                        n_tasks, _, _ = winreg.QueryInfoKey(pk)
+                        for j in range(n_tasks):
+                            task_id = winreg.EnumKey(pk, j)
+                            if task_id in ("HAM", "PSR", "Schemas", "SplashScreen"):
+                                continue
+
+                            task_path = f"{pkg_path}\\{task_id}"
+                            try:
+                                with winreg.OpenKey(hkey, task_path) as tk:
+                                    try:
+                                        state, _ = winreg.QueryValueEx(tk, "State")
+                                    except FileNotFoundError:
+                                        continue
+
+                                    enabled = (state == 2)
+                                    pkg_info = _find_package_info(pkg_family)
+                                    folder = pkg_info.get("folder", "")
+                                    exe_path = pkg_info.get("exe_path", "")
+                                    pub = pkg_info.get("publisher", "")
+
+                                    task_disp = pkg_info.get("task_names", {}).get(task_id, "")
+                                    resolved_task_disp = _resolve_resource_string(task_disp) if task_disp else ""
+                                    manifest_disp = _resolve_resource_string(pkg_info.get("display_name", ""))
+
+                                    display_name = ""
+                                    for candidate in [splash_name, resolved_task_disp, manifest_disp]:
+                                        if candidate and not candidate.startswith("@") and not candidate.startswith("ms-resource:"):
+                                            display_name = candidate
+                                            break
+
+                                    if not display_name and exe_path:
+                                        display_name = get_file_description(exe_path)
+
+                                    if not display_name:
+                                        display_name = pkg_family.split("_")[0]
+                                        if display_name.startswith("Microsoft."):
+                                            display_name = display_name.replace("Microsoft.", "")
+
+                                    if not pub and exe_path:
+                                        pub = get_file_publisher(exe_path)
+
+                                    icon_data = extract_file_icon_base64(exe_path) if exe_path else ""
+
+                                    item_uid = f"uwp_{pkg_family}_{task_id}"
+                                    clean_id = hashlib.md5(item_uid.encode("utf-8")).hexdigest()[:12]
+
+                                    items.append({
+                                        "id": clean_id,
+                                        "name": display_name,
+                                        "raw_name": f"{pkg_family}!{task_id}",
+                                        "display_name": display_name,
+                                        "publisher": pub or "Microsoft Store",
+                                        "command": f"UWP: {pkg_family} ({task_id})",
+                                        "file_path": exe_path or folder,
+                                        "file_exists": bool(exe_path and os.path.exists(exe_path)),
+                                        "source_type": "uwp_startup",
+                                        "source_label": "Магазин Windows (UWP)",
+                                        "location": f"AppModel: {pkg_family}",
+                                        "pkg_family": pkg_family,
+                                        "task_id": task_id,
+                                        "approved_key": None,
+                                        "root_hkey_name": "HKCU",
+                                        "enabled": enabled,
+                                        "can_toggle": True,
+                                        "can_delete": True,
+                                        "icon_data": icon_data,
+                                    })
+                            except OSError:
+                                pass
+                except OSError:
+                    pass
+    except Exception as e:
+        logger.warning(f"Ошибка сканирования UWP автозапуска: {e}")
+
+    return items
+
+
+def _scan_services_startup_items() -> list[dict[str, Any]]:
+    """Сканирует сторонние автозапускаемые службы Windows (например Wallpaper Engine, AnyDesk, VPN)."""
+    items: list[dict[str, Any]] = []
+    services_key = r"SYSTEM\CurrentControlSet\Services"
+    hkey = winreg.HKEY_LOCAL_MACHINE
+
+    try:
+        with winreg.OpenKey(hkey, services_key) as k:
+            n_sub, _, _ = winreg.QueryInfoKey(k)
+            for i in range(n_sub):
+                s_name = winreg.EnumKey(k, i)
+                try:
+                    with winreg.OpenKey(k, s_name) as sk:
+                        try:
+                            start_type, _ = winreg.QueryValueEx(sk, "Start")
+                            if start_type not in (2, 4):  # 2: Auto, 4: Disabled
+                                continue
+                            img_path, _ = winreg.QueryValueEx(sk, "ImagePath")
+                        except FileNotFoundError:
+                            continue
+
+                        img_lower = img_path.lower()
+                        # Исключаем системные службы ядра Windows
+                        if any(x in img_lower for x in [
+                            "system32\\svchost.exe",
+                            "system32\\lsass.exe",
+                            "system32\\services.exe",
+                            "system32\\csrss.exe",
+                            "system32\\smss.exe",
+                            "system32\\spoolsv.exe",
+                            "system32\\sppsvc.exe",
+                            "system32\\vmnat.exe",
+                            "system32\\vmnetdhcp.exe",
+                        ]):
+                            continue
+                        if "system32\\drivers\\" in img_lower or img_lower.endswith(".sys"):
+                            continue
+                        if img_lower.startswith("\\systemroot\\system32\\") or img_lower.startswith("system32\\"):
+                            continue
+
+                        try:
+                            disp_name, _ = winreg.QueryValueEx(sk, "DisplayName")
+                            disp_name = _resolve_resource_string(disp_name)
+                        except FileNotFoundError:
+                            disp_name = s_name
+
+                        # Ищем реальный исполняемый файл (в т.ч. обертки вроде wallpaperservice)
+                        target_exe = None
+                        if "wallpaperservice" in img_lower:
+                            m = re.search(r'([A-Za-z]:\\[^:\*\?\"\<\>\|]*?wallpaper\d*\.exe)\b', img_path, re.IGNORECASE)
+                            if m and os.path.exists(m.group(1)):
+                                target_exe = m.group(1)
+
+                        exe_path = target_exe or extract_executable_path(img_path)
+                        pub = get_file_publisher(exe_path)
+                        desc = get_file_description(exe_path)
+
+                        # Исключаем встроенные системные компоненты Microsoft Windows в system32
+                        if pub and any(m in pub.lower() for m in ["microsoft windows", "microsoft corporation"]) and ("windows\\system32" in exe_path.lower() or "windows\\syswow64" in exe_path.lower()):
+                            continue
+
+                        # Исключаем службы обновлений Windows Defender
+                        if s_name.lower() in ("windefend", "mdcoresvc"):
+                            continue
+
+                        enabled = (start_type == 2)
+                        icon_data = extract_file_icon_base64(exe_path)
+
+                        item_id = f"service_{s_name}"
+                        clean_id = hashlib.md5(item_id.encode("utf-8")).hexdigest()[:12]
+
+                        clean_disp = disp_name or desc or s_name
+                        if clean_disp.startswith("@"):
+                            clean_disp = desc or s_name
+
+                        items.append({
+                            "id": clean_id,
+                            "name": clean_disp,
+                            "raw_name": s_name,
+                            "service_name": s_name,
+                            "display_name": clean_disp,
+                            "publisher": pub or "Служба Windows",
+                            "command": img_path,
+                            "file_path": exe_path,
+                            "file_exists": bool(exe_path and os.path.exists(exe_path)),
+                            "source_type": "windows_service",
+                            "source_label": "Служба Windows",
+                            "location": f"Service: {s_name}",
+                            "approved_key": None,
+                            "root_hkey_name": "HKLM",
+                            "enabled": enabled,
+                            "can_toggle": True,
+                            "can_delete": True,
+                            "icon_data": icon_data,
+                        })
+                except OSError:
+                    pass
+    except Exception as e:
+        logger.warning(f"Ошибка сканирования служб Windows: {e}")
+
+    return items
+
+
 class StartupManager:
     """Менеджер автозагрузки Windows (реестр, папки, планировщик)."""
 
@@ -590,27 +931,41 @@ class StartupManager:
                 creationflags=subprocess.CREATE_NO_WINDOW,
             )
             if p.stdout.strip():
-                reader = csv.DictReader(io.StringIO(p.stdout))
+                lines = p.stdout.strip().splitlines()
+                reader = csv.reader(lines)
+                header = next(reader, None)
+                seen_tasks: set[str] = set()
+
                 for row in reader:
-                    task_name = row.get("TaskName", "")
-                    cmd = row.get("Task To Run", "")
-                    sched = row.get("Schedule Type", "")
-                    state = row.get("Scheduled Task State", "")
-                    author = row.get("Author", "")
+                    if len(row) < 9:
+                        continue
+
+                    # Извлекаем значения с поддержкой как позиций, так и локализованных имен
+                    task_name = row[1].strip() if len(row) > 1 else ""
+                    state = row[3].strip() if len(row) > 3 else ""
+                    author = row[7].strip() if len(row) > 7 else ""
+                    cmd = row[8].strip() if len(row) > 8 else ""
+                    sched = row[17].strip() if len(row) > 17 else ""
 
                     if not task_name or task_name.startswith("\\Microsoft\\Windows"):
+                        continue
+                    if task_name in seen_tasks:
                         continue
 
                     # Отбираем задачи, запускающиеся при входе/старте или принадлежащие сторонним приложениям
                     is_startup = any(k in sched.lower() for k in ["logon", "start up", "startup", "вход", "запуск"])
-                    is_app_updater = any(s in cmd.lower() for s in ["update", "discord", "telegram", "adobe", "steam", "edge", "chrome", "yandex", "browser", "tray", "client", "amnezia", "onedrive"])
+                    is_app_updater = any(s in cmd.lower() or s in task_name.lower() for s in [
+                        "update", "discord", "telegram", "adobe", "steam", "edge", "chrome",
+                        "yandex", "browser", "tray", "client", "amnezia", "onedrive", "wallpaper", "pcmanager"
+                    ])
 
                     if is_startup or is_app_updater:
+                        seen_tasks.add(task_name)
                         exe_path = extract_executable_path(cmd)
                         file_exists = bool(exe_path and os.path.exists(exe_path))
                         pub = get_file_publisher(exe_path) or author.replace("ZIABL-REDMIBOOK\\", "").strip()
                         desc = get_file_description(exe_path)
-                        enabled = (state.lower() != "disabled" and state.lower() != "отключено")
+                        enabled = (state.lower() not in ("disabled", "отключено"))
 
                         clean_name = task_name.lstrip("\\")
                         item_id = f"schtask_{task_name}"
@@ -639,6 +994,20 @@ class StartupManager:
                         })
         except Exception as e:
             logger.warning(f"Ошибка чтения задач планировщика: {e}")
+
+        # 4. Сканирование UWP/Store приложений (windows.startupTask)
+        try:
+            uwp_items = _scan_uwp_startup_items()
+            items.extend(uwp_items)
+        except Exception as e:
+            logger.warning(f"Ошибка получения UWP автозагрузки: {e}")
+
+        # 5. Сканирование сторонних служб автозапуска (Windows Services)
+        try:
+            service_items = _scan_services_startup_items()
+            items.extend(service_items)
+        except Exception as e:
+            logger.warning(f"Ошибка получения служб автозапуска: {e}")
 
         return items
 
@@ -706,6 +1075,48 @@ class StartupManager:
 
             return False, f"Ошибка schtasks: {res.stderr.strip() or res.stdout.strip()}"
 
+        # Магазин Windows (UWP / MSIX)
+        if source_type == "uwp_startup":
+            pkg_family = target.get("pkg_family")
+            task_id = target.get("task_id")
+            if not pkg_family or not task_id:
+                return False, "Недостаточно данных для переключения UWP приложения."
+            reg_path = rf"Software\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\SystemAppData\{pkg_family}\{task_id}"
+            try:
+                with winreg.CreateKeyEx(winreg.HKEY_CURRENT_USER, reg_path, 0, winreg.KEY_SET_VALUE | winreg.KEY_READ) as k:
+                    # 2 = Enabled, 1 = Disabled
+                    winreg.SetValueEx(k, "State", 0, winreg.REG_DWORD, 2 if enable else 1)
+                    winreg.SetValueEx(k, "UserEnabledStartupOnce", 0, winreg.REG_DWORD, 1 if enable else 0)
+                state_str = "включен" if enable else "отключен"
+                return True, f"Автозапуск «{target['name']}» успешно {state_str}."
+            except Exception as e:
+                return False, f"Ошибка переключения UWP автозапуска: {e}"
+
+        # Службы Windows (Services)
+        if source_type == "windows_service":
+            svc_name = target.get("service_name") or target.get("raw_name")
+            if not svc_name:
+                return False, "Не указано имя службы."
+
+            start_arg = "auto" if enable else "disabled"
+            res = subprocess.run(
+                ["sc.exe", "config", svc_name, f"start={start_arg}"],
+                capture_output=True,
+                text=True,
+                creationflags=subprocess.CREATE_NO_WINDOW
+            )
+            if res.returncode == 0:
+                state_str = "включена" if enable else "отключена"
+                return True, f"Служба «{target['name']}» успешно {state_str}."
+
+            # Попытка через PowerShell с UAC-повышением прав
+            ps_cmd = f"Set-Service -Name '{svc_name}' -StartupType {('Automatic' if enable else 'Disabled')}"
+            if _run_elevated_ps(ps_cmd):
+                state_str = "включена" if enable else "отключена"
+                return True, f"Служба «{target['name']}» успешно {state_str}."
+
+            return False, f"Ошибка переключения службы {svc_name}: {res.stderr.strip() or res.stdout.strip()}"
+
         return False, "Неподдерживаемый тип элемента для переключения."
 
     @classmethod
@@ -717,6 +1128,20 @@ class StartupManager:
             return False, "Элемент не найден в списке автозапуска."
 
         source_type = target["source_type"]
+
+        # Магазин Windows (UWP)
+        if source_type == "uwp_startup":
+            # Для UWP удаление отключает автозапуск (State = 1)
+            return cls.toggle_item(item_id, False)
+
+        # Службы Windows
+        if source_type == "windows_service":
+            # Безопасное «удаление» службы из автозапуска = остановка и отключение (Disabled)
+            svc_name = target.get("service_name") or target.get("raw_name")
+            ps_cmd = f"Stop-Service -Name '{svc_name}' -Force -ErrorAction SilentlyContinue; Set-Service -Name '{svc_name}' -StartupType Disabled"
+            if _run_elevated_ps(ps_cmd):
+                return True, f"Служба «{target['name']}» остановлена и отключена из автозапуска."
+            return cls.toggle_item(item_id, False)
 
         # Реестр
         if source_type in ("registry_user", "registry_machine"):
