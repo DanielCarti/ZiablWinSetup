@@ -249,6 +249,11 @@ class AppBridge:
         settings = load_settings()
         settings["language"] = new_lang
         save_settings(settings)
+        if self._window:
+            try:
+                self._window.set_title(i18n.t("app_title"))
+            except Exception:
+                pass
 
         categories_data = [
             {
@@ -553,21 +558,74 @@ class AppBridge:
             logger.error(f"Failed to open backups dir: {e}")
             return {"success": False, "message": str(e)}
 
+    def _open_file_dialog_native(
+        self,
+        title: str,
+        filter_str_ps: str,
+        file_types_webview: tuple[str, ...],
+        directory: str = "",
+    ) -> str | None:
+        """
+        Безопасное открытие диалога выбора файла.
+        Сначала пробует webview.create_file_dialog со строгим форматом pywebview,
+        при любой ошибке мгновенно и надежно использует PowerShell OpenFileDialog.
+        """
+        if self._window:
+            try:
+                res = self._window.create_file_dialog(
+                    webview.OPEN_DIALOG,
+                    directory=directory or None,
+                    allow_multiple=False,
+                    file_types=file_types_webview,
+                )
+                if res and len(res) > 0:
+                    return str(res[0])
+                elif res is not None and len(res) == 0:
+                    # Пользователь нажал "Отмена"
+                    return None
+            except Exception as e:
+                logger.warning(f"pywebview create_file_dialog warning (falling back to PowerShell): {e}")
+
+        # PowerShell WinForms OpenFileDialog fallback
+        try:
+            dir_clause = f'$f.InitialDirectory = "{directory}";' if directory and os.path.exists(directory) else ""
+            ps_script = f"""
+            Add-Type -AssemblyName System.Windows.Forms
+            $f = New-Object System.Windows.Forms.OpenFileDialog
+            $f.Filter = "{filter_str_ps}"
+            $f.Title = "{title}"
+            {dir_clause}
+            if ($f.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {{
+                Write-Output $f.FileName
+            }}
+            """
+            out = subprocess.check_output(
+                ["powershell", "-NoProfile", "-NonInteractive", "-Command", ps_script],
+                creationflags=NO_WINDOW,
+                text=True,
+                timeout=60
+            ).strip()
+            if out and os.path.exists(out):
+                return out
+        except Exception as e:
+            logger.warning(f"PowerShell OpenFileDialog fallback error: {e}")
+
+        return None
+
     def restore_registry_backup_dialog(self) -> dict[str, Any]:
         """Открывает диалог выбора .reg файла для восстановления реестра из бэкапа."""
-        if not self._window:
-            return {"success": False, "message": "Окно приложения недоступно."}
         try:
             b_dir = get_backups_dir()
             b_dir.mkdir(parents=True, exist_ok=True)
-            res = self._window.create_file_dialog(
-                webview.OPEN_DIALOG,
+            title = "Выберите файл резервной копии реестра (.reg)" if i18n.lang == "ru" else "Select Registry Backup File (.reg)"
+            reg_path = self._open_file_dialog_native(
+                title=title,
+                filter_str_ps="Файлы реестра (*.reg)|*.reg|Все файлы (*.*)|*.*",
+                file_types_webview=("Файлы реестра (*.reg)", "Все файлы (*.*)"),
                 directory=str(b_dir.resolve()),
-                file_types=('Файлы реестра (*.reg)', '*.reg', 'Все файлы (*.*)', '*.*')
             )
-            if not res or len(res) == 0:
+            if not reg_path:
                 return {"success": False, "cancelled": True}
-            reg_path = res[0]
             ok, msg = restore_registry_backup(reg_path)
             if ok:
                 self.call_js("onLog", f"🔄 {msg}")
@@ -593,27 +651,38 @@ class AppBridge:
         }
 
     def save_virustotal_api_key(self, api_key: str) -> dict[str, Any]:
-        """Сохраняет пользовательский API ключ VirusTotal."""
-        from app.virustotal import set_virustotal_api_key
+        """Сохраняет и строго валидирует пользовательский API ключ VirusTotal."""
+        from app.virustotal import set_virustotal_api_key, validate_virustotal_api_key
         key = (api_key or "").strip()
+        if not key:
+            set_virustotal_api_key("")
+            msg = "API ключ VirusTotal удален." if i18n.lang == "ru" else "VirusTotal API key removed."
+            self.call_js("onLog", f"ℹ️ {msg}")
+            return {"success": True, "has_key": False, "message": msg}
+
+        valid, err_msg = validate_virustotal_api_key(key, lang=i18n.lang)
+        if not valid:
+            self.call_js("onLog", f"❌ {err_msg}")
+            return {"success": False, "has_key": False, "message": err_msg}
+
         ok = set_virustotal_api_key(key)
         if ok:
-            self.call_js("onLog", "🛡️ API ключ VirusTotal успешно сохранен.")
-        return {"success": ok, "has_key": bool(key)}
+            msg = "API ключ VirusTotal успешно сохранен и проверен." if i18n.lang == "ru" else "VirusTotal API key verified and saved."
+            self.call_js("onLog", f"🛡️ {msg}")
+            return {"success": True, "has_key": True, "message": msg}
+        return {"success": False, "has_key": False, "message": "Не удалось сохранить ключ в настройках."}
 
     def browse_and_scan_virustotal(self) -> dict[str, Any]:
         """Открывает диалог выбора файла и запускает сканирование в VirusTotal."""
-        if not self._window:
-            return {"success": False, "message": "Окно приложения недоступно."}
         try:
-            res = self._window.create_file_dialog(
-                webview.OPEN_DIALOG,
-                allow_multiple=False,
-                file_types=('Все файлы (*.*)', '*.*', 'Программы и файлы (*.exe;*.msi;*.dll;*.zip;*.7z)', '*.exe;*.msi;*.dll;*.zip;*.7z')
+            title = "Выберите файл для проверки VirusTotal" if i18n.lang == "ru" else "Select file to scan with VirusTotal"
+            file_path = self._open_file_dialog_native(
+                title=title,
+                filter_str_ps="Все файлы (*.*)|*.*|Программы и архивы (*.exe;*.msi;*.dll;*.zip;*.7z)|*.exe;*.msi;*.dll;*.zip;*.7z",
+                file_types_webview=("Все файлы (*.*)", "Программы и файлы (*.exe;*.msi;*.dll;*.zip;*.7z)"),
             )
-            if not res or len(res) == 0:
+            if not file_path:
                 return {"success": False, "cancelled": True}
-            file_path = res[0]
             from app.virustotal import scan_file_by_path
             res_scan = scan_file_by_path(file_path)
             if res_scan.get("success"):
@@ -1071,14 +1140,92 @@ class AppBridge:
         return get_all_tweaks(i18n.lang)
 
     def apply_tweak(self, tweak_id: str) -> dict[str, Any]:
-        res = apply_tweak_by_id(tweak_id)
+        res = apply_tweak_by_id(tweak_id, lang=i18n.lang)
         if tweak_id == "clean_winsetup_installers":
             self._downloaded_results.clear()
             self.call_js("onLog", f"🗑️ {res.get('message', '')}")
+        elif tweak_id in ("repair_system_files", "restore_health_dism") and res.get("success"):
+            self._start_tweak_status_monitor(tweak_id)
         return res
 
+    def _start_tweak_status_monitor(self, tweak_id: str) -> None:
+        """Запускает фоновый поток мониторинга выполнения sfc /scannow или DISM RestoreHealth."""
+        from app.tweaks import get_sfc_status_file, get_dism_status_file
+        status_file = get_sfc_status_file() if tweak_id == "repair_system_files" else get_dism_status_file()
+        process_name = "sfc.exe" if tweak_id == "repair_system_files" else "dism.exe"
+
+        def monitor():
+            time.sleep(3)
+            seen_process = False
+            for _ in range(900):  # До 30 минут
+                time.sleep(2)
+                # Проверяем файл статуса
+                if status_file.exists():
+                    try:
+                        content = status_file.read_text(encoding="utf-8").strip()
+                        if content.startswith("COMPLETED"):
+                            if tweak_id == "repair_system_files":
+                                if "SUCCESS" in content:
+                                    msg_ru = "✅ Сканирование sfc /scannow завершено: повреждений целостности не обнаружено."
+                                    msg_en = "✅ sfc /scannow scan complete: no integrity violations found."
+                                else:
+                                    msg_ru = "✅ Сканирование sfc /scannow завершено: поврежденные системные файлы восстановлены."
+                                    msg_en = "✅ sfc /scannow scan complete: corrupted system files were repaired."
+                            else:
+                                if "SUCCESS" in content:
+                                    msg_ru = "✅ Восстановление хранилища компонентов DISM успешно завершено."
+                                    msg_en = "✅ DISM component store restore completed successfully."
+                                else:
+                                    msg_ru = "⚠️ Восстановление DISM завершено. Проверьте журнал CBS/DISM."
+                                    msg_en = "⚠️ DISM restore completed. Check CBS/DISM logs."
+
+                            self.call_js("onTweakCompleted", {
+                                "id": tweak_id,
+                                "success": True,
+                                "message": msg_en if i18n.lang == "en" else msg_ru,
+                                "message_ru": msg_ru,
+                                "message_en": msg_en,
+                            })
+                            try:
+                                status_file.unlink(missing_ok=True)
+                            except Exception:
+                                pass
+                            return
+                    except Exception as e:
+                        logger.debug(f"Status file read error: {e}")
+
+                # Проверяем, запущен ли процесс
+                try:
+                    out = subprocess.check_output(
+                        ["tasklist", "/FI", f"IMAGENAME eq {process_name}"],
+                        creationflags=NO_WINDOW,
+                        text=True,
+                        timeout=5
+                    )
+                    is_running = process_name.lower() in out.lower()
+                    if is_running:
+                        seen_process = True
+                    elif seen_process and not is_running:
+                        time.sleep(1)
+                        if status_file.exists():
+                            continue
+                        msg_ru = "✅ Выполнение команды завершено."
+                        msg_en = "✅ Command execution completed."
+                        self.call_js("onTweakCompleted", {
+                            "id": tweak_id,
+                            "success": True,
+                            "message": msg_en if i18n.lang == "en" else msg_ru,
+                            "message_ru": msg_ru,
+                            "message_en": msg_en,
+                        })
+                        return
+                except Exception:
+                    pass
+
+        threading.Thread(target=monitor, daemon=True).start()
+
     def revert_tweak(self, tweak_id: str) -> dict[str, Any]:
-        return revert_tweak_by_id(tweak_id)
+        return revert_tweak_by_id(tweak_id, lang=i18n.lang)
 
     # ==========================================
     # Metro / UWP приложения Windows

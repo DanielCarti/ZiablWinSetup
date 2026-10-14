@@ -7,6 +7,7 @@ ZiablWinSetup — Модуль интеграции с VirusTotal API (v3).
 import os
 import sys
 import json
+import re
 import time
 import uuid
 import hashlib
@@ -23,6 +24,52 @@ logger = logging.getLogger("WinSetup")
 
 VT_API_BASE = "https://www.virustotal.com/api/v3"
 MAX_UPLOAD_SIZE = 32 * 1024 * 1024  # 32 МБ для бесплатного публичного эндпоинта
+
+
+def validate_virustotal_api_key(api_key: str, lang: str = "ru") -> tuple[bool, str]:
+    """
+    Проверяет формат ключа VirusTotal и делает контрольный запрос к API.
+    Официальный ключ VirusTotal v3 состоит ровно из 64 шестнадцатеричных символов.
+    """
+    key = (api_key or "").strip()
+    if not key:
+        msg = "Ключ API не может быть пустым." if lang == "ru" else "API key cannot be empty."
+        return False, msg
+
+    if len(key) != 64 or not re.match(r"^[a-fA-F0-9]{64}$", key):
+        msg = (
+            "Неверный формат ключа VirusTotal. Официальный API ключ должен состоять ровно из 64 шестнадцатеричных символов (0-9, a-f)."
+            if lang == "ru"
+            else "Invalid VirusTotal API key format. Official API key must be exactly 64 hexadecimal characters (0-9, a-f)."
+        )
+        return False, msg
+
+    # Проверка ключа запросом к VirusTotal API
+    try:
+        url = f"{VT_API_BASE}/users/current"
+        req = urllib.request.Request(
+            url,
+            headers={
+                "x-apikey": key,
+                "User-Agent": "ZiablWinSetup/1.4.21",
+                "Accept": "application/json"
+            }
+        )
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            if resp.status == 200:
+                return True, ""
+    except urllib.error.HTTPError as e:
+        if e.code == 401:
+            msg = (
+                "Ключ отклонен сервисом VirusTotal (ошибка 401: неверный или неактивный ключ). Проверьте ключ в личном кабинете virustotal.com."
+                if lang == "ru"
+                else "Key rejected by VirusTotal (401 Unauthorized: invalid or inactive key). Please check your key at virustotal.com."
+            )
+            return False, msg
+    except Exception as e:
+        logger.debug(f"VT key network validation check (non-fatal): {e}")
+
+    return True, ""
 
 
 def format_file_size(size_bytes: int) -> str:

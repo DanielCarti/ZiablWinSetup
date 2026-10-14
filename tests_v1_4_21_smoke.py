@@ -118,6 +118,28 @@ class TestVirusTotal(unittest.TestCase):
         self.assertEqual(res["error_type"], "file_not_found")
 
 
+    def test_validate_api_key(self):
+        from app.virustotal import validate_virustotal_api_key
+        # Test empty
+        ok, msg = validate_virustotal_api_key("")
+        self.assertFalse(ok)
+        self.assertIn("пустым", msg)
+
+        # Test vulgar / invalid format string ("хуй")
+        ok, msg = validate_virustotal_api_key("хуй")
+        self.assertFalse(ok)
+        self.assertIn("64", msg)
+
+        # Test too short
+        ok, msg = validate_virustotal_api_key("abc123")
+        self.assertFalse(ok)
+        self.assertIn("64", msg)
+
+        # Test non-hex characters
+        ok, msg = validate_virustotal_api_key("z" * 64)
+        self.assertFalse(ok)
+        self.assertIn("64", msg)
+
     def test_settings_api_key(self):
         from app.settings import get_virustotal_api_key, set_virustotal_api_key
         orig_key = get_virustotal_api_key()
@@ -315,6 +337,16 @@ class TestWebAPI(unittest.TestCase):
 
         scan_res = bridge.scan_virustotal_path("C:\\non_existent_path.exe")
         self.assertFalse(scan_res.get("success"))
+
+        # Test save_virustotal_api_key with invalid input
+        res_invalid = bridge.save_virustotal_api_key("хуй")
+        self.assertFalse(res_invalid.get("success"))
+        self.assertIn("64", res_invalid.get("message", ""))
+
+        # Test save_virustotal_api_key with empty string (clear)
+        res_empty = bridge.save_virustotal_api_key("")
+        self.assertTrue(res_empty.get("success"))
+        self.assertFalse(res_empty.get("has_key"))
 
         # Test backups dir opening
         b_res = bridge.open_backups_directory()

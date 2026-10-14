@@ -874,30 +874,88 @@ def _revert_taskbar_align_left() -> tuple[bool, str]:
         return False, f"Ошибка изменения реестра: {e}"
 
 
-def _run_sfc_scan() -> tuple[bool, str]:
+def get_sfc_status_file() -> Path:
+    import tempfile
+    return Path(tempfile.gettempdir()) / "ziabl_sfc_status.txt"
+
+
+def get_dism_status_file() -> Path:
+    import tempfile
+    return Path(tempfile.gettempdir()) / "ziabl_dism_status.txt"
+
+
+def _run_sfc_scan() -> tuple[bool, str, str]:
     """Запуск проверки целостности системных файлов Windows (sfc /scannow)."""
     try:
-        title = "ZiablWinSetup - Проверка системных файлов (sfc /scannow)"
-        cmd = f'title {title} && color 0b && echo ======================================================== && echo [ZiablWinSetup] Проверка целостности системных файлов Windows && echo Команда: sfc /scannow && echo Пожалуйста, дождитесь окончания процесса... && echo ======================================================== && echo. && sfc.exe /scannow && echo. && echo -------------------------------------------------------- && echo Сканирование завершено. Нажмите любую клавишу для выхода... && pause >nul'
+        sf = get_sfc_status_file()
+        try:
+            sf.unlink(missing_ok=True)
+        except Exception:
+            pass
+        sf_str = str(sf.resolve()).replace("/", "\\")
+
+        title = "ZiablWinSetup - System File Checker (sfc /scannow)"
+        cmd = (
+            f'title {title} && color 0b && '
+            f'echo ======================================================== && '
+            f'echo [ZiablWinSetup] System File Checker (sfc /scannow) && '
+            f'echo Scans and repairs integrity of Windows system files && '
+            f'echo ======================================================== && echo. && '
+            f'sfc.exe /scannow & (if errorlevel 1 (echo COMPLETED_REPAIRED > "{sf_str}") else (echo COMPLETED_SUCCESS > "{sf_str}")) && '
+            f'echo. && echo -------------------------------------------------------- && '
+            f'echo Scan finished. Press any key to exit... && pause >nul'
+        )
         ret = ctypes.windll.shell32.ShellExecuteW(None, "runas", "cmd.exe", f'/c "{cmd}"', None, 1)
         if ret > 32:
-            return True, "Консоль sfc /scannow запущена от имени Администратора. Прогресс отображается в открывшемся окне."
-        return False, "Не удалось запустить sfc /scannow (требуются права администратора)."
+            return (
+                True,
+                "⏳ Консоль sfc /scannow запущена от имени Администратора. Ожидание завершения...",
+                "⏳ sfc /scannow console launched as Administrator. Waiting for completion...",
+            )
+        return (
+            False,
+            "Не удалось запустить sfc /scannow (требуются права администратора).",
+            "Failed to launch sfc /scannow (Administrator rights required).",
+        )
     except Exception as e:
-        return False, f"Ошибка запуска sfc /scannow: {e}"
+        return False, f"Ошибка запуска sfc /scannow: {e}", f"Error launching sfc /scannow: {e}"
 
 
-def _run_dism_restore_health() -> tuple[bool, str]:
+def _run_dism_restore_health() -> tuple[bool, str, str]:
     """Восстановление хранилища компонентов Windows через DISM /Online /Cleanup-Image /RestoreHealth."""
     try:
-        title = "ZiablWinSetup - Восстановление компонентов (DISM RestoreHealth)"
-        cmd = f'title {title} && color 0a && echo ======================================================== && echo [ZiablWinSetup] Восстановление хранилища компонентов Windows && echo Команда: DISM /Online /Cleanup-Image /RestoreHealth && echo Пожалуйста, дождитесь завершения операции... && echo ======================================================== && echo. && dism.exe /Online /Cleanup-Image /RestoreHealth && echo. && echo -------------------------------------------------------- && echo Восстановление завершено. Нажмите любую клавишу для выхода... && pause >nul'
+        df = get_dism_status_file()
+        try:
+            df.unlink(missing_ok=True)
+        except Exception:
+            pass
+        df_str = str(df.resolve()).replace("/", "\\")
+
+        title = "ZiablWinSetup - Restore Component Store Health (DISM)"
+        cmd = (
+            f'title {title} && color 0a && '
+            f'echo ======================================================== && '
+            f'echo [ZiablWinSetup] Component Store Health Restore (DISM) && '
+            f'echo Repairs Windows system image component corruption && '
+            f'echo ======================================================== && echo. && '
+            f'dism.exe /Online /Cleanup-Image /RestoreHealth & (if errorlevel 1 (echo COMPLETED_ERROR > "{df_str}") else (echo COMPLETED_SUCCESS > "{df_str}")) && '
+            f'echo. && echo -------------------------------------------------------- && '
+            f'echo Restore finished. Press any key to exit... && pause >nul'
+        )
         ret = ctypes.windll.shell32.ShellExecuteW(None, "runas", "cmd.exe", f'/c "{cmd}"', None, 1)
         if ret > 32:
-            return True, "Консоль DISM RestoreHealth запущена от имени Администратора. Прогресс отображается в открывшемся окне."
-        return False, "Не удалось запустить DISM RestoreHealth (требуются права администратора)."
+            return (
+                True,
+                "⏳ Консоль DISM RestoreHealth запущена от имени Администратора. Ожидание завершения...",
+                "⏳ DISM RestoreHealth console launched as Administrator. Waiting for completion...",
+            )
+        return (
+            False,
+            "Не удалось запустить DISM RestoreHealth (требуются права администратора).",
+            "Failed to launch DISM RestoreHealth (Administrator rights required).",
+        )
     except Exception as e:
-        return False, f"Ошибка запуска DISM RestoreHealth: {e}"
+        return False, f"Ошибка запуска DISM RestoreHealth: {e}", f"Error launching DISM RestoreHealth: {e}"
 
 
 # ==========================================
@@ -1117,17 +1175,45 @@ def get_all_tweaks(lang: str = "ru") -> list[dict]:
     return [t.to_dict(lang) for t in TWEAKS]
 
 
-def apply_tweak_by_id(tweak_id: str) -> dict:
+def apply_tweak_by_id(tweak_id: str, lang: str = "ru") -> dict:
     for t in TWEAKS:
         if t.id == tweak_id:
-            ok, msg = t.apply()
-            return {"success": ok, "message": msg, "applied": t.is_applied(), "type": t.type}
+            res = t.apply()
+            if isinstance(res, tuple) and len(res) == 3:
+                ok, msg_ru, msg_en = res
+                msg = msg_en if lang == "en" else msg_ru
+            else:
+                ok, msg = res
+                msg_ru = msg
+                msg_en = msg
+            return {
+                "success": ok,
+                "message": msg,
+                "message_ru": msg_ru,
+                "message_en": msg_en,
+                "applied": t.is_applied(),
+                "type": t.type
+            }
     return {"success": False, "message": f"Твик '{tweak_id}' не найден."}
 
 
-def revert_tweak_by_id(tweak_id: str) -> dict:
+def revert_tweak_by_id(tweak_id: str, lang: str = "ru") -> dict:
     for t in TWEAKS:
         if t.id == tweak_id:
-            ok, msg = t.revert()
-            return {"success": ok, "message": msg, "applied": t.is_applied(), "type": t.type}
+            res = t.revert()
+            if isinstance(res, tuple) and len(res) == 3:
+                ok, msg_ru, msg_en = res
+                msg = msg_en if lang == "en" else msg_ru
+            else:
+                ok, msg = res
+                msg_ru = msg
+                msg_en = msg
+            return {
+                "success": ok,
+                "message": msg,
+                "message_ru": msg_ru,
+                "message_en": msg_en,
+                "applied": t.is_applied(),
+                "type": t.type
+            }
     return {"success": False, "message": f"Твик '{tweak_id}' не найден."}
