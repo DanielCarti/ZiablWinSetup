@@ -470,7 +470,12 @@ class AppBridge:
             try:
                 res = self._window.create_file_dialog(
                     webview.OPEN_DIALOG,
-                    file_types=("ZiablWinSetup Backup (*.ziablbackup;*.json)", "JSON Files (*.json)", "All Files (*.*)"),
+                    file_types=(
+                        "Резервные копии (*.ziablbackup;*.txt;*.json)",
+                        "Файлы ZiablWinSetup Backup (*.ziablbackup)",
+                        "Текстовые бэкапы (*.txt)",
+                        "Все файлы (*.*)",
+                    ),
                 )
                 if res and len(res) > 0:
                     chosen_path = res[0]
@@ -510,7 +515,7 @@ class AppBridge:
         webbrowser.open(f"https://www.google.com/search?q={encoded}+download")
 
     # ==========================================
-    # Очистка и оптимизация реестра (CCleaner style)
+    # Очистка и оптимизация реестра Windows
     # ==========================================
 
     def scan_registry_cleaner(self) -> dict[str, Any]:

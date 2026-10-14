@@ -1035,6 +1035,20 @@ TWEAKS: list[TweakEntry] = [
         type="action",
         is_available=lambda: True,
     ),
+    TweakEntry(
+        id="clean_registry",
+        name="Очистка и оптимизация реестра Windows",
+        name_en="Clean & Optimize Windows Registry",
+        description="Поиск недействительных путей, битых деинсталляторов и устаревшего кэша с созданием резервной копии .reg перед исправлением.",
+        description_en="Scans invalid paths, orphaned uninstallers, and obsolete cache with automatic .reg backup before repair.",
+        category="cleanup",
+        icon="🧹",
+        is_applied=lambda: False,
+        apply=lambda: (True, "Открыто окно очистки реестра."),
+        revert=lambda: (True, "Действие очистки не требует отката."),
+        type="action",
+        is_available=lambda: True,
+    ),
 ]
 
 

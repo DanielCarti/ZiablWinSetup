@@ -1573,6 +1573,13 @@
       color: #fff;
       font-weight: 600;
     }
+    #appCardsContainer.is-scanning {
+      opacity: 0.65;
+      pointer-events: none;
+      user-select: none;
+      filter: grayscale(20%);
+      transition: opacity 0.25s ease, filter 0.25s ease;
+    }
     .startup-list {
       display: flex;
       flex-direction: column;
@@ -2348,6 +2355,32 @@
         <svg class="qa-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
         <span class="qa-label">Все → Интерактивная</span>
       </button>
+
+      <div class="sidebar-divider"></div>
+
+      <div class="sidebar-section-title" id="secSystemTools">Инструменты</div>
+      <button class="quick-btn" id="qaRegistryCleaner" onclick="openRegistryCleanerModal()" title="Очистка и оптимизация реестра Windows">
+        <svg class="qa-svg" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+        </svg>
+        <span class="qa-label">Очистка реестра</span>
+      </button>
+      <button class="quick-btn" id="qaBackupExport" onclick="exportAppsBackup()" title="Создать резервную копию установленных программ в Документах">
+        <svg class="qa-svg" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+          <polyline points="17 21 17 13 7 13 7 21"/>
+          <polyline points="7 3 7 8 15 8"/>
+        </svg>
+        <span class="qa-label">Создать бэкап</span>
+      </button>
+      <button class="quick-btn" id="qaBackupRestore" onclick="importAppsBackup()" title="Восстановить программы из файла бэкапа">
+        <svg class="qa-svg" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        <span class="qa-label">Восстановить</span>
+      </button>
     </aside>
 
     <!-- Draggable Splitter -->
@@ -2392,6 +2425,18 @@
         </div>
       </div>
 
+      <!-- Startup Scanning Indicator Banner -->
+      <div id="startupScanningBanner" style="display: none; padding: 10px 16px; margin: 12px 18px 0 18px; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: var(--radius-sm); align-items: center; justify-content: space-between; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 16px; height: 16px; border: 2px solid rgba(56, 189, 248, 0.25); border-top-color: #38bdf8; border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0;"></div>
+          <div>
+            <div style="font-size: 12.5px; font-weight: 600; color: #38bdf8;" id="scanningBannerTitle">🔍 Определение установленных программ в системе...</div>
+            <div style="font-size: 11px; color: var(--text-muted);" id="scanningBannerDesc">Пожалуйста, подождите пару секунд, пока определяются уже установленные программы.</div>
+          </div>
+        </div>
+        <div style="font-size: 11.5px; color: #38bdf8; font-weight: 500; opacity: 0.9;">⏳ Проверка...</div>
+      </div>
+
       <!-- App Cards -->
       <main id="appCardsContainer" style="flex: 1; overflow-y: auto; padding-bottom: 90px; box-sizing: border-box; background: var(--bg-app);"></main>
     </div>
@@ -2421,6 +2466,19 @@
           <button class="btn-action btn-primary" id="btnMetroRestoreSelected" onclick="handleRestoreSelectedMetro()" style="height: 32px; font-size: 12px; padding: 0 12px;">↩️ Восстановить выбранные</button>
         </div>
       </div>
+
+      <!-- Metro Filters & Search Toolbar -->
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+        <div class="metro-filter-chips" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+          <button class="filter-chip active" id="chipMetroAll" onclick="setMetroFilter('all')">Все (<span id="countMetroAll">0</span>)</button>
+          <button class="filter-chip" id="chipMetroInstalled" onclick="setMetroFilter('installed')">Установленные (<span id="countMetroInstalled">0</span>)</button>
+          <button class="filter-chip" id="chipMetroRemoved" onclick="setMetroFilter('removed')">Удалённые (<span id="countMetroRemoved">0</span>)</button>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <input type="text" id="metroSearchInput" placeholder="Поиск Metro-приложения..." oninput="onMetroSearch(this.value)" style="height: 32px; padding: 0 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--text-main); font-size: 12px; width: 220px; box-sizing: border-box;">
+        </div>
+      </div>
+
       <div class="metro-grid" id="metroGrid"></div>
     </div>
 
@@ -2514,7 +2572,7 @@
   </div>
 
   <!-- Leftovers Cleaner Modal (Uninstall Tool Style) -->
-  <div id="leftoversModal" class="modal-overlay" style="display: none;">
+  <div id="leftoversModal" class="modal-overlay" style="display: none; z-index: 12000;">
     <div class="modal-card" style="max-width: 560px; width: 92%;">
       <div class="modal-header-area">
         <div class="modal-icon-wrap" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; font-size: 26px;">🧹</div>
@@ -2545,7 +2603,7 @@
   </div>
 
   <!-- Add Program to Startup Modal -->
-  <div id="addStartupModal" class="modal-overlay" style="display: none;">
+  <div id="addStartupModal" class="modal-overlay" style="display: none; z-index: 12000;">
     <div class="modal-card" style="max-width: 480px; width: 90%;">
       <div class="modal-header-area">
         <div class="modal-icon-wrap" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;">🚀</div>
@@ -2580,7 +2638,7 @@
   </div>
 
   <!-- Self-Updater Modal (Modern TG WS Proxy Style) -->
-  <div id="selfUpdateModal" class="modal-overlay" style="display: none;">
+  <div id="selfUpdateModal" class="modal-overlay" style="display: none; z-index: 12000;">
     <div class="self-update-card">
       <div class="self-update-header">
         <div class="self-update-icon-wrap">🚀</div>
@@ -2635,7 +2693,7 @@
   </div>
 
   <!-- Dedicated No Update Confirmation Modal -->
-  <div id="noUpdateModal" class="modal-overlay" style="display: none;">
+  <div id="noUpdateModal" class="modal-overlay" style="display: none; z-index: 12000;">
     <div class="modal-card" style="max-width: 440px; text-align: center; padding: 24px;">
       <div style="font-size: 40px; margin-bottom: 12px;">✅</div>
       <div style="font-size: 16px; font-weight: 600; color: #f1f5f9; margin-bottom: 6px;" id="noUpdateModalTitle">У вас последняя версия!</div>
@@ -2821,21 +2879,6 @@
 
           <div class="settings-row">
             <div class="settings-row-left">
-              <div class="settings-row-icon" style="background: rgba(239, 68, 68, 0.1); color: #f87171;">🧹</div>
-              <div>
-                <div class="settings-row-title">Очистка реестра Windows (CCleaner)</div>
-                <div class="settings-row-desc">Поиск недействительных записей, битых деинсталляторов с авто-бэкапом .reg</div>
-              </div>
-            </div>
-            <div class="settings-row-right">
-              <button class="btn-action btn-outline" onclick="openRegistryCleanerModal()" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; font-size: 12px;" title="Открыть инструмент очистки реестра">
-                <span>🧹 Очистить реестр</span>
-              </button>
-            </div>
-          </div>
-
-          <div class="settings-row">
-            <div class="settings-row-left">
               <div class="settings-row-icon" style="background: rgba(234, 179, 8, 0.1); color: #facc15;">🛡️</div>
               <div>
                 <div class="settings-row-title" id="lblExclusionsRowTitle">Исключения автообновления</div>
@@ -2887,14 +2930,14 @@
       </div>
 
       <div style="padding: 12px 20px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.2);">
-        <div style="font-size: 11.5px; color: var(--text-dim); opacity: 0.8;" id="sidebarAppVerDisplay">ZiablWinSetup v1.4.18</div>
+        <div style="font-size: 11.5px; color: var(--text-dim); opacity: 0.8;" id="sidebarAppVerDisplay">ZiablWinSetup v1.4.19</div>
         <button class="btn-action btn-primary" onclick="closeSettingsModal()" style="padding: 6px 20px; font-size: 12px; font-weight: 600;">Готово</button>
       </div>
     </div>
   </div>
 
   <!-- Exclusions Modal -->
-  <div id="exclusionsModal" class="modal-overlay" style="display: none; z-index: 10000;" onclick="if(event.target === this) closeExclusionsModal()">
+  <div id="exclusionsModal" class="modal-overlay" style="display: none; z-index: 12000;" onclick="if(event.target === this) closeExclusionsModal()">
     <div class="exclusions-modal-card" style="width: 560px; max-width: 92%; height: 580px; max-height: 85%; display: flex; flex-direction: column; background: #1c1c1f; border: 1px solid var(--border-subtle); border-radius: 12px; box-shadow: 0 24px 48px rgba(0,0,0,0.8); overflow: hidden;">
       <div class="exclusions-modal-header" style="padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between;">
         <h3 style="margin: 0; font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px; color: #f1f5f9;">
@@ -2930,8 +2973,11 @@
       <div style="padding: 12px 20px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: flex-end; background: rgba(0,0,0,0.2);">
         <button class="btn-action btn-primary" id="btnExclusionsCloseBottom" onclick="closeExclusionsModal()" style="padding: 7px 22px; font-size: 12.5px; font-weight: 600;">Готово</button>
       </div>
+    </div>
+  </div>
+
   <!-- Backup & Restore Modal -->
-  <div id="backupRestoreModal" class="modal-overlay" style="display: none; z-index: 10000;" onclick="if(event.target === this) closeBackupRestoreModal()">
+  <div id="backupRestoreModal" class="modal-overlay" style="display: none; z-index: 12000;" onclick="if(event.target === this) closeBackupRestoreModal()">
     <div class="modal-card" style="width: 740px; max-width: 95%; height: 680px; max-height: 90%; display: flex; flex-direction: column; background: #18181b; border: 1px solid var(--border-subtle); border-radius: 12px; box-shadow: 0 24px 48px rgba(0,0,0,0.85); overflow: hidden; padding: 0;">
       <!-- Header -->
       <div style="padding: 16px 22px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.02);">
@@ -2997,8 +3043,8 @@
     </div>
   </div>
 
-  <!-- Registry Cleaner Modal (CCleaner Style) -->
-  <div id="registryCleanerModal" class="modal-overlay" style="display: none; z-index: 10000;" onclick="if(event.target === this) closeRegistryCleanerModal()">
+  <!-- Registry Cleaner Modal -->
+  <div id="registryCleanerModal" class="modal-overlay" style="display: none; z-index: 12000;" onclick="if(event.target === this) closeRegistryCleanerModal()">
     <div class="modal-card" style="width: 780px; max-width: 95%; height: 680px; max-height: 90%; display: flex; flex-direction: column; background: #18181b; border: 1px solid var(--border-subtle); border-radius: 12px; box-shadow: 0 24px 48px rgba(0,0,0,0.85); overflow: hidden; padding: 0;">
       <!-- Header -->
       <div style="padding: 16px 22px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.02);">
@@ -3217,6 +3263,30 @@
       }
     }
 
+    let isInitialScanning = true;
+
+    function updateScanningState(isScanning) {
+      isInitialScanning = isScanning;
+      const banner = document.getElementById('startupScanningBanner');
+      const cards = document.getElementById('appCardsContainer');
+      const downloadBtn = document.getElementById('btnDownloadSelected');
+
+      if (banner) {
+        banner.style.display = isScanning ? 'flex' : 'none';
+      }
+      if (cards) {
+        if (isScanning) {
+          cards.classList.add('is-scanning');
+        } else {
+          cards.classList.remove('is-scanning');
+        }
+      }
+      if (downloadBtn && isScanning) {
+        downloadBtn.disabled = true;
+      }
+    }
+    window.updateScanningState = updateScanningState;
+
     function initAppDefaults() {
       if (!appData || !appData.apps) return;
       appData.apps.forEach(app => {
@@ -3228,6 +3298,7 @@
       applyTranslations();
       renderCategories();
       renderCards();
+      updateScanningState(isInitialScanning);
       updateFooter();
       updateWingetBanner();
       if (appData.system_info && appData.system_info.extract_path) {
@@ -3258,7 +3329,10 @@
           if (data.strings) appData.strings = data.strings;
           if (data.strings_all) appData.strings_all = data.strings_all;
           if (data.system_info) appData.system_info = data.system_info;
-          if (data.installed_apps) appData.installed_apps = data.installed_apps;
+          if (data.installed_apps) {
+            appData.installed_apps = data.installed_apps;
+            updateScanningState(false);
+          }
           if (data.tweaks) appData.tweaks = data.tweaks;
           if (data.metro_apps) appData.metro_apps = data.metro_apps;
           if (data.startup_items) startupItems = data.startup_items;
@@ -5023,11 +5097,30 @@
         case 'disable_start_ads':
           return `<svg width="34" height="34" viewBox="0 0 36 36" fill="none"><rect x="6" y="4" width="24" height="28" rx="4" fill="#0f172a" stroke="#0284c7" stroke-width="1.5"/><rect x="9" y="8" width="3" height="3" rx="0.5" fill="#38bdf8"/><rect x="14" y="8" width="3" height="3" rx="0.5" fill="#818cf8"/><rect x="19" y="8" width="3" height="3" rx="0.5" fill="#f43f5e"/><rect x="24" y="8" width="3" height="3" rx="0.5" fill="#22c55e"/><rect x="9" y="13" width="3" height="3" rx="0.5" fill="#f59e0b"/><rect x="14" y="13" width="3" height="3" rx="0.5" fill="#a855f7"/><line x1="8" y1="18" x2="28" y2="18" stroke="#334155" stroke-width="1"/><rect x="9" y="21" width="10" height="2" rx="1" fill="#475569"/><rect x="9" y="25" width="13" height="2" rx="1" fill="#475569"/><circle cx="23" cy="24" r="5.5" fill="#ef4444"/><line x1="19.5" y1="20.5" x2="26.5" y2="27.5" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round"/></svg>`;
         case 'clean_steam_cache':
-          return `<svg width="34" height="34" viewBox="0 0 36 36" fill="none"><circle cx="17" cy="17" r="15" fill="#171a21"/><circle cx="21" cy="12" r="5.5" stroke="#ffffff" stroke-width="2.2" fill="none"/><path d="M18 15L11 20" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/><circle cx="10" cy="21" r="3.5" fill="#ffffff"/><circle cx="10" cy="21" r="1.5" fill="#171a21"/><circle cx="27" cy="27" r="7" fill="#0284c7" stroke="#12141a" stroke-width="1.5"/><path d="M24 30l3-5 3 2-3 5z" fill="#facc15"/><path d="M27 25l2-3" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/></svg>`;
+          return `<svg width="34" height="34" viewBox="0 0 36 36" fill="none">
+            <defs>
+              <linearGradient id="steamTweakGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#111d2e"/>
+                <stop offset="25%" stop-color="#051839"/>
+                <stop offset="50%" stop-color="#132e62"/>
+                <stop offset="75%" stop-color="#144b7e"/>
+                <stop offset="100%" stop-color="#1387b8"/>
+              </linearGradient>
+            </defs>
+            <circle cx="17" cy="17" r="15" fill="url(#steamTweakGrad)"/>
+            <g transform="translate(17, 17) scale(0.46875)">
+              <path d="M-1.7-8v.2L-9.5 3.5c-1.3-.1-2.5.2-3.7.7-.5.2-1 .5-1.5.8l-17.2-7.1s-.4 6.5 1.3 11.4l12.2 5c.6 2.7 2.5 5.1 5.2 6.3 4.5 1.9 9.7-.3 11.6-4.8.5-1.2.7-2.4.7-3.7l11.2-8h.3c6.7 0 12.2-5.5 12.2-12.2s-5.4-12.2-12.2-12.2C3.8-20.2-1.7-14.7-1.7-8m-1.8 23c-1.5 3.5-5.5 5.1-9 3.7-1.5-.7-2.8-1.8-3.5-3.4l4 1.6c2.6 1.1 5.5-.1 6.6-2.7s-.1-5.5-2.7-6.6L-12.3 6c1.6-.6 3.4-.6 5 .1 1.7.7 3 2 3.7 3.7s.7 3.5.1 5.2M10.5.1C6 .1 2.4-3.5 2.4-8s3.6-8.1 8.1-8.1 8.1 3.6 8.1 8.1S15 .1 10.5.1M4.4-8c0-3.4 2.7-6.1 6.1-6.1s6.1 2.7 6.1 6.1-2.7 6.1-6.1 6.1S4.4-4.7 4.4-8" fill="#ffffff"/>
+            </g>
+            <circle cx="27" cy="27" r="7" fill="#0284c7" stroke="#12141a" stroke-width="1.5"/>
+            <path d="M24 30l3-5 3 2-3 5z" fill="#facc15"/>
+            <path d="M27 25l2-3" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>`;
         case 'clean_telegram_cache':
           return `<svg width="34" height="34" viewBox="0 0 36 36" fill="none"><circle cx="17" cy="17" r="15" fill="#24A1DE"/><path d="M8 17l17-7-4 15-4-5-4 2-1-4 6-4-8 3z" fill="#ffffff"/><circle cx="27" cy="27" r="7" fill="#0284c7" stroke="#12141a" stroke-width="1.5"/><path d="M24 30l3-5 3 2-3 5z" fill="#facc15"/><path d="M27 25l2-3" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/></svg>`;
         case 'clean_winsetup_installers':
           return `<svg width="34" height="34" viewBox="0 0 36 36" fill="none"><path d="M7 9l11-5 11 5v15l-11 5-11-5V9z" fill="#0284c7" stroke="#38bdf8" stroke-width="1.2"/><circle cx="23" cy="9" r="5" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1"/><circle cx="23" cy="9" r="1.8" fill="#0284c7"/><rect x="11" y="15" width="13" height="7" rx="2" fill="#f59e0b"/><text x="17.5" y="20.5" font-size="5" font-weight="900" fill="#0f172a" text-anchor="middle" font-family="'Segoe UI', sans-serif">.EXE</text><circle cx="27" cy="27" r="7" fill="#22c55e" stroke="#12141a" stroke-width="1.5"/><path d="M25 29l2-3 2 1-2 3z" fill="#ffffff"/><path d="M27 26l2-3" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/></svg>`;
+        case 'clean_registry':
+          return `<svg width="34" height="34" viewBox="0 0 36 36" fill="none"><circle cx="17" cy="17" r="15" fill="rgba(239, 68, 68, 0.18)" stroke="#ef4444" stroke-width="1.5"/><path d="M12 9l8 8-3 3-8-8 3-3z" fill="#f87171"/><path d="M10 19l-3 6 6-3 8-8-3-3-8 8z" fill="#facc15"/><line x1="22" y1="7" x2="27" y2="12" stroke="#f87171" stroke-width="2" stroke-linecap="round"/><circle cx="27" cy="27" r="6" fill="#10b981"/><path d="M25 27l1.5 1.5 3-3" stroke="#ffffff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
         default:
           return `<svg width="34" height="34" viewBox="0 0 36 36" fill="none"><circle cx="18" cy="18" r="14" fill="#1e293b" stroke="#64748b" stroke-width="1.5"/><circle cx="18" cy="18" r="4" fill="#94a3b8"/><path d="M18 6v4m0 16v4m-12-12h4m16 0h4m-19.8-5.8l2.8 2.8m14 14l2.8 2.8m0-19.6l-2.8 2.8m-14 14l-2.8 2.8" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/></svg>`;
       }
@@ -5098,6 +5191,10 @@
     }
 
     async function handleToggleTweak(tweakId) {
+      if (tweakId === 'clean_registry') {
+        openRegistryCleanerModal();
+        return;
+      }
       const tw = (appData.tweaks || []).find(t => t.id === tweakId);
       if (!tw) return;
 
@@ -5134,6 +5231,24 @@
     // Metro / UWP приложения Windows
     // ==========================================
 
+    let currentMetroFilter = 'all';
+    let metroSearchQuery = '';
+
+    function setMetroFilter(filter) {
+      currentMetroFilter = filter;
+      document.querySelectorAll('.metro-filter-chips .filter-chip').forEach(c => c.classList.remove('active'));
+      const activeBtn = document.getElementById(`chipMetro${filter.charAt(0).toUpperCase() + filter.slice(1)}`);
+      if (activeBtn) activeBtn.classList.add('active');
+      renderMetro();
+    }
+    window.setMetroFilter = setMetroFilter;
+
+    function onMetroSearch(query) {
+      metroSearchQuery = (query || '').trim().toLowerCase();
+      renderMetro();
+    }
+    window.onMetroSearch = onMetroSearch;
+
     function renderMetro() {
       const container = document.getElementById('metroGrid');
       if (!container) return;
@@ -5143,6 +5258,14 @@
 
       const installedCount = metroApps.filter(a => a.installed).length;
       const totalCount = metroApps.length;
+      const removedCount = totalCount - installedCount;
+
+      const cAll = document.getElementById('countMetroAll');
+      if (cAll) cAll.textContent = totalCount;
+      const cInst = document.getElementById('countMetroInstalled');
+      if (cInst) cInst.textContent = installedCount;
+      const cRem = document.getElementById('countMetroRemoved');
+      if (cRem) cRem.textContent = removedCount;
 
       const badge = document.getElementById('metroCounterBadge');
       if (badge) {
@@ -5155,7 +5278,29 @@
         return;
       }
 
-      metroApps.forEach(app => {
+      let filteredApps = metroApps;
+      if (currentMetroFilter === 'installed') {
+        filteredApps = filteredApps.filter(a => a.installed);
+      } else if (currentMetroFilter === 'removed') {
+        filteredApps = filteredApps.filter(a => !a.installed);
+      }
+
+      if (metroSearchQuery) {
+        filteredApps = filteredApps.filter(a =>
+          (a.name && a.name.toLowerCase().includes(metroSearchQuery)) ||
+          (a.description && a.description.toLowerCase().includes(metroSearchQuery)) ||
+          (a.id && a.id.toLowerCase().includes(metroSearchQuery))
+        );
+      }
+
+      if (filteredApps.length === 0) {
+        container.innerHTML = `<div style="color:var(--text-muted); font-size:13px; grid-column: 1 / -1; text-align: center; padding: 40px 0;">${
+          metroSearchQuery ? 'Ничего не найдено по вашему запросу.' : 'Нет приложений в данной категории.'
+        }</div>`;
+        return;
+      }
+
+      filteredApps.forEach(app => {
         const isInstalled = Boolean(app.installed);
         const isSelected = selectedMetroApps.has(app.id);
         const card = document.createElement('div');
@@ -5860,16 +6005,15 @@
 
       container.innerHTML = list.map(app => {
         const isInst = Boolean(app.already_installed);
-        const chkAttr = (!isInst && app.checked !== false) ? 'checked' : '';
-        const disAttr = isInst ? 'disabled' : '';
+        const chkAttr = (app.checked !== false) ? 'checked' : '';
         const statusBadge = isInst 
           ? '<span style="background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); font-size: 11px; padding: 2px 8px; border-radius: 6px; font-weight: 500;">✓ Уже установлено</span>'
           : '<span style="background: rgba(56,189,248,0.15); color: #38bdf8; border: 1px solid rgba(56,189,248,0.3); font-size: 11px; padding: 2px 8px; border-radius: 6px;">Будет установлено</span>';
 
         return `
-          <label style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: 8px; cursor: ${isInst ? 'default' : 'pointer'}; transition: background 0.15s;" onmouseover="if(!${isInst}) this.style.background='rgba(255,255,255,0.06)'" onmouseout="if(!${isInst}) this.style.background='rgba(255,255,255,0.03)'">
+          <label style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: 8px; cursor: pointer; transition: background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
             <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
-              <input type="checkbox" class="backup-catalog-cb" data-id="${app.id}" ${chkAttr} ${disAttr} onchange="onBackupCatalogCbChange('${app.id}', this.checked)" style="width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer;">
+              <input type="checkbox" class="backup-catalog-cb" data-id="${app.id}" ${chkAttr} onchange="onBackupCatalogCbChange('${app.id}', this.checked)" style="width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer;">
               <img src="icons/${app.id}.svg" onerror="this.src='icons/default.svg'" style="width: 28px; height: 28px; object-fit: contain; flex-shrink: 0;">
               <div style="min-width: 0;">
                 <div style="font-weight: 600; color: #f1f5f9; font-size: 13px; display: flex; align-items: center; gap: 6px;">
@@ -5897,9 +6041,9 @@
     function setAllBackupCatalogChecked(checked) {
       if (!currentBackupData || !currentBackupData.catalog_apps) return;
       currentBackupData.catalog_apps.forEach(a => {
-        if (!a.already_installed) a.checked = checked;
+        a.checked = checked;
       });
-      document.querySelectorAll('#backupCatalogList .backup-catalog-cb:not(:disabled)').forEach(cb => {
+      document.querySelectorAll('#backupCatalogList .backup-catalog-cb').forEach(cb => {
         cb.checked = checked;
       });
       updateBackupSummary();
@@ -5909,13 +6053,13 @@
     function updateBackupSummary() {
       const summary = document.getElementById('backupRestoreSummary');
       if (!summary || !currentBackupData || !currentBackupData.catalog_apps) return;
-      const count = currentBackupData.catalog_apps.filter(a => !a.already_installed && a.checked !== false).length;
+      const count = currentBackupData.catalog_apps.filter(a => a.checked !== false).length;
       summary.textContent = `К установке выбрано: ${count} программ каталога`;
     }
 
     function applyBackupCatalogSelection() {
       if (!currentBackupData || !currentBackupData.catalog_apps) return;
-      const toSelect = currentBackupData.catalog_apps.filter(a => !a.already_installed && a.checked !== false);
+      const toSelect = currentBackupData.catalog_apps.filter(a => a.checked !== false);
       if (toSelect.length === 0) {
         showToast('Не выбрано ни одной программы для установки.', 'info', 2500);
         return;
@@ -6022,7 +6166,7 @@
     window.suggestAppsToCatalog = suggestAppsToCatalog;
 
     // ==========================================
-    // Очистка реестра Windows (CCleaner Style)
+    // Очистка и оптимизация реестра Windows
     // ==========================================
     let registryIssues = [];
     let currentRegFilter = 'all';
@@ -6252,6 +6396,7 @@
 
     window.onRescanStart = function() {
       isRescanning = true;
+      if (typeof updateScanningState === 'function') updateScanningState(true);
       const icon = document.getElementById('rescanIcon');
       if (icon) icon.classList.add('spinning');
       const btn = document.getElementById('btnRescanInstalled');
@@ -6262,6 +6407,7 @@
 
     window.onRescanDone = function(count) {
       isRescanning = false;
+      if (typeof updateScanningState === 'function') updateScanningState(false);
       const icon = document.getElementById('rescanIcon');
       if (icon) icon.classList.remove('spinning');
       const btn = document.getElementById('btnRescanInstalled');
@@ -6351,8 +6497,10 @@
     window.onInstalledAppsDetected = function(installedMap) {
       if (installedMap && typeof installedMap === 'object') {
         appData.installed_apps = installedMap;
+        if (typeof updateScanningState === 'function') updateScanningState(false);
         renderCategories();
         renderCards();
+        updateFooter();
         const count = Object.keys(installedMap).length;
         addLog(`Обновлен список установленных программ: ${count} шт.`);
       }

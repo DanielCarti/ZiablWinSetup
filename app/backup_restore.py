@@ -151,17 +151,84 @@ def export_apps_backup(target_path: str | None = None) -> dict[str, Any]:
         return {"success": False, "message": f"Ошибка создания резервной копии: {e}"}
 
 
+def _parse_txt_backup(content: str) -> dict[str, Any]:
+    """Парсит человекочитаемый .txt файл резервной копии программ."""
+    catalog_apps = []
+    system_apps = []
+    current_section = None
+    created_at = ""
+    machine_name = ""
+
+    for line in content.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        if line.startswith("Дата:") or line.startswith("Date:"):
+            created_at = line.split(":", 1)[1].strip()
+        elif line.startswith("Компьютер:") or line.startswith("PC:"):
+            machine_name = line.split(":", 1)[1].strip()
+        elif "ПРОГРАММЫ ИЗ КАТАЛОГА" in line.upper() or "CATALOG APPS" in line.upper():
+            current_section = "catalog"
+        elif "ДРУГИЕ ПРОГРАММЫ" in line.upper() or "SYSTEM APPS" in line.upper():
+            current_section = "system"
+        elif line.startswith("•") or line.startswith("-") or line.startswith("*"):
+            item_text = line.lstrip("•-* ").strip()
+            # Формат: Name (version) [category]
+            m = re.match(r"^(.+?)(?:\s*\(([^)]+)\))?(?:\s*\[([^\]]+)\])?$", item_text)
+            if m:
+                name = m.group(1).strip()
+                version = (m.group(2) or "").strip()
+                category = (m.group(3) or "").strip()
+                if current_section == "catalog":
+                    catalog_apps.append({
+                        "name": name,
+                        "version": version,
+                        "category": category,
+                    })
+                elif current_section == "system":
+                    system_apps.append({
+                        "name": name,
+                        "version": version,
+                    })
+
+    return {
+        "app": "ZiablWinSetup",
+        "format_version": 1,
+        "created_at": created_at,
+        "machine_name": machine_name,
+        "catalog_apps": catalog_apps,
+        "system_apps": system_apps,
+    }
+
+
 def import_apps_backup(file_path: str) -> dict[str, Any]:
     """
-    Считывает файл резервной копии и сопоставляет его с текущим каталогом и системой.
+    Считывает файл резервной копии (.ziablbackup, .json или .txt) и сопоставляет его с текущим каталогом и системой.
     """
     try:
         p = Path(file_path)
         if not p.exists():
             return {"success": False, "message": "Файл резервной копии не найден"}
 
-        data = json.loads(p.read_text(encoding="utf-8"))
-        if data.get("app") != "ZiablWinSetup" and "catalog_apps" not in data:
+        data = None
+        # Если выбран .txt, сначала проверяем companion .ziablbackup, либо парсим текст
+        if p.suffix.lower() == ".txt":
+            companion = p.with_suffix(".ziablbackup")
+            if companion.exists():
+                try:
+                    data = json.loads(companion.read_text(encoding="utf-8"))
+                except Exception:
+                    data = None
+            if not data:
+                data = _parse_txt_backup(p.read_text(encoding="utf-8"))
+        else:
+            try:
+                data = json.loads(p.read_text(encoding="utf-8"))
+            except Exception:
+                # Если парсинг JSON не удался, пробуем текстовый парсер
+                data = _parse_txt_backup(p.read_text(encoding="utf-8"))
+
+        if not data or (data.get("app") != "ZiablWinSetup" and "catalog_apps" not in data):
             return {"success": False, "message": "Неверный формат файла бэкапа"}
 
         catalog = get_catalog()
@@ -179,7 +246,7 @@ def import_apps_backup(file_path: str) -> dict[str, Any]:
 
         for item in raw_catalog_list:
             app_id = item.get("id")
-            app = catalog_map.get(app_id)
+            app = catalog_map.get(app_id) if app_id else None
             if not app:
                 # Попробуем по имени
                 name_key = item.get("name", "").lower()
@@ -203,7 +270,7 @@ def import_apps_backup(file_path: str) -> dict[str, Any]:
                     "winget_id": app.winget_id,
                     "installer_type": app.installer_type,
                     "recommended": getattr(app, "recommended", False),
-                    "checked": not is_inst,  # по умолчанию выбраны те, которых нет в системе
+                    "checked": True,  # По умолчанию выделяем все программы из бэкапа
                 })
 
         # Разбор системных программ
