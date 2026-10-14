@@ -2283,6 +2283,10 @@
         <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.77.04"/></svg>
         <span class="tab-label" id="tabLabelStartup">Автозагрузка</span>
       </button>
+      <button class="tab-btn" id="tabBtnVirusTotal" onclick="switchMainTab('virustotal')" title="Проверка файлов на вирусы через VirusTotal">
+        <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+        <span class="tab-label" id="tabLabelVirusTotal">VirusTotal</span>
+      </button>
       <button class="tab-btn" id="tabBtnSettings" onclick="openSettingsModal()" title="Настройки">
         <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         <span class="tab-label" id="tabLabelSettings">Настройки</span>
@@ -2503,7 +2507,7 @@
           <div class="metro-counter-badge" id="startupCounterBadge">Всего: 0 (Включено: 0)</div>
           <button class="btn-action btn-primary" onclick="openAddStartupModal()" style="height: 32px; font-size: 12px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px;" title="Добавить исполняемый файл в автозагрузку Windows">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-            <span>+ Добавить программу</span>
+            <span id="btnAddStText">Добавить программу</span>
           </button>
           <button class="btn-action btn-outline" id="btnRescanStartup" onclick="rescanStartupItems()" style="height: 32px; font-size: 12px; padding: 0 12px;">
             <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;margin-right:6px;"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
@@ -2535,6 +2539,148 @@
 
       <!-- Startup Items List -->
       <div id="startupListContainer" class="startup-list"></div>
+    </div>
+
+    <!-- View 5: VirusTotal Scanner view -->
+    <div id="viewVirusTotal" style="display: none; flex: 1; min-height: 0; width: 100%; flex-direction: column; overflow-y: auto; padding: 24px 32px 100px 32px; box-sizing: border-box; background: var(--bg-app);">
+      <!-- Header -->
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <h2 style="font-size: 20px; font-weight: 600; margin-bottom: 4px;" id="vtMainTitle">🛡️ Сканер файлов VirusTotal</h2>
+          <p style="font-size: 13px; color: var(--text-muted);" id="vtMainSubtitle">Мгновенная проверка файлов и инсталляторов по базе 70+ антивирусных движков через официальный API.</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div id="vtApiKeyStatusBadge" style="font-size: 11.5px; padding: 4px 10px; border-radius: 12px; background: rgba(255,255,255,0.06); border: 1px solid var(--border-subtle); display: inline-flex; align-items: center; gap: 6px;">
+            <span id="vtKeyIndicator">⚪</span> <span id="vtKeyText">Проверка API ключа...</span>
+          </div>
+          <button class="btn-action btn-outline" onclick="toggleVtKeyInput()" style="height: 30px; font-size: 11.5px; padding: 0 10px;" id="btnToggleVtKey">
+            ⚙️ Настроить ключ
+          </button>
+        </div>
+      </div>
+
+      <!-- API Key Setup Banner -->
+      <div id="vtApiKeyCard" style="display: none; background: rgba(2, 132, 199, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: var(--radius-md); padding: 16px 20px; margin-bottom: 20px;">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;">
+          <div style="flex: 1;">
+            <div style="font-size: 13.5px; font-weight: 600; color: #38bdf8; margin-bottom: 4px;" id="vtKeyCardTitle">🔑 Официальный бесплатный API ключ VirusTotal</div>
+            <div style="font-size: 12px; color: var(--text-muted); line-height: 1.5;" id="vtKeyCardDesc">
+              Бесплатный ключ позволяет проверять до 500 файлов в день (до 4 запросов в минуту). Зарегистрируйтесь на <a href="https://www.virustotal.com" target="_blank" onclick="event.preventDefault(); window.pywebview && window.pywebview.api.open_external_url ? window.pywebview.api.open_external_url('https://www.virustotal.com') : window.open('https://www.virustotal.com', '_blank');" style="color: #38bdf8; text-decoration: underline;">virustotal.com</a>, перейдите в профиль ➔ <b>API key</b> и вставьте его сюда. Ключ сохраняется локально на вашем компьютере.
+            </div>
+            <div style="display: flex; gap: 8px; margin-top: 12px; max-width: 580px;">
+              <input type="password" id="inputVtApiKey" placeholder="Вставьте ваш 64-значный API ключ VirusTotal..." style="flex: 1; height: 34px; padding: 0 12px; background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--text-main); font-size: 12.5px; box-sizing: border-box; font-family: monospace;">
+              <button class="btn-action btn-primary" id="btnVtSaveKey" onclick="saveVirusTotalKey()" style="height: 34px; padding: 0 16px; font-size: 12px; white-space: nowrap;">Сохранить ключ</button>
+            </div>
+          </div>
+          <button onclick="toggleVtKeyInput(false)" style="background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 16px;">✕</button>
+        </div>
+      </div>
+
+      <!-- File Dropzone & Selector Card -->
+      <div id="vtDropzoneCard" ondragover="onVtDragOver(event)" ondragleave="onVtDragLeave(event)" ondrop="onVtDrop(event)" style="border: 2px dashed rgba(255,255,255,0.15); border-radius: var(--radius-lg); background: rgba(255,255,255,0.02); padding: 40px 24px; text-align: center; transition: all 0.2s ease; cursor: pointer; margin-bottom: 24px;" onclick="browseAndScanVtFile()">
+        <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(56, 189, 248, 0.12); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 14px; color: #38bdf8;">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+        </div>
+        <div style="font-size: 15px; font-weight: 600; color: var(--text-main); margin-bottom: 6px;" id="vtDropTitle">Нажмите для выбора файла или перетащите его сюда</div>
+        <div style="font-size: 12.5px; color: var(--text-muted); max-width: 480px; margin: 0 auto 16px auto;" id="vtDropSub">Поддерживаются .exe, .msi, .dll, .zip, .7z, .iso и любые другие файлы</div>
+        <button class="btn-action btn-primary" style="height: 36px; padding: 0 20px; font-size: 12.5px; display: inline-flex; align-items: center; gap: 8px; pointer-events: none;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <span id="vtBtnSelectText">📁 Выбрать файл для сканирования</span>
+        </button>
+      </div>
+
+      <!-- Loading State -->
+      <div id="vtLoadingState" style="display: none; padding: 50px 20px; text-align: center;">
+        <div class="spinner" style="width: 36px; height: 36px; border: 3px solid rgba(255,255,255,0.1); border-top-color: #38bdf8; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px auto;"></div>
+        <div style="font-size: 14px; font-weight: 500; color: var(--text-main);" id="vtLoadingText">Вычисление SHA-256 хэша и запрос к VirusTotal...</div>
+        <div style="font-size: 12px; color: var(--text-muted); margin-top: 6px;">Пожалуйста, подождите несколько секунд</div>
+      </div>
+
+      <!-- Result Card: Found in VT Database -->
+      <div id="vtResultCard" style="display: none; flex-direction: column; gap: 18px;">
+        <!-- Verdict Banner -->
+        <div id="vtVerdictBanner" style="border-radius: var(--radius-md); padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.3);">
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <div id="vtVerdictIcon" style="font-size: 34px;">🛡️</div>
+            <div>
+              <div id="vtVerdictScore" style="font-size: 22px; font-weight: 700; letter-spacing: -0.5px; color: #22c55e;">0 / 72</div>
+              <div id="vtVerdictTitle" style="font-size: 13.5px; font-weight: 500; margin-top: 2px; color: var(--text-main);">Угроз не обнаружено (Чисто)</div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <a id="vtOnlineLink" href="#" target="_blank" class="btn-action btn-outline" style="height: 34px; font-size: 12px; padding: 0 14px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+              <span>Открыть отчет на VirusTotal ↗</span>
+            </a>
+            <button class="btn-action btn-outline" onclick="resetVtScanner()" style="height: 34px; font-size: 12px; padding: 0 14px;">
+              Проверить другой файл
+            </button>
+          </div>
+        </div>
+
+        <!-- File Details Card -->
+        <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 16px 20px;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; font-size: 12.5px;">
+            <div>
+              <span style="color: var(--text-muted); display: block; margin-bottom: 2px;">Имя файла:</span>
+              <strong id="vtResFileName" style="color: var(--text-main); word-break: break-all;">-</strong>
+            </div>
+            <div>
+              <span style="color: var(--text-muted); display: block; margin-bottom: 2px;">Размер:</span>
+              <strong id="vtResFileSize" style="color: var(--text-main);">-</strong>
+            </div>
+            <div>
+              <span style="color: var(--text-muted); display: block; margin-bottom: 2px;">Дата анализа:</span>
+              <strong id="vtResDate" style="color: var(--text-main);">-</strong>
+            </div>
+            <div>
+              <span style="color: var(--text-muted); display: block; margin-bottom: 2px;">Тип:</span>
+              <strong id="vtResType" style="color: var(--text-main);">-</strong>
+            </div>
+          </div>
+          <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+            <div style="font-family: monospace; font-size: 11.5px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+              SHA-256: <span id="vtResSha256" style="color: #38bdf8;">-</span>
+            </div>
+            <button class="btn-browse" onclick="copyVtSha256()" style="padding: 2px 8px; font-size: 11px;">📋 Скопировать хэш</button>
+          </div>
+        </div>
+
+        <!-- Engines Table Card -->
+        <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); overflow: hidden;">
+          <div style="padding: 12px 20px; border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+            <div style="font-size: 13.5px; font-weight: 600; color: var(--text-main);">
+              Движки антивирусов (<span id="vtEnginesCount">0</span>)
+            </div>
+            <div style="display: flex; gap: 6px;">
+              <button class="filter-chip active" id="chipVtAll" onclick="filterVtEngines('all')" style="padding: 3px 10px; font-size: 11.5px;">Все</button>
+              <button class="filter-chip" id="chipVtMalicious" onclick="filterVtEngines('malicious')" style="padding: 3px 10px; font-size: 11.5px; border-left: 2px solid #ef4444;">Только детекты (<span id="vtBadgeMalCount">0</span>)</button>
+            </div>
+          </div>
+          <div id="vtEnginesListContainer" style="max-height: 440px; overflow-y: auto; padding: 10px 20px; display: flex; flex-direction: column; gap: 4px;">
+            <!-- Rendered list of antivirus engines -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Result Card: File Not Found (404) in VT -->
+      <div id="vtNotFoundCard" style="display: none; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 32px 24px; text-align: center;">
+        <div style="font-size: 38px; margin-bottom: 10px;">🔍</div>
+        <div style="font-size: 16px; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Файл ранее не сканировался на VirusTotal</div>
+        <div style="font-size: 13px; color: var(--text-muted); max-width: 520px; margin: 0 auto 16px auto;" id="vtNotFoundDesc">
+          Хэш файла отсутствует в базе данных VirusTotal. Никто ранее не отправлял этот файл на проверку.
+        </div>
+        <div style="background: rgba(0,0,0,0.3); border-radius: var(--radius-sm); padding: 10px 16px; display: inline-block; font-family: monospace; font-size: 11.5px; color: #38bdf8; margin-bottom: 20px;">
+          <span id="vtNotFoundFileName">-</span> (<span id="vtNotFoundFileSize">-</span>)
+        </div>
+        <div style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
+          <button id="btnVtUploadFile" class="btn-action btn-primary" onclick="uploadCurrentVtFile()" style="height: 36px; padding: 0 18px; font-size: 12.5px;">
+            📤 Отправить файл на сканирование (до 32 МБ)
+          </button>
+          <button class="btn-action btn-outline" onclick="resetVtScanner()" style="height: 36px; padding: 0 18px; font-size: 12.5px;">
+            Выбрать другой файл
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -2942,7 +3088,7 @@
       </div>
 
       <div style="padding: 12px 20px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.2);">
-        <div style="font-size: 11.5px; color: var(--text-dim); opacity: 0.8;" id="sidebarAppVerDisplay">ZiablWinSetup v1.4.20</div>
+        <div style="font-size: 11.5px; color: var(--text-dim); opacity: 0.8;" id="sidebarAppVerDisplay">ZiablWinSetup v1.4.21</div>
         <button class="btn-action btn-primary" onclick="closeSettingsModal()" style="padding: 6px 20px; font-size: 12px; font-weight: 600;">Готово</button>
       </div>
     </div>
@@ -3102,9 +3248,12 @@
 
       <!-- Footer -->
       <div style="padding: 12px 22px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.25);">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <button class="btn-action btn-outline" onclick="openBackupsFolder()" style="height: 32px; font-size: 11.5px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px;" title="Открыть папку с созданными .reg резервными копиями">
-            <span>📁 Папка бэкапов</span>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button class="btn-action btn-outline" id="btnRegBackupsFolder" onclick="openBackupsFolder()" style="height: 32px; font-size: 11.5px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px;" title="Открыть папку с созданными .reg резервными копиями">
+            <span id="btnRegBackupsFolderText">📁 Папка бэкапов</span>
+          </button>
+          <button class="btn-action btn-outline" id="btnRegRestoreBackup" onclick="restoreRegistryBackupPrompt()" style="height: 32px; font-size: 11.5px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px;" title="Восстановить записи реестра из ранее созданного .reg файла отката">
+            <span id="btnRegRestoreBackupText">🔄 Восстановить из бэкапа</span>
           </button>
           <span id="registryCleanStatusText" style="font-size: 12px; color: #10b981;"></span>
         </div>
@@ -3466,6 +3615,36 @@
         const lbl = tabSettings.querySelector('.tab-label');
         if (lbl) lbl.textContent = (s.settings || 'Настройки').replace(/^[^\w\u0400-\u04FF]+\s*/, '').trim();
       }
+      const tabVT = document.getElementById('tabLabelVirusTotal');
+      if (tabVT) tabVT.textContent = s.tab_virustotal || 'VirusTotal';
+      const vtTitle = document.getElementById('vtMainTitle');
+      if (vtTitle) vtTitle.textContent = `🛡️ ${s.vt_title || 'Сканер файлов VirusTotal'}`;
+      const vtSub = document.getElementById('vtMainSubtitle');
+      if (vtSub) vtSub.textContent = s.vt_subtitle || 'Мгновенная проверка файлов и инсталляторов по базе 70+ антивирусных движков через официальный API.';
+      const vtKeyTitle = document.getElementById('vtKeyCardTitle');
+      if (vtKeyTitle) vtKeyTitle.textContent = `🔑 ${s.vt_api_key_title || 'Официальный бесплатный API ключ VirusTotal'}`;
+      const vtSaveKeyBtn = document.getElementById('btnVtSaveKey');
+      if (vtSaveKeyBtn) vtSaveKeyBtn.textContent = s.vt_save_key_btn || 'Сохранить ключ';
+      const vtDropTitle = document.getElementById('vtDropTitle');
+      if (vtDropTitle) vtDropTitle.textContent = s.vt_drop_title || 'Нажмите для выбора файла или перетащите его сюда';
+      const vtDropSub = document.getElementById('vtDropSub');
+      if (vtDropSub) vtDropSub.textContent = s.vt_drop_subtitle || 'Поддерживаются .exe, .msi, .dll, .zip, .7z, .iso и любые другие файлы';
+      const vtBtnSelectText = document.getElementById('vtBtnSelectText');
+      if (vtBtnSelectText) vtBtnSelectText.textContent = s.vt_btn_choose || '📁 Выбрать файл для сканирования';
+      const chipVtAll = document.getElementById('chipVtAll');
+      if (chipVtAll) chipVtAll.textContent = s.vt_filter_all || 'Все';
+      const chipVtMal = document.getElementById('chipVtMalicious');
+      if (chipVtMal && chipVtMal.childNodes[0]) chipVtMal.childNodes[0].nodeValue = (s.vt_filter_malicious || 'Только детекты') + ' ';
+      const btnVtUpload = document.getElementById('btnVtUploadFile');
+      if (btnVtUpload) btnVtUpload.textContent = s.vt_btn_upload || '📤 Отправить файл на сканирование (до 32 МБ)';
+      const vtNotFoundDesc = document.getElementById('vtNotFoundDesc');
+      if (vtNotFoundDesc) vtNotFoundDesc.textContent = s.vt_upload_hint || 'Хэш файла отсутствует в базе данных VirusTotal. Вы можете отправить его на анализ.';
+
+      const btnRegBkp = document.getElementById('btnRegBackupsFolderText');
+      if (btnRegBkp) btnRegBkp.textContent = `📁 ${s.reg_btn_backups_folder || 'Папка бэкапов'}`;
+      const btnRegRest = document.getElementById('btnRegRestoreBackupText');
+      if (btnRegRest) btnRegRest.textContent = `🔄 ${s.reg_btn_restore_backup || 'Восстановить из бэкапа'}`;
+
       const setModalTitle = document.getElementById('settingsModalTitle');
       if (setModalTitle) setModalTitle.textContent = appData.lang === 'ru' ? 'Настройки приложения' : 'Application Settings';
       const setViewTitle = document.getElementById('settingsViewTitle');
@@ -3578,8 +3757,8 @@
       if (chipTsk && chipTsk.childNodes[0]) chipTsk.childNodes[0].nodeValue = (s.startup_tab_scheduler || 'Планировщик') + ' ';
 
       // Startup add & sort & chips
-      const btnAddStText = document.getElementById('btnAddStartupItemText');
-      if (btnAddStText) btnAddStText.textContent = s.startup_add_btn || '+ Добавить программу';
+      const btnAddStText = document.getElementById('btnAddStartupItemText') || document.getElementById('btnAddStText');
+      if (btnAddStText) btnAddStText.textContent = s.startup_add_btn || 'Добавить программу';
       const sortBtn = document.getElementById('btnStartupSort');
       if (sortBtn) {
         const sortSpan = sortBtn.querySelector('span');
@@ -5051,11 +5230,14 @@
       if (tabMetro) tabMetro.classList.toggle('active', tab === 'metro');
       const tabStartup = document.getElementById('tabBtnStartup');
       if (tabStartup) tabStartup.classList.toggle('active', tab === 'startup');
+      const tabVT = document.getElementById('tabBtnVirusTotal');
+      if (tabVT) tabVT.classList.toggle('active', tab === 'virustotal');
 
       const viewApps = document.getElementById('viewApps');
       const viewTweaks = document.getElementById('viewTweaks');
       const viewMetro = document.getElementById('viewMetro');
       const viewStartup = document.getElementById('viewStartup');
+      const viewVT = document.getElementById('viewVirusTotal');
       const footer = document.getElementById('mainFooter');
 
       if (tab === 'apps') {
@@ -5063,12 +5245,14 @@
         viewTweaks.style.display = 'none';
         if (viewMetro) viewMetro.style.display = 'none';
         if (viewStartup) viewStartup.style.display = 'none';
+        if (viewVT) viewVT.style.display = 'none';
         footer.style.display = 'flex';
       } else if (tab === 'tweaks') {
         viewApps.style.display = 'none';
         viewTweaks.style.display = 'flex';
         if (viewMetro) viewMetro.style.display = 'none';
         if (viewStartup) viewStartup.style.display = 'none';
+        if (viewVT) viewVT.style.display = 'none';
         footer.style.display = 'none';
         renderTweaks();
       } else if (tab === 'metro') {
@@ -5076,6 +5260,7 @@
         viewTweaks.style.display = 'none';
         if (viewMetro) viewMetro.style.display = 'flex';
         if (viewStartup) viewStartup.style.display = 'none';
+        if (viewVT) viewVT.style.display = 'none';
         footer.style.display = 'none';
         renderMetro();
       } else if (tab === 'startup') {
@@ -5083,8 +5268,17 @@
         viewTweaks.style.display = 'none';
         if (viewMetro) viewMetro.style.display = 'none';
         if (viewStartup) viewStartup.style.display = 'flex';
+        if (viewVT) viewVT.style.display = 'none';
         footer.style.display = 'none';
         renderStartup();
+      } else if (tab === 'virustotal') {
+        viewApps.style.display = 'none';
+        viewTweaks.style.display = 'none';
+        if (viewMetro) viewMetro.style.display = 'none';
+        if (viewStartup) viewStartup.style.display = 'none';
+        if (viewVT) viewVT.style.display = 'flex';
+        footer.style.display = 'none';
+        initVirusTotalView();
       }
     }
     window.switchMainTab = switchMainTab;
@@ -5135,6 +5329,10 @@
           return `<svg width="34" height="34" viewBox="0 0 36 36" fill="none"><path d="M7 9l11-5 11 5v15l-11 5-11-5V9z" fill="#0284c7" stroke="#38bdf8" stroke-width="1.2"/><circle cx="23" cy="9" r="5" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1"/><circle cx="23" cy="9" r="1.8" fill="#0284c7"/><rect x="11" y="15" width="13" height="7" rx="2" fill="#f59e0b"/><text x="17.5" y="20.5" font-size="5" font-weight="900" fill="#0f172a" text-anchor="middle" font-family="'Segoe UI', sans-serif">.EXE</text><circle cx="27" cy="27" r="7" fill="#22c55e" stroke="#12141a" stroke-width="1.5"/><path d="M25 29l2-3 2 1-2 3z" fill="#ffffff"/><path d="M27 26l2-3" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/></svg>`;
         case 'clean_registry':
           return `<svg width="34" height="34" viewBox="0 0 36 36" fill="none"><circle cx="17" cy="17" r="15" fill="rgba(239, 68, 68, 0.18)" stroke="#ef4444" stroke-width="1.5"/><path d="M12 9l8 8-3 3-8-8 3-3z" fill="#f87171"/><path d="M10 19l-3 6 6-3 8-8-3-3-8 8z" fill="#facc15"/><line x1="22" y1="7" x2="27" y2="12" stroke="#f87171" stroke-width="2" stroke-linecap="round"/><circle cx="27" cy="27" r="6" fill="#10b981"/><path d="M25 27l1.5 1.5 3-3" stroke="#ffffff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+        case 'repair_system_files':
+          return `<svg width="34" height="34" viewBox="0 0 36 36" fill="none"><path d="M18 4L6 9v8c0 8.5 5.5 14.5 12 17 6.5-2.5 12-8.5 12-17V9L18 4z" fill="#0284c7" stroke="#38bdf8" stroke-width="1.5"/><rect x="10" y="13" width="16" height="10" rx="2" fill="#0f172a"/><text x="12" y="20.5" font-size="6.5" font-weight="900" fill="#22c55e" font-family="'Consolas', monospace">&gt;_</text><path d="M19 18l2 2 4-4" stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+        case 'restore_health_dism':
+          return `<svg width="34" height="34" viewBox="0 0 36 36" fill="none"><rect x="4" y="5" width="28" height="26" rx="4" fill="#0f172a" stroke="#10b981" stroke-width="1.5"/><rect x="7" y="8" width="10" height="9" rx="1.5" fill="#0284c7"/><rect x="19" y="8" width="10" height="9" rx="1.5" fill="#38bdf8"/><rect x="7" y="19" width="10" height="9" rx="1.5" fill="#0284c7"/><rect x="19" y="19" width="10" height="9" rx="1.5" fill="#38bdf8"/><circle cx="27" cy="27" r="7.5" fill="#10b981" stroke="#0f172a" stroke-width="1.8"/><path d="M27 23.5v7m-3.5-3.5h7" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/></svg>`;
         default:
           return `<svg width="34" height="34" viewBox="0 0 36 36" fill="none"><circle cx="18" cy="18" r="14" fill="#1e293b" stroke="#64748b" stroke-width="1.5"/><circle cx="18" cy="18" r="4" fill="#94a3b8"/><path d="M18 6v4m0 16v4m-12-12h4m16 0h4m-19.8-5.8l2.8 2.8m14 14l2.8 2.8m0-19.6l-2.8 2.8m-14 14l-2.8 2.8" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/></svg>`;
       }
@@ -5170,7 +5368,7 @@
           statusClass = 'tweak-status unavailable';
         } else if (tw.type === 'action') {
           btnClass = 'btn-clean-action';
-          btnText = `🧹 ${s.btn_clean_action || 'Очистить'}`;
+          btnText = tw.action_text || `🧹 ${s.btn_clean_action || 'Очистить'}`;
           if (tw.last_result) {
             statusText = `✅ ${tw.last_result}`;
             statusClass = 'tweak-status result-badge';
@@ -6400,13 +6598,36 @@
     async function openBackupsFolder() {
       try {
         if (window.pywebview && window.pywebview.api && window.pywebview.api.open_backups_directory) {
-          await window.pywebview.api.open_backups_directory();
+          const res = await window.pywebview.api.open_backups_directory();
+          if (res && !res.success && res.message) {
+            showToast('Не удалось открыть папку: ' + res.message, 'error');
+          }
         }
       } catch (err) {
         console.error('openBackupsFolder error:', err);
       }
     }
     window.openBackupsFolder = openBackupsFolder;
+
+    async function restoreRegistryBackupPrompt() {
+      try {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.restore_registry_backup_dialog) {
+          const res = await window.pywebview.api.restore_registry_backup_dialog();
+          if (res && res.success) {
+            showToast(res.message, 'success');
+            if (typeof scanRegistryIssues === 'function') {
+              scanRegistryIssues();
+            }
+          } else if (res && !res.cancelled && res.message) {
+            showToast(res.message, 'error');
+          }
+        }
+      } catch (err) {
+        console.error('restoreRegistryBackupPrompt error:', err);
+        showToast(`Ошибка восстановления: ${err}`, 'error');
+      }
+    }
+    window.restoreRegistryBackupPrompt = restoreRegistryBackupPrompt;
 
     window.onStartupItemsUpdated = function(items) {
       if (items && Array.isArray(items)) {
@@ -7061,6 +7282,363 @@
 
       showToast(`Ошибка обновления: ${errMsg}`, 'error', 6000);
     };
+
+    // ==========================================
+    // Сканер VirusTotal
+    // ==========================================
+    let vtCurrentScanData = null;
+    let vtCurrentFilePath = null;
+    let vtCurrentEnginesFilter = 'all';
+
+    async function initVirusTotalView() {
+      await checkVirusTotalApiKey();
+    }
+    window.initVirusTotalView = initVirusTotalView;
+
+    async function checkVirusTotalApiKey() {
+      try {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.get_virustotal_config) {
+          const cfg = await window.pywebview.api.get_virustotal_config();
+          const badge = document.getElementById('vtApiKeyStatusBadge');
+          const indicator = document.getElementById('vtKeyIndicator');
+          const text = document.getElementById('vtKeyText');
+          const card = document.getElementById('vtApiKeyCard');
+          const btn = document.getElementById('btnToggleVtKey');
+
+          if (cfg && cfg.has_key) {
+            if (indicator) indicator.textContent = '🟢';
+            if (text) text.textContent = `Ключ: ${cfg.masked_key || 'Подключен'}`;
+            if (badge) badge.style.borderColor = 'rgba(34, 197, 94, 0.4)';
+            if (card) card.style.display = 'none';
+            if (btn) btn.textContent = '⚙️ Изменить ключ';
+          } else {
+            if (indicator) indicator.textContent = '⚪';
+            if (text) text.textContent = 'API ключ не настроен';
+            if (badge) badge.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+            if (card) card.style.display = 'block';
+            if (btn) btn.textContent = '🔑 Ввести ключ';
+          }
+        }
+      } catch (err) {
+        console.error('checkVirusTotalApiKey error:', err);
+      }
+    }
+    window.checkVirusTotalApiKey = checkVirusTotalApiKey;
+
+    function toggleVtKeyInput(forceState) {
+      const card = document.getElementById('vtApiKeyCard');
+      if (!card) return;
+      if (typeof forceState === 'boolean') {
+        card.style.display = forceState ? 'block' : 'none';
+      } else {
+        card.style.display = (card.style.display === 'none' || !card.style.display) ? 'block' : 'none';
+      }
+    }
+    window.toggleVtKeyInput = toggleVtKeyInput;
+
+    async function saveVirusTotalKey() {
+      const inp = document.getElementById('inputVtApiKey');
+      if (!inp) return;
+      const key = inp.value.trim();
+      if (!key) {
+        showToast('Пожалуйста, введите валидный API ключ VirusTotal', 'warning');
+        return;
+      }
+      try {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.save_virustotal_api_key) {
+          const res = await window.pywebview.api.save_virustotal_api_key(key);
+          if (res && res.success) {
+            showToast('API ключ VirusTotal успешно сохранен!', 'success');
+            inp.value = '';
+            toggleVtKeyInput(false);
+            await checkVirusTotalApiKey();
+          } else {
+            showToast('Не удалось сохранить API ключ', 'error');
+          }
+        }
+      } catch (err) {
+        console.error('saveVirusTotalKey error:', err);
+        showToast(`Ошибка сохранения ключа: ${err}`, 'error');
+      }
+    }
+    window.saveVirusTotalKey = saveVirusTotalKey;
+
+    async function browseAndScanVtFile() {
+      try {
+        setVtUiState('loading', 'Выбор файла и отправка запроса в VirusTotal...');
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.browse_and_scan_virustotal) {
+          const res = await window.pywebview.api.browse_and_scan_virustotal();
+          if (res && res.cancelled) {
+            resetVtScanner();
+            return;
+          }
+          handleVtScanResult(res);
+        }
+      } catch (err) {
+        console.error('browseAndScanVtFile error:', err);
+        setVtUiState('idle');
+        showToast(`Ошибка сканирования: ${err}`, 'error');
+      }
+    }
+    window.browseAndScanVtFile = browseAndScanVtFile;
+
+    function onVtDragOver(event) {
+      event.preventDefault();
+      const dropzone = document.getElementById('vtDropzoneCard');
+      if (dropzone) {
+        dropzone.style.borderColor = '#38bdf8';
+        dropzone.style.background = 'rgba(56, 189, 248, 0.08)';
+      }
+    }
+    window.onVtDragOver = onVtDragOver;
+
+    function onVtDragLeave(event) {
+      event.preventDefault();
+      const dropzone = document.getElementById('vtDropzoneCard');
+      if (dropzone) {
+        dropzone.style.borderColor = 'rgba(255,255,255,0.15)';
+        dropzone.style.background = 'rgba(255,255,255,0.02)';
+      }
+    }
+    window.onVtDragLeave = onVtDragLeave;
+
+    async function onVtDrop(event) {
+      event.preventDefault();
+      onVtDragLeave(event);
+      if (event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files.length > 0) {
+        const file = event.dataTransfer.files[0];
+        if (file.path && window.pywebview && window.pywebview.api && window.pywebview.api.scan_virustotal_path) {
+          setVtUiState('loading', `Вычисление SHA-256 для ${file.name}...`);
+          const res = await window.pywebview.api.scan_virustotal_path(file.path);
+          handleVtScanResult(res);
+        } else {
+          showToast('Используйте кнопку «Выбрать файл» для сканирования', 'info');
+        }
+      }
+    }
+    window.onVtDrop = onVtDrop;
+
+    function handleVtScanResult(res) {
+      if (!res) {
+        setVtUiState('idle');
+        return;
+      }
+      if (!res.success) {
+        setVtUiState('idle');
+        if (res.error_type === 'no_key') {
+          toggleVtKeyInput(true);
+        }
+        showToast(res.message || 'Ошибка при обращении к VirusTotal', 'error', 5000);
+        return;
+      }
+
+      vtCurrentScanData = res;
+      vtCurrentFilePath = res.file_path;
+
+      if (res.found) {
+        setVtUiState('result');
+
+        const banner = document.getElementById('vtVerdictBanner');
+        const scoreElem = document.getElementById('vtVerdictScore');
+        const titleElem = document.getElementById('vtVerdictTitle');
+        const iconElem = document.getElementById('vtVerdictIcon');
+        const malCount = res.malicious_count || 0;
+        const total = res.total_scanners || 0;
+
+        if (scoreElem) scoreElem.textContent = `${malCount} / ${total}`;
+
+        if (malCount === 0) {
+          if (banner) {
+            banner.style.background = 'rgba(34, 197, 94, 0.12)';
+            banner.style.borderColor = 'rgba(34, 197, 94, 0.35)';
+          }
+          if (iconElem) iconElem.textContent = '🛡️';
+          if (scoreElem) scoreElem.style.color = '#22c55e';
+          if (titleElem) titleElem.textContent = 'Угроз не обнаружено (Чисто)';
+        } else {
+          if (banner) {
+            banner.style.background = 'rgba(239, 68, 68, 0.15)';
+            banner.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+          }
+          if (iconElem) iconElem.textContent = '🚨';
+          if (scoreElem) scoreElem.style.color = '#ef4444';
+          if (titleElem) titleElem.textContent = `Обнаружены угрозы безопасности (${malCount} движков)`;
+        }
+
+        const fName = document.getElementById('vtResFileName');
+        if (fName) fName.textContent = res.file_name || '-';
+        const fSize = document.getElementById('vtResFileSize');
+        if (fSize) fSize.textContent = res.file_size_formatted || `${res.file_size} Б`;
+        const fDate = document.getElementById('vtResDate');
+        if (fDate) fDate.textContent = res.last_analysis_date || '-';
+        const fType = document.getElementById('vtResType');
+        if (fType) fType.textContent = res.type_description || '-';
+        const fSha = document.getElementById('vtResSha256');
+        if (fSha) fSha.textContent = res.sha256 || '-';
+
+        const link = document.getElementById('vtOnlineLink');
+        if (link && res.permalink) {
+          link.href = res.permalink;
+          link.onclick = function(e) {
+            e.preventDefault();
+            if (window.pywebview && window.pywebview.api && window.pywebview.api.open_external_url) {
+              window.pywebview.api.open_external_url(res.permalink);
+            } else {
+              window.open(res.permalink, '_blank');
+            }
+          };
+        }
+
+        renderVtEngines(res.engines || []);
+      } else {
+        setVtUiState('not_found');
+        const fName = document.getElementById('vtNotFoundFileName');
+        if (fName) fName.textContent = res.file_name || '-';
+        const fSize = document.getElementById('vtNotFoundFileSize');
+        if (fSize) fSize.textContent = res.file_size_formatted || '-';
+        const btnUpload = document.getElementById('btnVtUploadFile');
+        if (btnUpload) {
+          btnUpload.style.display = res.can_upload ? 'inline-block' : 'none';
+        }
+      }
+    }
+
+    function renderVtEngines(engines) {
+      const container = document.getElementById('vtEnginesListContainer');
+      const countElem = document.getElementById('vtEnginesCount');
+      const malBadge = document.getElementById('vtBadgeMalCount');
+      if (!container) return;
+
+      const malCount = engines.filter(e => e.category === 'malicious' || e.category === 'suspicious').length;
+      if (countElem) countElem.textContent = engines.length;
+      if (malBadge) malBadge.textContent = malCount;
+
+      let filtered = engines;
+      if (vtCurrentEnginesFilter === 'malicious') {
+        filtered = engines.filter(e => e.category === 'malicious' || e.category === 'suspicious');
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 12.5px;">Детектов не найдено (все движки подтверждают безопасность).</div>';
+        return;
+      }
+
+      container.innerHTML = filtered.map(eng => {
+        const isMal = eng.category === 'malicious';
+        const isSusp = eng.category === 'suspicious';
+        let badgeBg = 'rgba(34, 197, 94, 0.12)';
+        let badgeColor = '#22c55e';
+        let badgeText = 'Чисто';
+        let icon = '✓';
+
+        if (isMal) {
+          badgeBg = 'rgba(239, 68, 68, 0.15)';
+          badgeColor = '#ef4444';
+          badgeText = eng.result || 'Вредоносный';
+          icon = '⚠️';
+        } else if (isSusp) {
+          badgeBg = 'rgba(245, 158, 11, 0.15)';
+          badgeColor = '#f59e0b';
+          badgeText = eng.result || 'Подозрительный';
+          icon = '❓';
+        }
+
+        return `
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 7px 12px; background: rgba(255,255,255,0.02); border-radius: var(--radius-sm); font-size: 12px; border: 1px solid rgba(255,255,255,0.04);">
+            <div style="font-weight: 500; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+              <span>${eng.name}</span>
+              ${eng.version ? `<span style="font-size: 10.5px; color: var(--text-dim); font-family: monospace;">(${eng.version})</span>` : ''}
+            </div>
+            <div style="padding: 2px 10px; border-radius: 10px; background: ${badgeBg}; color: ${badgeColor}; font-weight: 600; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;">
+              <span>${icon}</span>
+              <span>${badgeText}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function filterVtEngines(filter) {
+      vtCurrentEnginesFilter = filter;
+      const chipAll = document.getElementById('chipVtAll');
+      const chipMal = document.getElementById('chipVtMalicious');
+      if (chipAll) chipAll.classList.toggle('active', filter === 'all');
+      if (chipMal) chipMal.classList.toggle('active', filter === 'malicious');
+      if (vtCurrentScanData && vtCurrentScanData.engines) {
+        renderVtEngines(vtCurrentScanData.engines);
+      }
+    }
+    window.filterVtEngines = filterVtEngines;
+
+    function setVtUiState(state, text) {
+      const dropzone = document.getElementById('vtDropzoneCard');
+      const loading = document.getElementById('vtLoadingState');
+      const result = document.getElementById('vtResultCard');
+      const notFound = document.getElementById('vtNotFoundCard');
+      const loadingText = document.getElementById('vtLoadingText');
+
+      if (loadingText && text) loadingText.textContent = text;
+
+      if (state === 'loading') {
+        if (dropzone) dropzone.style.display = 'none';
+        if (loading) loading.style.display = 'block';
+        if (result) result.style.display = 'none';
+        if (notFound) notFound.style.display = 'none';
+      } else if (state === 'result') {
+        if (dropzone) dropzone.style.display = 'none';
+        if (loading) loading.style.display = 'none';
+        if (result) result.style.display = 'flex';
+        if (notFound) notFound.style.display = 'none';
+      } else if (state === 'not_found') {
+        if (dropzone) dropzone.style.display = 'none';
+        if (loading) loading.style.display = 'none';
+        if (result) result.style.display = 'none';
+        if (notFound) notFound.style.display = 'block';
+      } else {
+        if (dropzone) dropzone.style.display = 'block';
+        if (loading) loading.style.display = 'none';
+        if (result) result.style.display = 'none';
+        if (notFound) notFound.style.display = 'none';
+      }
+    }
+
+    function resetVtScanner() {
+      vtCurrentScanData = null;
+      vtCurrentFilePath = null;
+      vtCurrentEnginesFilter = 'all';
+      setVtUiState('idle');
+    }
+    window.resetVtScanner = resetVtScanner;
+
+    function copyVtSha256() {
+      if (vtCurrentScanData && vtCurrentScanData.sha256) {
+        navigator.clipboard.writeText(vtCurrentScanData.sha256).then(() => {
+          showToast('SHA-256 скопирован в буфер обмена', 'success');
+        }).catch(() => {
+          showToast(vtCurrentScanData.sha256, 'info');
+        });
+      }
+    }
+    window.copyVtSha256 = copyVtSha256;
+
+    async function uploadCurrentVtFile() {
+      if (!vtCurrentFilePath) {
+        showToast('Файл для отправки не определен', 'error');
+        return;
+      }
+      try {
+        setVtUiState('loading', 'Загрузка файла и ожидание отчета VirusTotal (до 60 сек)...');
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.upload_and_scan_virustotal) {
+          const res = await window.pywebview.api.upload_and_scan_virustotal(vtCurrentFilePath);
+          handleVtScanResult(res);
+        }
+      } catch (err) {
+        console.error('uploadCurrentVtFile error:', err);
+        setVtUiState('idle');
+        showToast(`Ошибка отправки: ${err}`, 'error');
+      }
+    }
+    window.uploadCurrentVtFile = uploadCurrentVtFile;
 
   </script>
 

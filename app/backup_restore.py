@@ -7,6 +7,7 @@ ZiablWinSetup — Модуль резервного копирования и в
 
 import os
 import sys
+import re
 import json
 import logging
 import datetime
@@ -17,13 +18,14 @@ from typing import Any
 
 from app.catalog import get_catalog
 from app.detector import detect_installed_apps, _get_registry_entries
+from app.utils import get_user_documents_dir
 
 logger = logging.getLogger("WinSetup")
 
 
 def get_default_backup_dir() -> Path:
     """Возвращает путь к папке бэкапов в Документах пользователя."""
-    b_dir = Path(os.environ.get("USERPROFILE", "C:\\Users\\Default")) / "Documents" / "ZiablWinSetup_Backups"
+    b_dir = get_user_documents_dir() / "ZiablWinSetup_Backups"
     b_dir.mkdir(parents=True, exist_ok=True)
     return b_dir
 

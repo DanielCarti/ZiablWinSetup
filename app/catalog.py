@@ -391,6 +391,19 @@ def _build_catalog() -> list[AppEntry]:
             notes="Зачем нужен: Быстрый антивирусный сканер второго мнения. Находит скрытые вирусы, трояны, руткиты и рекламные модули, которые пропустил ваш основной антивирус, не требуя постоянной работы в фоне и не нагружая систему.",
             notes_en="Why you need it: Second-opinion malware scanner. Catches rootkits, spyware, and adware missed by primary antivirus programs.",
         ),
+        AppEntry(
+            id="rufus",
+            name="Rufus",
+            description="Утилита для форматирования и создания загрузочных USB-флешек с Windows и Linux",
+            description_en="Utility to format and create bootable USB flash drives for Windows and Linux",
+            category="utilities",
+            winget_id="Rufus.Rufus",
+            direct_url="https://github.com/pbatard/rufus/releases/download/v4.15/rufus-4.15.exe",
+            silent_args=[],
+            recommended=True,
+            notes="Зачем нужен: Самая быстрая и надёжная программа для создания установочных флешек Windows и Linux. Умеет обходить требования Windows 11 к TPM, Secure Boot и учетной записи Microsoft.",
+            notes_en="Why you need it: Fastest tool to create bootable USB flash drives. Can automatically bypass Windows 11 TPM, Secure Boot, and Microsoft Account requirements.",
+        ),
 
         # ========================
         # 4. СВЯЗЬ И МЕССЕНДЖЕРЫ (5)
@@ -792,6 +805,19 @@ def _build_catalog() -> list[AppEntry]:
             recommended=True,
             notes="Зачем нужен: Удобный лаунчер для Minecraft с простым выбором любых версий игры, быстрой установкой модов Forge/Fabric, текстур-паков и пользовательских скинов в один клик.",
             notes_en="Why you need it: Easy-to-use Minecraft launcher with one-click installation of game versions, Forge/Fabric, and modpacks.",
+        ),
+        AppEntry(
+            id="hydralauncher",
+            name="Hydra Launcher",
+            description="Игровой лаунчер со встроенным торрент-клиентом и агрегатором репаков игр",
+            description_en="Game launcher with embedded BitTorrent client and game library manager",
+            category="gaming",
+            winget_id="HydraLauncher.Hydra",
+            direct_url="https://github.com/hydralauncher/hydra/releases/download/v4.1.6/hydralauncher-4.1.6-setup.exe",
+            silent_args=["/S"],
+            recommended=True,
+            notes="Зачем нужен: Современный игровой лаунчер с открытым исходным кодом. Позволяет искать, скачивать и запускать любые ПК-игры с автоматическим сохранением прогресса и удобной библиотекой.",
+            notes_en="Why you need it: Open-source gaming launcher and library manager with integrated BitTorrent client for hassle-free game installation.",
         ),
 
         # ========================

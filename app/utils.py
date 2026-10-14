@@ -415,3 +415,35 @@ def get_file_version(filepath: str | Path) -> str | None:
     except Exception:
         pass
     return None
+
+
+def get_user_documents_dir() -> Path:
+    """
+    Возвращает действительный путь к папке 'Документы' текущего пользователя
+    с учетом возможного перенаправления в OneDrive или изменения реестра Windows.
+    """
+    if sys.platform == "win32":
+        try:
+            import winreg
+            with winreg.OpenKey(
+                winreg.HKEY_CURRENT_USER,
+                r"Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders"
+            ) as key:
+                val, _ = winreg.QueryValueEx(key, "Personal")
+                expanded = os.path.expandvars(str(val))
+                if os.path.isdir(expanded):
+                    return Path(expanded)
+        except Exception:
+            pass
+
+        for var in ("OneDrive", "OneDriveConsumer", "OneDriveCommercial"):
+            od = os.environ.get(var)
+            if od:
+                od_docs = Path(od) / "Documents"
+                if od_docs.is_dir():
+                    return od_docs
+
+    profile = os.environ.get("USERPROFILE", "C:\\Users\\Default")
+    fallback = Path(profile) / "Documents"
+    fallback.mkdir(parents=True, exist_ok=True)
+    return fallback

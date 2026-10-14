@@ -9,17 +9,20 @@ import re
 import sys
 import datetime
 import logging
+import subprocess
 import winreg
 from pathlib import Path
 from typing import Any
+
+from app.utils import get_user_documents_dir
 
 logger = logging.getLogger("WinSetup")
 
 def get_backups_dir() -> Path:
     """Возвращает путь к папке бэкапов реестра в Документах пользователя."""
-    user_docs = Path(os.environ.get("USERPROFILE", "C:\\Users\\Default")) / "Documents" / "ZiablWinSetup_Backups"
-    user_docs.mkdir(parents=True, exist_ok=True)
-    return user_docs
+    b_dir = get_user_documents_dir() / "ZiablWinSetup_Backups"
+    b_dir.mkdir(parents=True, exist_ok=True)
+    return b_dir
 
 
 def _get_hkey_name(hkey) -> str:
@@ -447,3 +450,37 @@ def clean_registry_issues(selected_issues: list[dict[str, Any]]) -> dict[str, An
         "backup_filename": backup_file.name,
         "message": f"Успешно очищено записей: {cleaned_count}. Бэкап сохранён в «{backup_file.name}»."
     }
+
+
+def restore_registry_backup(reg_file_path: str) -> tuple[bool, str]:
+    """
+    Восстанавливает записи реестра из выбранного .reg файла отката.
+    Использует системную утилиту reg.exe import с авто-повышением прав при необходимости.
+    """
+    p = Path(reg_file_path)
+    if not p.is_file():
+        return False, f"Файл резервной копии не найден: {reg_file_path}"
+    if p.suffix.lower() != ".reg":
+        return False, "Выбранный файл не является файлом реестра (.reg)."
+
+    try:
+        no_win = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
+        res = subprocess.run(
+            ["reg.exe", "import", str(p.resolve())],
+            capture_output=True,
+            text=True,
+            creationflags=no_win
+        )
+        if res.returncode == 0:
+            return True, f"Записи реестра успешно восстановлены из «{p.name}»."
+
+        # Если не хватило прав (например, для HKEY_LOCAL_MACHINE), запрашиваем повышение прав
+        from app.installer import run_with_elevation
+        code = run_with_elevation("reg.exe", ["import", str(p.resolve())])
+        if code == 0:
+            return True, f"Записи реестра успешно восстановлены с правами Администратора из «{p.name}»."
+        err_msg = res.stderr.strip() if res.stderr else "Ошибка доступа при импорте в реестр."
+        return False, f"Не удалось импортировать файл (код {code}): {err_msg}"
+    except Exception as e:
+        logger.error(f"Error restoring registry backup from {reg_file_path}: {e}")
+        return False, f"Ошибка восстановления реестра: {e}"

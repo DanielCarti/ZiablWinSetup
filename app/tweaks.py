@@ -34,6 +34,8 @@ class TweakEntry:
     apply: Callable[[], tuple[bool, str]]
     revert: Callable[[], tuple[bool, str]]
     type: str = "toggle"  # "toggle" (Вкл/Выкл) или "action" (Очистить/Выполнить)
+    action_text: str = ""
+    action_text_en: str = ""
     is_available: Callable[[], bool] = lambda: True
     unavailable_reason: str = ""
     unavailable_reason_en: str = ""
@@ -50,6 +52,7 @@ class TweakEntry:
             "available": available,
             "unavailable_reason": (self.unavailable_reason if lang != "en" else self.unavailable_reason_en) if not available else "",
             "type": self.type,
+            "action_text": (self.action_text if lang != "en" else self.action_text_en) if self.action_text else "",
         }
 
 
@@ -871,6 +874,32 @@ def _revert_taskbar_align_left() -> tuple[bool, str]:
         return False, f"Ошибка изменения реестра: {e}"
 
 
+def _run_sfc_scan() -> tuple[bool, str]:
+    """Запуск проверки целостности системных файлов Windows (sfc /scannow)."""
+    try:
+        title = "ZiablWinSetup - Проверка системных файлов (sfc /scannow)"
+        cmd = f'title {title} && color 0b && echo ======================================================== && echo [ZiablWinSetup] Проверка целостности системных файлов Windows && echo Команда: sfc /scannow && echo Пожалуйста, дождитесь окончания процесса... && echo ======================================================== && echo. && sfc.exe /scannow && echo. && echo -------------------------------------------------------- && echo Сканирование завершено. Нажмите любую клавишу для выхода... && pause >nul'
+        ret = ctypes.windll.shell32.ShellExecuteW(None, "runas", "cmd.exe", f'/c "{cmd}"', None, 1)
+        if ret > 32:
+            return True, "Консоль sfc /scannow запущена от имени Администратора. Прогресс отображается в открывшемся окне."
+        return False, "Не удалось запустить sfc /scannow (требуются права администратора)."
+    except Exception as e:
+        return False, f"Ошибка запуска sfc /scannow: {e}"
+
+
+def _run_dism_restore_health() -> tuple[bool, str]:
+    """Восстановление хранилища компонентов Windows через DISM /Online /Cleanup-Image /RestoreHealth."""
+    try:
+        title = "ZiablWinSetup - Восстановление компонентов (DISM RestoreHealth)"
+        cmd = f'title {title} && color 0a && echo ======================================================== && echo [ZiablWinSetup] Восстановление хранилища компонентов Windows && echo Команда: DISM /Online /Cleanup-Image /RestoreHealth && echo Пожалуйста, дождитесь завершения операции... && echo ======================================================== && echo. && dism.exe /Online /Cleanup-Image /RestoreHealth && echo. && echo -------------------------------------------------------- && echo Восстановление завершено. Нажмите любую клавишу для выхода... && pause >nul'
+        ret = ctypes.windll.shell32.ShellExecuteW(None, "runas", "cmd.exe", f'/c "{cmd}"', None, 1)
+        if ret > 32:
+            return True, "Консоль DISM RestoreHealth запущена от имени Администратора. Прогресс отображается в открывшемся окне."
+        return False, "Не удалось запустить DISM RestoreHealth (требуются права администратора)."
+    except Exception as e:
+        return False, f"Ошибка запуска DISM RestoreHealth: {e}"
+
+
 # ==========================================
 # РЕЕСТР ВСЕХ ТВproperties
 # ==========================================
@@ -1047,6 +1076,38 @@ TWEAKS: list[TweakEntry] = [
         apply=lambda: (True, "Открыто окно очистки реестра."),
         revert=lambda: (True, "Действие очистки не требует отката."),
         type="action",
+        is_available=lambda: True,
+    ),
+    TweakEntry(
+        id="repair_system_files",
+        name="Восстановление файлов Windows (sfc /scannow)",
+        name_en="System File Checker (sfc /scannow)",
+        description="Сканирует целостность всех защищенных системных файлов Windows и автоматически восстанавливает поврежденные или отсутствующие компоненты.",
+        description_en="Scans the integrity of all protected Windows system files and repairs corrupted or missing components automatically.",
+        category="system",
+        icon="🛡️",
+        is_applied=lambda: False,
+        apply=_run_sfc_scan,
+        revert=lambda: (True, "Действие проверки не требует отката."),
+        type="action",
+        action_text="Запустить сканирование",
+        action_text_en="Start Scan",
+        is_available=lambda: True,
+    ),
+    TweakEntry(
+        id="restore_health_dism",
+        name="Восстановление хранилища компонентов (DISM)",
+        name_en="Restore Component Store Health (DISM)",
+        description="Запускает DISM /Online /Cleanup-Image /RestoreHealth для устранения повреждений системного образа Windows.",
+        description_en="Runs DISM /Online /Cleanup-Image /RestoreHealth to repair Windows system image component store corruption.",
+        category="system",
+        icon="🩹",
+        is_applied=lambda: False,
+        apply=_run_dism_restore_health,
+        revert=lambda: (True, "Действие восстановления не требует отката."),
+        type="action",
+        action_text="Восстановить образ",
+        action_text_en="Restore Health",
         is_available=lambda: True,
     ),
 ]

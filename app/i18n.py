@@ -219,7 +219,7 @@ STRINGS: dict[Language, dict[str, str]] = {
         "btn_check_app_update": "Проверить обновление ZiablWinSetup",
 
         # Дополнительные переводы UI
-        "startup_add_btn": "+ Добавить программу",
+        "startup_add_btn": "Добавить программу",
         "startup_sort_label": "↕️ Сортировка:",
         "startup_sort_enabled_first": "Сначала вкл.",
         "startup_filter_enabled": "🟢 Включено",
@@ -253,6 +253,30 @@ STRINGS: dict[Language, dict[str, str]] = {
         "status_log_title": "Журнал событий",
         "uninstall_confirm_title": "Удаление приложения",
         "uninstall_confirm_desc": "Вы действительно хотите запустить деинсталляцию {name}?",
+
+        # Реестр и бэкапы
+        "reg_btn_backups_folder": "Папка бэкапов",
+        "reg_btn_restore_backup": "Восстановить из бэкапа",
+
+        # VirusTotal
+        "tab_virustotal": "VirusTotal",
+        "vt_title": "Сканер файлов VirusTotal",
+        "vt_subtitle": "Мгновенная проверка подозрительных файлов и инсталляторов через 70+ антивирусных движков официального API VirusTotal.",
+        "vt_api_key_title": "Официальный API ключ VirusTotal",
+        "vt_api_key_desc": "Бесплатный ключ на 500 проверок в день. Получите его в профиле на virustotal.com и вставьте сюда. Ключ хранится локально на вашем ПК.",
+        "vt_save_key_btn": "Сохранить ключ",
+        "vt_change_key_btn": "Изменить ключ",
+        "vt_drop_title": "Перетащите файл сюда для проверки",
+        "vt_drop_subtitle": "или нажмите кнопку «Выбрать файл» (.exe, .msi, .dll, .zip и любые другие форматы)",
+        "vt_btn_choose": "📁 Выбрать файл...",
+        "vt_clean_verdict": "Угроз не обнаружено (Чисто)",
+        "vt_malicious_verdict": "Обнаружены угрозы безопасности!",
+        "vt_suspicious_verdict": "Подозрительный файл!",
+        "vt_open_online": "Открыть полный отчет на VirusTotal ↗",
+        "vt_filter_all": "Все антивирусы",
+        "vt_filter_malicious": "Только детекты",
+        "vt_btn_upload": "📤 Отправить файл на сканирование в VirusTotal",
+        "vt_upload_hint": "Файл ранее не сканировался на VirusTotal. Вы можете отправить его на анализ (до 32 МБ).",
     },
 
     "en": {
@@ -465,7 +489,7 @@ STRINGS: dict[Language, dict[str, str]] = {
         "btn_check_app_update": "Check for ZiablWinSetup Update",
 
         # Additional UI translations
-        "startup_add_btn": "+ Add Program",
+        "startup_add_btn": "Add Program",
         "startup_sort_label": "↕️ Sort by:",
         "startup_sort_enabled_first": "Enabled first",
         "startup_filter_enabled": "🟢 Enabled",
@@ -499,6 +523,30 @@ STRINGS: dict[Language, dict[str, str]] = {
         "status_log_title": "Event Log",
         "uninstall_confirm_title": "Uninstall Application",
         "uninstall_confirm_desc": "Are you sure you want to uninstall {name}?",
+
+        # Registry & Backups
+        "reg_btn_backups_folder": "Backup Folder",
+        "reg_btn_restore_backup": "Restore from Backup",
+
+        # VirusTotal
+        "tab_virustotal": "VirusTotal",
+        "vt_title": "VirusTotal File Scanner",
+        "vt_subtitle": "Instant verification of suspicious files and installers against 70+ antivirus engines using official VirusTotal API.",
+        "vt_api_key_title": "Official VirusTotal API Key",
+        "vt_api_key_desc": "Free key for 500 scans/day. Get it in your virustotal.com profile and paste here. Stored locally on your PC.",
+        "vt_save_key_btn": "Save Key",
+        "vt_change_key_btn": "Change Key",
+        "vt_drop_title": "Drop file here to scan",
+        "vt_drop_subtitle": "or click 'Select File' (.exe, .msi, .dll, .zip, etc.)",
+        "vt_btn_choose": "📁 Select File...",
+        "vt_clean_verdict": "No threats detected (Clean)",
+        "vt_malicious_verdict": "Security threats detected!",
+        "vt_suspicious_verdict": "Suspicious file!",
+        "vt_open_online": "Open full report on VirusTotal ↗",
+        "vt_filter_all": "All Antiviruses",
+        "vt_filter_malicious": "Detections Only",
+        "vt_btn_upload": "📤 Upload file for scanning to VirusTotal",
+        "vt_upload_hint": "File has not been scanned on VirusTotal before. You can submit it for analysis (up to 32 MB).",
     },
 }
 

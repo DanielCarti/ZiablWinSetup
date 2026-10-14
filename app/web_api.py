@@ -8,6 +8,7 @@ import logging
 import os
 import re
 import subprocess
+import sys
 import threading
 import time
 import webbrowser
@@ -51,7 +52,7 @@ from app.startup_manager import StartupManager
 from app.version import __version__, GITHUB_REPO
 from app.self_updater import check_for_app_update, download_and_apply_update
 from app.backup_restore import export_apps_backup, import_apps_backup, install_winget_package_sync, get_default_backup_dir
-from app.registry_cleaner import scan_registry_issues, clean_registry_issues, get_backups_dir
+from app.registry_cleaner import scan_registry_issues, clean_registry_issues, get_backups_dir, restore_registry_backup
 
 logger = logging.getLogger("WinSetup")
 
@@ -544,11 +545,115 @@ class AppBridge:
         """Открывает папку с созданными резервными копиями в Проводнике."""
         try:
             b_dir = get_backups_dir()
+            b_dir.mkdir(parents=True, exist_ok=True)
             if sys.platform == "win32":
-                os.startfile(str(b_dir))
+                subprocess.Popen(["explorer.exe", str(b_dir.resolve())])
             return {"success": True, "path": str(b_dir)}
         except Exception as e:
+            logger.error(f"Failed to open backups dir: {e}")
             return {"success": False, "message": str(e)}
+
+    def restore_registry_backup_dialog(self) -> dict[str, Any]:
+        """Открывает диалог выбора .reg файла для восстановления реестра из бэкапа."""
+        if not self._window:
+            return {"success": False, "message": "Окно приложения недоступно."}
+        try:
+            b_dir = get_backups_dir()
+            b_dir.mkdir(parents=True, exist_ok=True)
+            res = self._window.create_file_dialog(
+                webview.OPEN_DIALOG,
+                directory=str(b_dir.resolve()),
+                file_types=('Файлы реестра (*.reg)', '*.reg', 'Все файлы (*.*)', '*.*')
+            )
+            if not res or len(res) == 0:
+                return {"success": False, "cancelled": True}
+            reg_path = res[0]
+            ok, msg = restore_registry_backup(reg_path)
+            if ok:
+                self.call_js("onLog", f"🔄 {msg}")
+            else:
+                self.call_js("onLog", f"❌ {msg}")
+            return {"success": ok, "message": msg, "path": reg_path}
+        except Exception as e:
+            logger.error(f"Error in restore_registry_backup_dialog: {e}")
+            return {"success": False, "message": str(e)}
+
+    # ==========================================
+    # Сканер файлов VirusTotal API
+    # ==========================================
+
+    def get_virustotal_config(self) -> dict[str, Any]:
+        """Возвращает статус наличия API ключа VirusTotal."""
+        from app.virustotal import get_virustotal_api_key
+        key = get_virustotal_api_key()
+        masked = f"{key[:4]}...{key[-4:]}" if len(key) >= 8 else ("***" if key else "")
+        return {
+            "has_key": bool(key),
+            "masked_key": masked,
+        }
+
+    def save_virustotal_api_key(self, api_key: str) -> dict[str, Any]:
+        """Сохраняет пользовательский API ключ VirusTotal."""
+        from app.virustotal import set_virustotal_api_key
+        key = (api_key or "").strip()
+        ok = set_virustotal_api_key(key)
+        if ok:
+            self.call_js("onLog", "🛡️ API ключ VirusTotal успешно сохранен.")
+        return {"success": ok, "has_key": bool(key)}
+
+    def browse_and_scan_virustotal(self) -> dict[str, Any]:
+        """Открывает диалог выбора файла и запускает сканирование в VirusTotal."""
+        if not self._window:
+            return {"success": False, "message": "Окно приложения недоступно."}
+        try:
+            res = self._window.create_file_dialog(
+                webview.OPEN_DIALOG,
+                allow_multiple=False,
+                file_types=('Все файлы (*.*)', '*.*', 'Программы и файлы (*.exe;*.msi;*.dll;*.zip;*.7z)', '*.exe;*.msi;*.dll;*.zip;*.7z')
+            )
+            if not res or len(res) == 0:
+                return {"success": False, "cancelled": True}
+            file_path = res[0]
+            from app.virustotal import scan_file_by_path
+            res_scan = scan_file_by_path(file_path)
+            if res_scan.get("success"):
+                if res_scan.get("found"):
+                    score = res_scan.get("score_text", "")
+                    self.call_js("onLog", f"🛡️ VirusTotal проверка завершена для «{res_scan.get('file_name')}»: {score} угроз")
+                else:
+                    self.call_js("onLog", f"🛡️ VirusTotal: файл «{res_scan.get('file_name')}» ранее не исследовался.")
+            elif res_scan.get("message"):
+                self.call_js("onLog", f"⚠️ VirusTotal: {res_scan.get('message')}")
+            return res_scan
+        except Exception as e:
+            logger.error(f"Error in browse_and_scan_virustotal: {e}")
+            return {"success": False, "message": str(e)}
+
+    def scan_virustotal_path(self, file_path: str) -> dict[str, Any]:
+        """Сканирует переданный путь к файлу в VirusTotal."""
+        from app.virustotal import scan_file_by_path
+        res_scan = scan_file_by_path(file_path)
+        if res_scan.get("success"):
+            if res_scan.get("found"):
+                score = res_scan.get("score_text", "")
+                self.call_js("onLog", f"🛡️ VirusTotal проверка завершена: {score} угроз")
+            else:
+                self.call_js("onLog", "🛡️ VirusTotal: файл ранее не исследовался.")
+        elif res_scan.get("message"):
+            self.call_js("onLog", f"⚠️ VirusTotal: {res_scan.get('message')}")
+        return res_scan
+
+    def upload_and_scan_virustotal(self, file_path: str) -> dict[str, Any]:
+        """Загружает неизвестный файл на проверку в VirusTotal."""
+        from app.virustotal import upload_and_scan_file
+        self.call_js("onLog", "📤 Отправка файла на анализ в VirusTotal...")
+        res_upload = upload_and_scan_file(file_path)
+        if res_upload.get("success") and res_upload.get("found"):
+            score = res_upload.get("score_text", "")
+            self.call_js("onLog", f"✅ Анализ VirusTotal завершен: {score} угроз")
+        elif res_upload.get("message"):
+            self.call_js("onLog", f"⚠️ VirusTotal: {res_upload.get('message')}")
+        return res_upload
 
     # ==========================================
     # Путь для распаковки портативных версий

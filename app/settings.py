@@ -30,6 +30,7 @@ _DEFAULT_SETTINGS = {
     "auto_check_software_updates": True,
     "auto_clean_leftovers": None,
     "skipped_app_version": "",
+    "virustotal_api_key": "",
 }
 
 
@@ -101,3 +102,14 @@ def set_ignored_update_apps(app_ids: list[str]) -> list[str]:
     settings["ignored_update_apps"] = sorted(list(set(app_ids)))
     save_settings(settings)
     return settings["ignored_update_apps"]
+
+
+def get_virustotal_api_key() -> str:
+    settings = load_settings()
+    return str(settings.get("virustotal_api_key", "")).strip()
+
+
+def set_virustotal_api_key(api_key: str) -> bool:
+    settings = load_settings()
+    settings["virustotal_api_key"] = api_key.strip()
+    return save_settings(settings)

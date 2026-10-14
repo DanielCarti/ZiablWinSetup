@@ -278,6 +278,14 @@ DETECTION_RULES: dict[str, dict[str, list[str]]] = {
         "patterns": [r"^Dropbox$"],
         "paths": [r"Dropbox\Client\Dropbox.exe"],
     },
+    "rufus": {
+        "patterns": [r"Rufus"],
+        "paths": [r"Rufus\rufus*.exe", r"rufus*.exe", r"Programs\Rufus\rufus*.exe"],
+    },
+    "hydralauncher": {
+        "patterns": [r"Hydra"],
+        "paths": [r"Hydra\Hydra.exe", r"Programs\Hydra\Hydra.exe"],
+    },
 }
 
 

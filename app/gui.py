@@ -6,6 +6,7 @@ ZiablWinSetup — GUI на CustomTkinter.
 
 import logging
 import os
+import sys
 import queue
 import threading
 from concurrent.futures import ThreadPoolExecutor
