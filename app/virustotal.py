@@ -117,18 +117,24 @@ def _build_multipart_payload(fields: dict[str, str], files: dict[str, tuple[str,
     return bytes(body), content_type
 
 
-def scan_file_by_path(filepath: str | Path, api_key: str | None = None) -> dict[str, Any]:
+def scan_file_by_hash(
+    sha256_hash: str,
+    filename: str = "",
+    file_size: int = 0,
+    api_key: str | None = None,
+    file_path: str = ""
+) -> dict[str, Any]:
     """
-    Проверяет файл в VirusTotal по его SHA-256 хэшу.
-    Если файл уже есть в базе — мгновенно возвращает вердикт и результаты по всем антивирусам.
+    Проверяет файл в VirusTotal напрямую по его SHA-256 хэшу.
+    Если файл уже есть в базе — возвращает детальный вердикт и результаты антивирусов.
     Если файла нет — возвращает статус 'found: False' с возможностью отправки.
     """
-    path_obj = Path(filepath)
-    if not path_obj.is_file():
+    clean_hash = (sha256_hash or "").strip().lower()
+    if not clean_hash or len(clean_hash) != 64 or not re.match(r"^[a-f0-9]{64}$", clean_hash):
         return {
             "success": False,
-            "error_type": "file_not_found",
-            "message": f"Файл не найден на диске: {filepath}"
+            "error_type": "invalid_hash",
+            "message": "Некорректный SHA-256 хэш файла."
         }
 
     key = (api_key or get_virustotal_api_key()).strip()
@@ -139,16 +145,7 @@ def scan_file_by_path(filepath: str | Path, api_key: str | None = None) -> dict[
             "message": "Для сканирования требуется бесплатный API ключ VirusTotal. Укажите его в поле ниже."
         }
 
-    try:
-        sha256_hash, file_size = calculate_file_sha256(path_obj)
-    except Exception as e:
-        return {
-            "success": False,
-            "error_type": "hash_error",
-            "message": f"Не удалось прочитать файл и вычислить хэш: {e}"
-        }
-
-    url = f"{VT_API_BASE}/files/{sha256_hash}"
+    url = f"{VT_API_BASE}/files/{clean_hash}"
     req = urllib.request.Request(
         url,
         headers={
@@ -161,19 +158,22 @@ def scan_file_by_path(filepath: str | Path, api_key: str | None = None) -> dict[
     try:
         with urllib.request.urlopen(req, timeout=15) as resp:
             data = json.loads(resp.read().decode("utf-8"))
-            return _parse_vt_file_response(data, sha256_hash, path_obj.name, file_size)
+            res = _parse_vt_file_response(data, clean_hash, filename, file_size)
+            if file_path:
+                res["file_path"] = file_path
+            return res
 
     except urllib.error.HTTPError as e:
         if e.code == 404:
             return {
                 "success": True,
                 "found": False,
-                "sha256": sha256_hash,
-                "file_name": path_obj.name,
-                "file_path": str(path_obj.resolve()),
+                "sha256": clean_hash,
+                "file_name": filename or "Неизвестный файл",
+                "file_path": file_path,
                 "file_size": file_size,
-                "file_size_formatted": format_file_size(file_size),
-                "can_upload": file_size <= MAX_UPLOAD_SIZE,
+                "file_size_formatted": format_file_size(file_size) if file_size else "",
+                "can_upload": file_size <= MAX_UPLOAD_SIZE if file_size else True,
                 "message": "Данный файл ранее не исследовался в VirusTotal (хэш отсутствует в базе). Вы можете отправить его на сканирование."
             }
         elif e.code == 401:
@@ -206,6 +206,36 @@ def scan_file_by_path(filepath: str | Path, api_key: str | None = None) -> dict[
             "error_type": "network_error",
             "message": f"Ошибка сетевого соединения с VirusTotal: {e}"
         }
+
+
+def scan_file_by_path(filepath: str | Path, api_key: str | None = None) -> dict[str, Any]:
+    """
+    Проверяет локальный файл в VirusTotal по вычисленному SHA-256 хэшу.
+    """
+    path_obj = Path(filepath)
+    if not path_obj.is_file():
+        return {
+            "success": False,
+            "error_type": "file_not_found",
+            "message": f"Файл не найден на диске: {filepath}"
+        }
+
+    try:
+        sha256_hash, file_size = calculate_file_sha256(path_obj)
+    except Exception as e:
+        return {
+            "success": False,
+            "error_type": "hash_error",
+            "message": f"Не удалось прочитать файл и вычислить хэш: {e}"
+        }
+
+    return scan_file_by_hash(
+        sha256_hash=sha256_hash,
+        filename=path_obj.name,
+        file_size=file_size,
+        api_key=api_key,
+        file_path=str(path_obj.resolve())
+    )
 
 
 def _parse_vt_file_response(data: dict, sha256_hash: str, local_filename: str, local_size: int) -> dict[str, Any]:
@@ -286,20 +316,16 @@ def _parse_vt_file_response(data: dict, sha256_hash: str, local_filename: str, l
     }
 
 
-def upload_and_scan_file(filepath: str | Path, api_key: str | None = None) -> dict[str, Any]:
+def upload_file_bytes(file_bytes: bytes, filename: str, api_key: str | None = None) -> dict[str, Any]:
     """
-    Загружает файл (до 32 МБ) в VirusTotal для первичного анализа.
+    Загружает байты файла (до 32 МБ) в VirusTotal для первичного анализа.
     Опрашивает статус анализа до завершения и возвращает полный отчет.
     """
-    path_obj = Path(filepath)
-    if not path_obj.is_file():
-        return {"success": False, "message": f"Файл не найден: {filepath}"}
-
     key = (api_key or get_virustotal_api_key()).strip()
     if not key:
         return {"success": False, "message": "API ключ VirusTotal не указан."}
 
-    file_size = path_obj.stat().st_size
+    file_size = len(file_bytes)
     if file_size > MAX_UPLOAD_SIZE:
         return {
             "success": False,
@@ -307,10 +333,8 @@ def upload_and_scan_file(filepath: str | Path, api_key: str | None = None) -> di
         }
 
     try:
-        with open(path_obj, "rb") as f:
-            file_bytes = f.read()
-
-        payload, content_type = _build_multipart_payload({}, {"file": (path_obj.name, file_bytes)})
+        clean_name = Path(filename).name if filename else "file.bin"
+        payload, content_type = _build_multipart_payload({}, {"file": (clean_name, file_bytes)})
 
         upload_req = urllib.request.Request(
             f"{VT_API_BASE}/files",
@@ -330,6 +354,9 @@ def upload_and_scan_file(filepath: str | Path, api_key: str | None = None) -> di
         if not analysis_id:
             return {"success": False, "message": "VirusTotal не вернул идентификатор анализа."}
 
+        # Вычисляем SHA-256 для последующего запроса отчета
+        sha256_hash = hashlib.sha256(file_bytes).hexdigest().lower()
+
         # Ожидаем завершения анализа (до 60 секунд)
         for _ in range(20):
             time.sleep(3)
@@ -343,8 +370,8 @@ def upload_and_scan_file(filepath: str | Path, api_key: str | None = None) -> di
                 if status == "completed":
                     break
 
-        # Получаем итоговый отчет
-        return scan_file_by_path(path_obj, key)
+        # Получаем итоговый отчет по хэшу
+        return scan_file_by_hash(sha256_hash, clean_name, file_size, key)
 
     except urllib.error.HTTPError as e:
         if e.code == 429:
@@ -353,3 +380,20 @@ def upload_and_scan_file(filepath: str | Path, api_key: str | None = None) -> di
     except Exception as e:
         logger.error(f"Error uploading file to VirusTotal: {e}")
         return {"success": False, "message": f"Ошибка отправки файла на VirusTotal: {e}"}
+
+
+def upload_and_scan_file(filepath: str | Path, api_key: str | None = None) -> dict[str, Any]:
+    """
+    Загружает файл с диска (до 32 МБ) в VirusTotal для первичного анализа.
+    """
+    path_obj = Path(filepath)
+    if not path_obj.is_file():
+        return {"success": False, "message": f"Файл не найден: {filepath}"}
+
+    try:
+        with open(path_obj, "rb") as f:
+            file_bytes = f.read()
+        return upload_file_bytes(file_bytes, path_obj.name, api_key)
+    except Exception as e:
+        logger.error(f"Error reading file for VirusTotal upload: {e}")
+        return {"success": False, "message": f"Ошибка чтения файла: {e}"}

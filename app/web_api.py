@@ -99,6 +99,7 @@ class AppBridge:
         self._app_data: dict[str, Any] | None = None
         self._tray_manager: Any = None
         self._is_quitting = False
+        self._running_tweaks: dict[str, dict[str, Any]] = {}
 
     def set_window(self, window: webview.Window):
         self._window = window
@@ -636,6 +637,28 @@ class AppBridge:
             logger.error(f"Error in restore_registry_backup_dialog: {e}")
             return {"success": False, "message": str(e)}
 
+    def restore_registry_from_text(self, reg_text: str, filename: str = "") -> dict[str, Any]:
+        """Восстанавливает реестр из переданного текста .reg файла."""
+        try:
+            import tempfile
+            from app.registry_cleaner import restore_registry_backup
+            clean_name = Path(filename).name if filename else "backup.reg"
+            temp_file = Path(tempfile.gettempdir()) / f"ziabl_restore_{clean_name}"
+            temp_file.write_text(reg_text, encoding="utf-8-sig")
+            ok, msg = restore_registry_backup(str(temp_file.resolve()))
+            try:
+                temp_file.unlink(missing_ok=True)
+            except Exception:
+                pass
+            if ok:
+                self.call_js("onLog", f"🔄 {msg}")
+            else:
+                self.call_js("onLog", f"❌ {msg}")
+            return {"success": ok, "message": msg}
+        except Exception as e:
+            logger.error(f"Error in restore_registry_from_text: {e}")
+            return {"success": False, "message": str(e)}
+
     # ==========================================
     # Сканер файлов VirusTotal API
     # ==========================================
@@ -697,6 +720,38 @@ class AppBridge:
         except Exception as e:
             logger.error(f"Error in browse_and_scan_virustotal: {e}")
             return {"success": False, "message": str(e)}
+
+    def scan_virustotal_hash(self, sha256: str, filename: str = "", file_size: int = 0) -> dict[str, Any]:
+        """Сканирует SHA-256 хэш файла в VirusTotal напрямую без передачи всего файла."""
+        from app.virustotal import scan_file_by_hash
+        res_scan = scan_file_by_hash(sha256, filename=filename, file_size=file_size)
+        if res_scan.get("success"):
+            if res_scan.get("found"):
+                score = res_scan.get("score_text", "")
+                self.call_js("onLog", f"🛡️ VirusTotal проверка завершена для «{res_scan.get('file_name')}»: {score} угроз")
+            else:
+                self.call_js("onLog", f"🛡️ VirusTotal: файл «{res_scan.get('file_name')}» ранее не исследовался.")
+        elif res_scan.get("message"):
+            self.call_js("onLog", f"⚠️ VirusTotal: {res_scan.get('message')}")
+        return res_scan
+
+    def upload_virustotal_base64(self, file_bytes_base64: str, filename: str) -> dict[str, Any]:
+        """Принимает Base64-данные файла из браузера и загружает их в VirusTotal для анализа."""
+        import base64
+        from app.virustotal import upload_file_bytes
+        try:
+            raw_bytes = base64.b64decode(file_bytes_base64)
+            self.call_js("onLog", f"📤 Отправка файла «{filename}» ({len(raw_bytes)} Б) на анализ в VirusTotal...")
+            res_upload = upload_file_bytes(raw_bytes, filename=filename)
+            if res_upload.get("success") and res_upload.get("found"):
+                score = res_upload.get("score_text", "")
+                self.call_js("onLog", f"✅ Анализ VirusTotal завершен: {score} угроз")
+            elif res_upload.get("message"):
+                self.call_js("onLog", f"⚠️ VirusTotal: {res_upload.get('message')}")
+            return res_upload
+        except Exception as e:
+            logger.error(f"Error in upload_virustotal_base64: {e}")
+            return {"success": False, "message": f"Ошибка отправки файла на анализ: {e}"}
 
     def scan_virustotal_path(self, file_path: str) -> dict[str, Any]:
         """Сканирует переданный путь к файлу в VirusTotal."""
@@ -1148,22 +1203,35 @@ class AppBridge:
             self._start_tweak_status_monitor(tweak_id)
         return res
 
+    def get_tweak_running_status(self, tweak_id: str) -> dict[str, Any]:
+        """Возвращает текущий статус выполнения длительного твика для надежного фронтенд-поллинга."""
+        return self._running_tweaks.get(tweak_id, {"running": False, "completed": False})
+
     def _start_tweak_status_monitor(self, tweak_id: str) -> None:
         """Запускает фоновый поток мониторинга выполнения sfc /scannow или DISM RestoreHealth."""
-        from app.tweaks import get_sfc_status_file, get_dism_status_file
+        from app.tweaks import get_sfc_status_file, get_dism_status_file, get_tweak_process_handle, set_tweak_process_handle, TWEAKS
         status_file = get_sfc_status_file() if tweak_id == "repair_system_files" else get_dism_status_file()
-        process_name = "sfc.exe" if tweak_id == "repair_system_files" else "dism.exe"
+        tweak_name = "sfc" if tweak_id == "repair_system_files" else "dism"
+
+        self._running_tweaks[tweak_id] = {
+            "running": True,
+            "completed": False,
+            "id": tweak_id,
+            "message": "Консоль запущена..."
+        }
 
         def monitor():
-            time.sleep(3)
-            seen_process = False
-            for _ in range(900):  # До 30 минут
-                time.sleep(2)
-                # Проверяем файл статуса
+            time.sleep(2)
+            handle = get_tweak_process_handle(tweak_name)
+
+            for _ in range(1800):  # До 30 минут
+                time.sleep(1)
+
+                # 1. Проверяем файл статуса (создается bat-файлом сразу по окончании работы команды)
                 if status_file.exists():
                     try:
                         content = status_file.read_text(encoding="utf-8").strip()
-                        if content.startswith("COMPLETED"):
+                        if content.startswith("SUCCESS") or content.startswith("REPAIRED") or content.startswith("ERROR") or content.startswith("COMPLETED"):
                             if tweak_id == "repair_system_files":
                                 if "SUCCESS" in content:
                                     msg_ru = "✅ Сканирование sfc /scannow завершено: повреждений целостности не обнаружено."
@@ -1179,48 +1247,72 @@ class AppBridge:
                                     msg_ru = "⚠️ Восстановление DISM завершено. Проверьте журнал CBS/DISM."
                                     msg_en = "⚠️ DISM restore completed. Check CBS/DISM logs."
 
-                            self.call_js("onTweakCompleted", {
+                            res_data = {
                                 "id": tweak_id,
+                                "running": False,
+                                "completed": True,
                                 "success": True,
                                 "message": msg_en if i18n.lang == "en" else msg_ru,
                                 "message_ru": msg_ru,
                                 "message_en": msg_en,
-                            })
+                            }
+                            self._running_tweaks[tweak_id] = res_data
+
+                            for t in TWEAKS:
+                                if t.id == tweak_id:
+                                    t.last_result = res_data["message"]
+                                    t.last_result_ru = msg_ru
+                                    t.last_result_en = msg_en
+
+                            self.call_js("onTweakCompleted", res_data)
                             try:
                                 status_file.unlink(missing_ok=True)
                             except Exception:
                                 pass
+                            if handle:
+                                try:
+                                    ctypes.windll.kernel32.CloseHandle(handle)
+                                except Exception:
+                                    pass
+                                set_tweak_process_handle(tweak_name, None)
                             return
                     except Exception as e:
                         logger.debug(f"Status file read error: {e}")
 
-                # Проверяем, запущен ли процесс
-                try:
-                    out = subprocess.check_output(
-                        ["tasklist", "/FI", f"IMAGENAME eq {process_name}"],
-                        creationflags=NO_WINDOW,
-                        text=True,
-                        timeout=5
-                    )
-                    is_running = process_name.lower() in out.lower()
-                    if is_running:
-                        seen_process = True
-                    elif seen_process and not is_running:
-                        time.sleep(1)
-                        if status_file.exists():
-                            continue
-                        msg_ru = "✅ Выполнение команды завершено."
-                        msg_en = "✅ Command execution completed."
-                        self.call_js("onTweakCompleted", {
-                            "id": tweak_id,
-                            "success": True,
-                            "message": msg_en if i18n.lang == "en" else msg_ru,
-                            "message_ru": msg_ru,
-                            "message_en": msg_en,
-                        })
-                        return
-                except Exception:
-                    pass
+                # 2. Проверяем статус процесса через Windows Handle (если окно консоли закрыли крестиком)
+                if handle:
+                    try:
+                        wait_code = ctypes.windll.kernel32.WaitForSingleObject(handle, 0)
+                        if wait_code == 0:  # Процесс консоли завершился / окно закрыто!
+                            time.sleep(1)
+                            if status_file.exists():
+                                continue  # Прочтется на следующем шаге
+                            msg_ru = "⚠️ Консоль была закрыта пользователем до завершения."
+                            msg_en = "⚠️ Console was closed by user before completion."
+                            res_data = {
+                                "id": tweak_id,
+                                "running": False,
+                                "completed": True,
+                                "success": False,
+                                "message": msg_en if i18n.lang == "en" else msg_ru,
+                                "message_ru": msg_ru,
+                                "message_en": msg_en,
+                            }
+                            self._running_tweaks[tweak_id] = res_data
+                            for t in TWEAKS:
+                                if t.id == tweak_id:
+                                    t.last_result = res_data["message"]
+                                    t.last_result_ru = msg_ru
+                                    t.last_result_en = msg_en
+                            self.call_js("onTweakCompleted", res_data)
+                            try:
+                                ctypes.windll.kernel32.CloseHandle(handle)
+                            except Exception:
+                                pass
+                            set_tweak_process_handle(tweak_name, None)
+                            return
+                    except Exception as e:
+                        logger.debug(f"Process handle wait error: {e}")
 
         threading.Thread(target=monitor, daemon=True).start()
 

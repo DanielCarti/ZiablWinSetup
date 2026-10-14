@@ -874,6 +874,61 @@ def _revert_taskbar_align_left() -> tuple[bool, str]:
         return False, f"Ошибка изменения реестра: {e}"
 
 
+_TWEAK_PROCESS_HANDLES: dict[str, int] = {}
+
+
+def get_tweak_process_handle(tweak_id: str) -> int | None:
+    return _TWEAK_PROCESS_HANDLES.get(tweak_id)
+
+
+def set_tweak_process_handle(tweak_id: str, handle: int | None) -> None:
+    if handle is None:
+        _TWEAK_PROCESS_HANDLES.pop(tweak_id, None)
+    else:
+        _TWEAK_PROCESS_HANDLES[tweak_id] = handle
+
+
+class _SHELLEXECUTEINFOW(ctypes.Structure):
+    _fields_ = [
+        ("cbSize", wintypes.DWORD),
+        ("fMask", wintypes.ULONG),
+        ("hwnd", wintypes.HWND),
+        ("lpVerb", wintypes.LPCWSTR),
+        ("lpFile", wintypes.LPCWSTR),
+        ("lpParameters", wintypes.LPCWSTR),
+        ("lpDirectory", wintypes.LPCWSTR),
+        ("nShow", ctypes.c_int),
+        ("hInstApp", wintypes.HINSTANCE),
+        ("lpIDList", ctypes.c_void_p),
+        ("lpClass", wintypes.LPCWSTR),
+        ("hkeyClass", wintypes.HKEY),
+        ("dwHotKey", wintypes.DWORD),
+        ("hIconOrMonitor", ctypes.c_void_p),
+        ("hProcess", wintypes.HANDLE),
+    ]
+
+
+def _launch_elevated_bat(tweak_id: str, bat_content: str) -> bool:
+    """Безопасно создает временный .bat файл и запускает его с правами администратора, сохраняя hProcess."""
+    import tempfile
+    bat_file = Path(tempfile.gettempdir()) / f"ziabl_{tweak_id}.bat"
+    bat_file.write_text(bat_content, encoding="utf-8-sig")
+
+    info = _SHELLEXECUTEINFOW()
+    info.cbSize = ctypes.sizeof(info)
+    info.fMask = 0x00000040  # SEE_MASK_NOCLOSEPROCESS
+    info.lpVerb = "runas"
+    info.lpFile = str(bat_file.resolve())
+    info.lpParameters = None
+    info.nShow = 1
+
+    ok = ctypes.windll.shell32.ShellExecuteExW(ctypes.byref(info))
+    if ok and info.hProcess:
+        set_tweak_process_handle(tweak_id, info.hProcess)
+        return True
+    return bool(ok)
+
+
 def get_sfc_status_file() -> Path:
     import tempfile
     return Path(tempfile.gettempdir()) / "ziabl_sfc_status.txt"
@@ -894,19 +949,31 @@ def _run_sfc_scan() -> tuple[bool, str, str]:
             pass
         sf_str = str(sf.resolve()).replace("/", "\\")
 
-        title = "ZiablWinSetup - System File Checker (sfc /scannow)"
-        cmd = (
-            f'title {title} && color 0b && '
-            f'echo ======================================================== && '
-            f'echo [ZiablWinSetup] System File Checker (sfc /scannow) && '
-            f'echo Scans and repairs integrity of Windows system files && '
-            f'echo ======================================================== && echo. && '
-            f'sfc.exe /scannow & (if errorlevel 1 (echo COMPLETED_REPAIRED > "{sf_str}") else (echo COMPLETED_SUCCESS > "{sf_str}")) && '
-            f'echo. && echo -------------------------------------------------------- && '
-            f'echo Scan finished. Press any key to exit... && pause >nul'
+        bat = (
+            "@echo off\n"
+            "chcp 65001 >nul\n"
+            "title ZiablWinSetup - System File Checker (sfc /scannow)\n"
+            "color 0b\n"
+            "echo ========================================================\n"
+            "echo [ZiablWinSetup] System File Checker (sfc /scannow)\n"
+            "echo Scans and repairs integrity of Windows system files\n"
+            "echo ========================================================\n"
+            "echo.\n"
+            "echo Running sfc /scannow, please wait...\n"
+            "sfc.exe /scannow\n"
+            "set ERR=%ERRORLEVEL%\n"
+            "if %ERR% EQU 0 (\n"
+            f'    echo SUCCESS > "{sf_str}"\n'
+            ") else (\n"
+            f'    echo REPAIRED_%ERR% > "{sf_str}"\n'
+            ")\n"
+            "echo.\n"
+            "echo ========================================================\n"
+            "echo Scan complete (Exit Code: %ERR%).\n"
+            "echo Window will close automatically in 5 seconds or press any key...\n"
+            "timeout /t 5 >nul 2>&1 || pause >nul\n"
         )
-        ret = ctypes.windll.shell32.ShellExecuteW(None, "runas", "cmd.exe", f'/c "{cmd}"', None, 1)
-        if ret > 32:
+        if _launch_elevated_bat("sfc", bat):
             return (
                 True,
                 "⏳ Консоль sfc /scannow запущена от имени Администратора. Ожидание завершения...",
@@ -931,19 +998,34 @@ def _run_dism_restore_health() -> tuple[bool, str, str]:
             pass
         df_str = str(df.resolve()).replace("/", "\\")
 
-        title = "ZiablWinSetup - Restore Component Store Health (DISM)"
-        cmd = (
-            f'title {title} && color 0a && '
-            f'echo ======================================================== && '
-            f'echo [ZiablWinSetup] Component Store Health Restore (DISM) && '
-            f'echo Repairs Windows system image component corruption && '
-            f'echo ======================================================== && echo. && '
-            f'dism.exe /Online /Cleanup-Image /RestoreHealth & (if errorlevel 1 (echo COMPLETED_ERROR > "{df_str}") else (echo COMPLETED_SUCCESS > "{df_str}")) && '
-            f'echo. && echo -------------------------------------------------------- && '
-            f'echo Restore finished. Press any key to exit... && pause >nul'
+        bat = (
+            "@echo off\n"
+            "chcp 65001 >nul\n"
+            "title ZiablWinSetup - Restore Component Store Health (DISM)\n"
+            "color 0a\n"
+            "echo ========================================================\n"
+            "echo [ZiablWinSetup] Component Store Health Restore (DISM)\n"
+            "echo Repairs Windows system image component corruption\n"
+            "echo ========================================================\n"
+            "echo.\n"
+            "echo Running DISM RestoreHealth...\n"
+            "echo NOTE: DISM may stay at 20%%, 40%%, or 62.3%% for several minutes.\n"
+            "echo Please do NOT close this window until the operation finishes!\n"
+            "echo.\n"
+            "dism.exe /Online /Cleanup-Image /RestoreHealth /NoRestart\n"
+            "set ERR=%ERRORLEVEL%\n"
+            "if %ERR% EQU 0 (\n"
+            f'    echo SUCCESS > "{df_str}"\n'
+            ") else (\n"
+            f'    echo ERROR_%ERR% > "{df_str}"\n'
+            ")\n"
+            "echo.\n"
+            "echo ========================================================\n"
+            "echo DISM operation complete (Exit Code: %ERR%).\n"
+            "echo Window will close automatically in 5 seconds or press any key...\n"
+            "timeout /t 5 >nul 2>&1 || pause >nul\n"
         )
-        ret = ctypes.windll.shell32.ShellExecuteW(None, "runas", "cmd.exe", f'/c "{cmd}"', None, 1)
-        if ret > 32:
+        if _launch_elevated_bat("dism", bat):
             return (
                 True,
                 "⏳ Консоль DISM RestoreHealth запущена от имени Администратора. Ожидание завершения...",

@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.abspath("."))
 class TestVersion(unittest.TestCase):
     def test_version_string(self):
         from app.version import __version__, APP_NAME
-        self.assertEqual(__version__, "1.4.21")
+        self.assertEqual(__version__, "1.4.22")
         self.assertEqual(APP_NAME, "ZiablWinSetup")
 
 
@@ -320,7 +320,7 @@ class TestWebAPI(unittest.TestCase):
 
         # Check basic methods return valid structures
         init_data = bridge.get_initial_data()
-        self.assertEqual(init_data["system_info"]["app_version"], "1.4.21")
+        self.assertEqual(init_data["system_info"]["app_version"], "1.4.22")
 
         cat = init_data["apps"]
         self.assertIsInstance(cat, list)
@@ -352,6 +352,31 @@ class TestWebAPI(unittest.TestCase):
         b_res = bridge.open_backups_directory()
         self.assertTrue(b_res.get("success"))
         self.assertTrue(os.path.isdir(b_res.get("path")))
+
+        # Test scan_virustotal_hash with invalid hash
+        h_res = bridge.scan_virustotal_hash("invalid_hash", "test.exe", 100)
+        self.assertFalse(h_res.get("success"))
+        self.assertEqual(h_res.get("error_type"), "invalid_hash")
+
+        # Test restore_registry_from_text
+        from unittest.mock import patch
+        with patch("app.registry_cleaner.restore_registry_backup", return_value=(True, "OK")):
+            r_res = bridge.restore_registry_from_text("Windows Registry Editor Version 5.00\n", "test.reg")
+            self.assertTrue(r_res.get("success"))
+
+        # Test get_tweak_running_status
+        t_res = bridge.get_tweak_running_status("repair_system_files")
+        self.assertIn("running", t_res)
+        self.assertIn("completed", t_res)
+
+
+class TestTweakProcessHandling(unittest.TestCase):
+    def test_handle_tracking(self):
+        from app.tweaks import get_tweak_process_handle, set_tweak_process_handle
+        set_tweak_process_handle("test_tweak", 9999)
+        self.assertEqual(get_tweak_process_handle("test_tweak"), 9999)
+        set_tweak_process_handle("test_tweak", None)
+        self.assertIsNone(get_tweak_process_handle("test_tweak"))
 
 
 if __name__ == "__main__":

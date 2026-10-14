@@ -79,14 +79,16 @@
 
     /* Header */
     header {
-      height: 60px;
+      height: 56px;
       background: var(--bg-header);
       border-bottom: 1px solid var(--border-subtle);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 20px;
+      padding: 0 16px;
       flex-shrink: 0;
+      gap: 10px;
+      white-space: nowrap;
     }
 
     .brand {
@@ -1157,13 +1159,15 @@
       background: rgba(255, 255, 255, 0.06);
       border-radius: var(--radius-sm);
       padding: 3px;
-      gap: 4px;
-      margin-right: 8px;
+      gap: 3px;
+      margin-right: 6px;
+      flex-shrink: 0;
+      white-space: nowrap;
     }
 
     .tab-btn {
       height: 28px;
-      padding: 0 14px;
+      padding: 0 10px;
       border-radius: var(--radius-sm);
       border: none;
       background: transparent;
@@ -1173,8 +1177,10 @@
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       transition: all 0.15s;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
     .tab-btn:hover {
@@ -1189,22 +1195,36 @@
       font-weight: 600;
     }
 
+    .tab-label {
+      white-space: nowrap;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+
     /* Update button - Modern Fluent */
     .btn-check-updates {
-      height: 34px;
-      padding: 0 14px;
+      height: 32px;
+      padding: 0 10px;
       background: rgba(255, 255, 255, 0.05);
       border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: var(--radius-sm);
       color: var(--text-main);
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 500;
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
       position: relative;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
     .btn-check-updates:hover {
@@ -1216,6 +1236,18 @@
 
     .btn-check-updates:active {
       transform: scale(0.98);
+    }
+
+    @media (max-width: 1160px) {
+      .btn-check-updates span:not(.update-badge) {
+        display: none;
+      }
+      .btn-check-updates {
+        padding: 0 8px;
+      }
+      .search-box {
+        max-width: 130px;
+      }
     }
 
     .update-badge {
@@ -2288,15 +2320,15 @@
       </button>
       <button class="tab-btn" id="tabBtnTweaks" onclick="switchMainTab('tweaks')">
         <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-        <span class="tab-label" id="tabLabelTweaks">Твики и фичи</span>
+        <span class="tab-label" id="tabLabelTweaks">Твики</span>
       </button>
       <button class="tab-btn" id="tabBtnMetro" onclick="switchMainTab('metro')">
         <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-        <span class="tab-label" id="tabLabelMetro">Metro приложения</span>
+        <span class="tab-label" id="tabLabelMetro">Metro</span>
       </button>
       <button class="tab-btn" id="tabBtnStartup" onclick="switchMainTab('startup')">
         <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.77.04"/></svg>
-        <span class="tab-label" id="tabLabelStartup">Автозагрузка</span>
+        <span class="tab-label" id="tabLabelStartup">Автозапуск</span>
       </button>
       <button class="tab-btn" id="tabBtnVirusTotal" onclick="switchMainTab('virustotal')" title="Проверка файлов на вирусы через VirusTotal">
         <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
@@ -2311,13 +2343,13 @@
     <div class="header-actions">
       <button class="btn-check-updates" id="btnCheckUpdates" onclick="triggerCheckUpdates()" title="Проверить обновления установленных программ">
         <svg class="tab-svg" id="updateIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-        <span id="updateBtnText">Проверить обновления</span>
+        <span id="updateBtnText">Обновления</span>
         <span class="update-badge" id="updateBadge" style="display:none;">0</span>
       </button>
 
       <button class="btn-check-updates" id="btnRescanInstalled" onclick="triggerRescanInstalled()" title="Пересканировать установленные программы в Windows">
         <svg class="tab-svg" id="rescanIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
-        <span id="rescanBtnText">Проверить установленное</span>
+        <span id="rescanBtnText">Установленное</span>
       </button>
 
       <div class="search-box">
@@ -2591,14 +2623,18 @@
         </div>
       </div>
 
+      <!-- Hidden Native File Inputs -->
+      <input type="file" id="vtFileInput" style="display:none;" onchange="onVtFileChosen(event)">
+      <input type="file" id="regBackupFileInput" accept=".reg" style="display:none;" onchange="onRegBackupFileChosen(event)">
+
       <!-- File Dropzone & Selector Card -->
-      <div id="vtDropzoneCard" ondragover="onVtDragOver(event)" ondragleave="onVtDragLeave(event)" ondrop="onVtDrop(event)" style="border: 2px dashed rgba(255,255,255,0.15); border-radius: var(--radius-lg); background: rgba(255,255,255,0.02); padding: 40px 24px; text-align: center; transition: all 0.2s ease; cursor: pointer; margin-bottom: 24px;" onclick="browseAndScanVtFile()">
+      <div id="vtDropzoneCard" ondragover="onVtDragOver(event)" ondragleave="onVtDragLeave(event)" ondrop="onVtDrop(event)" style="border: 2px dashed rgba(255,255,255,0.15); border-radius: var(--radius-lg); background: rgba(255,255,255,0.02); padding: 40px 24px; text-align: center; transition: all 0.2s ease; cursor: pointer; margin-bottom: 24px;" onclick="triggerVtFilePicker(event)">
         <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(56, 189, 248, 0.12); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 14px; color: #38bdf8;">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
         </div>
         <div style="font-size: 15px; font-weight: 600; color: var(--text-main); margin-bottom: 6px;" id="vtDropTitle">Нажмите для выбора файла или перетащите его сюда</div>
         <div style="font-size: 12.5px; color: var(--text-muted); max-width: 480px; margin: 0 auto 16px auto;" id="vtDropSub">Поддерживаются .exe, .msi, .dll, .zip, .7z, .iso и любые другие файлы</div>
-        <button class="btn-action btn-primary" style="height: 36px; padding: 0 20px; font-size: 12.5px; display: inline-flex; align-items: center; gap: 8px; pointer-events: none;">
+        <button class="btn-action btn-primary" onclick="triggerVtFilePicker(event)" style="height: 36px; padding: 0 20px; font-size: 12.5px; display: inline-flex; align-items: center; gap: 8px;">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           <span id="vtBtnSelectText">📁 Выбрать файл для сканирования</span>
         </button>
@@ -5434,6 +5470,27 @@
       });
     }
 
+    const activeTweakPollers = {};
+
+    function startTweakStatusPolling(tweakId) {
+      if (activeTweakPollers[tweakId]) {
+        clearInterval(activeTweakPollers[tweakId]);
+      }
+      activeTweakPollers[tweakId] = setInterval(async () => {
+        try {
+          if (!window.pywebview || !window.pywebview.api || !window.pywebview.api.get_tweak_running_status) return;
+          const status = await window.pywebview.api.get_tweak_running_status(tweakId);
+          if (status && status.completed) {
+            clearInterval(activeTweakPollers[tweakId]);
+            delete activeTweakPollers[tweakId];
+            window.onTweakCompleted(status);
+          }
+        } catch (err) {
+          console.debug('Tweak polling check error:', err);
+        }
+      }, 1500);
+    }
+
     async function handleToggleTweak(tweakId) {
       if (tweakId === 'clean_registry') {
         openRegistryCleanerModal();
@@ -5465,6 +5522,10 @@
           }
           addLog(res.message);
           renderTweaks();
+
+          if (tweakId === 'repair_system_files' || tweakId === 'restore_health_dism') {
+            startTweakStatusPolling(tweakId);
+          }
         }
       } catch (e) {
         console.error('Tweak toggle error:', e);
@@ -5475,6 +5536,10 @@
 
     window.onTweakCompleted = function(data) {
       if (!data || !data.id) return;
+      if (activeTweakPollers[data.id]) {
+        clearInterval(activeTweakPollers[data.id]);
+        delete activeTweakPollers[data.id];
+      }
       const tweaks = appData.tweaks || [];
       const tw = tweaks.find(t => t.id === data.id);
       const isEn = appData.lang === 'en';
@@ -5484,19 +5549,8 @@
         tw.last_result_en = data.message_en || data.message;
         tw.last_result = msg;
       }
-      const badge = document.getElementById(`tweak_status_${data.id}`);
-      if (badge) {
-        badge.textContent = msg;
-        badge.className = 'tweak-status result-badge';
-      }
-      const btn = document.getElementById(`tweak_btn_${data.id}`);
-      if (btn) {
-        btn.disabled = false;
-        if (tw && tw.action_text) {
-          btn.textContent = tw.action_text;
-        }
-      }
-      showToast(msg, data.success ? 'success' : 'error');
+      renderTweaks();
+      showToast(msg, data.success ? 'success' : 'info');
     };
 
     // ==========================================
@@ -6670,6 +6724,12 @@
     window.openBackupsFolder = openBackupsFolder;
 
     async function restoreRegistryBackupPrompt() {
+      const regInput = document.getElementById('regBackupFileInput');
+      if (regInput) {
+        regInput.value = '';
+        regInput.click();
+        return;
+      }
       try {
         if (window.pywebview && window.pywebview.api && window.pywebview.api.restore_registry_backup_dialog) {
           const res = await window.pywebview.api.restore_registry_backup_dialog();
@@ -6688,6 +6748,27 @@
       }
     }
     window.restoreRegistryBackupPrompt = restoreRegistryBackupPrompt;
+
+    async function onRegBackupFileChosen(event) {
+      if (!event.target || !event.target.files || event.target.files.length === 0) return;
+      const file = event.target.files[0];
+      try {
+        const text = await file.text();
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.restore_registry_from_text) {
+          const res = await window.pywebview.api.restore_registry_from_text(text, file.name);
+          if (res && res.success) {
+            showToast(res.message, 'success');
+            if (typeof scanRegistryIssues === 'function') scanRegistryIssues();
+          } else if (res && res.message) {
+            showToast(res.message, 'error');
+          }
+        }
+      } catch (err) {
+        console.error('onRegBackupFileChosen error:', err);
+        showToast(`Ошибка чтения файла реестра: ${err}`, 'error');
+      }
+    }
+    window.onRegBackupFileChosen = onRegBackupFileChosen;
 
     window.onStartupItemsUpdated = function(items) {
       if (items && Array.isArray(items)) {
@@ -7423,22 +7504,58 @@
     }
     window.saveVirusTotalKey = saveVirusTotalKey;
 
-    async function browseAndScanVtFile() {
+    let currentVtFileObject = null;
+
+    function triggerVtFilePicker(event) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      const fileInput = document.getElementById('vtFileInput');
+      if (fileInput) {
+        fileInput.value = '';
+        fileInput.click();
+      }
+    }
+    window.triggerVtFilePicker = triggerVtFilePicker;
+
+    async function computeFileSha256(file) {
+      const buffer = await file.arrayBuffer();
+      const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function processVtFile(file) {
+      if (!file) return;
       try {
-        setVtUiState('loading', 'Выбор файла и отправка запроса в VirusTotal...');
-        if (window.pywebview && window.pywebview.api && window.pywebview.api.browse_and_scan_virustotal) {
-          const res = await window.pywebview.api.browse_and_scan_virustotal();
-          if (res && res.cancelled) {
-            resetVtScanner();
-            return;
-          }
+        currentVtFileObject = file;
+        setVtUiState('loading', `Вычисление SHA-256 для «${file.name}»...`);
+        const sha256 = await computeFileSha256(file);
+        setVtUiState('loading', `Запрос отчета VirusTotal по хэшу...`);
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.scan_virustotal_hash) {
+          const res = await window.pywebview.api.scan_virustotal_hash(sha256, file.name, file.size);
           handleVtScanResult(res);
+        } else {
+          setVtUiState('idle');
+          showToast('API сканирования VirusTotal недоступно', 'error');
         }
       } catch (err) {
-        console.error('browseAndScanVtFile error:', err);
+        console.error('VT process file error:', err);
         setVtUiState('idle');
-        showToast(`Ошибка сканирования: ${err}`, 'error');
+        showToast(`Ошибка обработки файла: ${err.message || err}`, 'error');
       }
+    }
+
+    async function onVtFileChosen(event) {
+      if (event.target && event.target.files && event.target.files.length > 0) {
+        await processVtFile(event.target.files[0]);
+      }
+    }
+    window.onVtFileChosen = onVtFileChosen;
+
+    async function browseAndScanVtFile() {
+      triggerVtFilePicker();
     }
     window.browseAndScanVtFile = browseAndScanVtFile;
 
@@ -7467,13 +7584,7 @@
       onVtDragLeave(event);
       if (event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files.length > 0) {
         const file = event.dataTransfer.files[0];
-        if (file.path && window.pywebview && window.pywebview.api && window.pywebview.api.scan_virustotal_path) {
-          setVtUiState('loading', `Вычисление SHA-256 для ${file.name}...`);
-          const res = await window.pywebview.api.scan_virustotal_path(file.path);
-          handleVtScanResult(res);
-        } else {
-          showToast('Используйте кнопку «Выбрать файл» для сканирования', 'info');
-        }
+        await processVtFile(file);
       }
     }
     window.onVtDrop = onVtDrop;
@@ -7682,16 +7793,51 @@
     window.copyVtSha256 = copyVtSha256;
 
     async function uploadCurrentVtFile() {
-      if (!vtCurrentFilePath) {
-        showToast('Файл для отправки не определен', 'error');
+      if (!currentVtFileObject) {
+        if (vtCurrentFilePath && window.pywebview && window.pywebview.api && window.pywebview.api.upload_and_scan_virustotal) {
+          try {
+            setVtUiState('loading', 'Загрузка файла и ожидание отчета VirusTotal (до 60 сек)...');
+            const res = await window.pywebview.api.upload_and_scan_virustotal(vtCurrentFilePath);
+            handleVtScanResult(res);
+          } catch (err) {
+            console.error('uploadCurrentVtFile error:', err);
+            setVtUiState('idle');
+            showToast(`Ошибка отправки: ${err}`, 'error');
+          }
+          return;
+        }
+        showToast('Файл для отправки не выбран', 'error');
         return;
       }
+
+      const file = currentVtFileObject;
+      if (file.size > 32 * 1024 * 1024) {
+        showToast('Размер файла превышает лимит бесплатной отправки (32 МБ)', 'warning');
+        return;
+      }
+
       try {
-        setVtUiState('loading', 'Загрузка файла и ожидание отчета VirusTotal (до 60 сек)...');
-        if (window.pywebview && window.pywebview.api && window.pywebview.api.upload_and_scan_virustotal) {
-          const res = await window.pywebview.api.upload_and_scan_virustotal(vtCurrentFilePath);
-          handleVtScanResult(res);
-        }
+        setVtUiState('loading', `Загрузка «${file.name}» в VirusTotal (до 60 сек)...`);
+        const reader = new FileReader();
+        reader.onload = async function() {
+          try {
+            const base64Data = reader.result.split(',')[1];
+            if (window.pywebview && window.pywebview.api && window.pywebview.api.upload_virustotal_base64) {
+              const res = await window.pywebview.api.upload_virustotal_base64(base64Data, file.name);
+              handleVtScanResult(res);
+            }
+          } catch (upErr) {
+            console.error('upload error:', upErr);
+            setVtUiState('idle');
+            showToast(`Ошибка загрузки: ${upErr}`, 'error');
+          }
+        };
+        reader.onerror = function(readErr) {
+          console.error('reader error:', readErr);
+          setVtUiState('idle');
+          showToast(`Ошибка чтения файла: ${readErr}`, 'error');
+        };
+        reader.readAsDataURL(file);
       } catch (err) {
         console.error('uploadCurrentVtFile error:', err);
         setVtUiState('idle');
