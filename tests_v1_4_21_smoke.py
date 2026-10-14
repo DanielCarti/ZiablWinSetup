@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.abspath("."))
 class TestVersion(unittest.TestCase):
     def test_version_string(self):
         from app.version import __version__, APP_NAME
-        self.assertEqual(__version__, "1.4.22")
+        self.assertEqual(__version__, "1.4.23")
         self.assertEqual(APP_NAME, "ZiablWinSetup")
 
 
@@ -320,7 +320,7 @@ class TestWebAPI(unittest.TestCase):
 
         # Check basic methods return valid structures
         init_data = bridge.get_initial_data()
-        self.assertEqual(init_data["system_info"]["app_version"], "1.4.22")
+        self.assertEqual(init_data["system_info"]["app_version"], "1.4.23")
 
         cat = init_data["apps"]
         self.assertIsInstance(cat, list)
@@ -377,6 +377,50 @@ class TestTweakProcessHandling(unittest.TestCase):
         self.assertEqual(get_tweak_process_handle("test_tweak"), 9999)
         set_tweak_process_handle("test_tweak", None)
         self.assertIsNone(get_tweak_process_handle("test_tweak"))
+
+    def test_batch_file_no_bom(self):
+        import tempfile
+        from unittest.mock import patch
+        from app.tweaks import _launch_elevated_bat
+        with patch("ctypes.windll.shell32.ShellExecuteExW", return_value=1):
+            ok = _launch_elevated_bat("test_nobom", "@echo off\necho hello\n")
+            self.assertTrue(ok)
+            bat_path = Path(tempfile.gettempdir()) / "ziabl_test_nobom.bat"
+            self.assertTrue(bat_path.exists())
+            raw_bytes = bat_path.read_bytes()
+            # Must NOT start with UTF-8 BOM (\xef\xbb\xbf)
+            self.assertFalse(raw_bytes.startswith(b"\xef\xbb\xbf"), "Batch file must not contain UTF-8 BOM!")
+            self.assertTrue(raw_bytes.startswith(b"@echo off"))
+
+    def test_tweak_english_messages(self):
+        from app.tweaks import apply_tweak_by_id
+        res_en = apply_tweak_by_id("clean_winsetup_installers", lang="en")
+        self.assertTrue(res_en.get("success"))
+        # Message must be in English
+        self.assertIn("Installer cache", res_en.get("message", ""))
+        self.assertIn("Installer cache", res_en.get("message_en", ""))
+
+    def test_log_selection_and_copy_html(self):
+        html_path = Path("app/ui/index.html")
+        content = html_path.read_text(encoding="utf-8")
+        self.assertIn("user-select: text !important;", content)
+        self.assertIn("id=\"btnCopyLog\"", content)
+        self.assertIn("copyFullLog", content)
+
+    def test_registry_restore_utf16_and_cp866(self):
+        from app.web_api import AppBridge
+        bridge = AppBridge()
+        from unittest.mock import patch
+        saved_file_bytes = []
+        def mock_restore(p):
+            saved_file_bytes.append(Path(p).read_bytes())
+            return True, "Restored"
+        with patch("app.registry_cleaner.restore_registry_backup", side_effect=mock_restore):
+            res = bridge.restore_registry_from_text("; test comment\n", "backup.reg")
+            self.assertTrue(res.get("success"))
+            self.assertEqual(len(saved_file_bytes), 1)
+            # UTF-16 LE file must start with BOM FF FE
+            self.assertTrue(saved_file_bytes[0].startswith(b"\xff\xfe"), "Registry file must be saved in UTF-16 LE with BOM")
 
 
 if __name__ == "__main__":

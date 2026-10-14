@@ -468,18 +468,32 @@ def restore_registry_backup(reg_file_path: str) -> tuple[bool, str]:
         res = subprocess.run(
             ["reg.exe", "import", str(p.resolve())],
             capture_output=True,
-            text=True,
+            text=False,
             creationflags=no_win
         )
         if res.returncode == 0:
             return True, f"Записи реестра успешно восстановлены из «{p.name}»."
+
+        # reg.exe является консольной утилитой и выводит ошибки в кодировке OEM (CP866 в RU Windows)
+        err_msg = ""
+        if res.stderr:
+            for enc in ("cp866", "utf-8", "cp1251"):
+                try:
+                    err_msg = res.stderr.decode(enc).strip()
+                    if err_msg:
+                        break
+                except UnicodeDecodeError:
+                    continue
+            if not err_msg:
+                err_msg = res.stderr.decode("latin1", errors="replace").strip()
 
         # Если не хватило прав (например, для HKEY_LOCAL_MACHINE), запрашиваем повышение прав
         from app.installer import run_with_elevation
         code = run_with_elevation("reg.exe", ["import", str(p.resolve())])
         if code == 0:
             return True, f"Записи реестра успешно восстановлены с правами Администратора из «{p.name}»."
-        err_msg = res.stderr.strip() if res.stderr else "Ошибка доступа при импорте в реестр."
+        if not err_msg:
+            err_msg = "Ошибка доступа при импорте в реестр."
         return False, f"Не удалось импортировать файл (код {code}): {err_msg}"
     except Exception as e:
         logger.error(f"Error restoring registry backup from {reg_file_path}: {e}")

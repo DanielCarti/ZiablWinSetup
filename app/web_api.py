@@ -643,8 +643,17 @@ class AppBridge:
             import tempfile
             from app.registry_cleaner import restore_registry_backup
             clean_name = Path(filename).name if filename else "backup.reg"
+            if not clean_name.lower().endswith(".reg"):
+                clean_name += ".reg"
             temp_file = Path(tempfile.gettempdir()) / f"ziabl_restore_{clean_name}"
-            temp_file.write_text(reg_text, encoding="utf-8-sig")
+            # Windows reg.exe строго требует кодировку UTF-16 LE с BOM и переводы строк CRLF (\r\n)
+            clean_text = reg_text.lstrip("\ufeff \t\r\n")
+            if not clean_text.startswith("Windows Registry Editor Version 5.00"):
+                clean_text = "Windows Registry Editor Version 5.00\r\n\r\n" + clean_text
+            content_crlf = clean_text.replace("\r\n", "\n").replace("\n", "\r\n")
+            if not content_crlf.endswith("\r\n"):
+                content_crlf += "\r\n"
+            temp_file.write_text(content_crlf, encoding="utf-16")
             ok, msg = restore_registry_backup(str(temp_file.resolve()))
             try:
                 temp_file.unlink(missing_ok=True)

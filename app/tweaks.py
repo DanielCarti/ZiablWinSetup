@@ -565,19 +565,25 @@ def _clean_steam_cache() -> tuple[bool, str]:
                     except Exception:
                         pass
 
+    if freed == 0 and files_deleted == 0:
+        return True, "Кэш Steam уже пуст.", "Steam cache is already empty."
     mb = round(freed / (1024 * 1024), 1)
-    return True, f"Кэш Steam очищен! Освобождено {mb} МБ ({files_deleted} файлов)."
+    return (
+        True,
+        f"Кэш Steam очищен! Освобождено {mb} МБ ({files_deleted} файлов).",
+        f"Steam cache cleaned! Freed {mb} MB ({files_deleted} files)."
+    )
 
 
 # ==========================================
 # 7. ОЧИСТКА: Кэш медиа Telegram (все аккаунты + WebView)
 # ==========================================
 
-def _clean_telegram_cache() -> tuple[bool, str]:
+def _clean_telegram_cache() -> tuple[bool, str, str]:
     appdata = os.environ.get("APPDATA", "")
     tdata = Path(appdata) / "Telegram Desktop" / "tdata"
     if not tdata.exists():
-        return False, "Папка Telegram Desktop не найдена."
+        return False, "Папка Telegram Desktop не найдена.", "Telegram Desktop folder not found."
 
     subprocess.run(["taskkill", "/F", "/IM", "Telegram.exe"], capture_output=True, creationflags=NO_WINDOW)
 
@@ -614,8 +620,14 @@ def _clean_telegram_cache() -> tuple[bool, str]:
                     except Exception:
                         pass
 
+    if freed == 0 and files_deleted == 0:
+        return True, "Медиа-кэш Telegram уже пуст.", "Telegram media cache is already empty."
     mb = round(freed / (1024 * 1024), 1)
-    return True, f"Медиа-кэш Telegram очищен! Освобождено {mb} МБ ({files_deleted} файлов)."
+    return (
+        True,
+        f"Медиа-кэш Telegram очищен! Освобождено {mb} МБ ({files_deleted} файлов).",
+        f"Telegram media cache cleaned! Freed {mb} MB ({files_deleted} files)."
+    )
 
 
 def _clean_winsetup_installers() -> tuple[bool, str]:
@@ -743,8 +755,16 @@ def _clean_winsetup_installers() -> tuple[bool, str]:
             pass
 
     if deleted_files == 0:
-        return True, "Кэш установщиков уже пуст (файлы .exe и старые копии не найдены)."
-    return True, f"Успешно удалено {deleted_files} файлов инсталляторов и старых копий (освобождено {format_size(total_freed)} памяти)."
+        return (
+            True,
+            "Кэш установщиков уже пуст (файлы .exe и старые копии не найдены).",
+            "Installer cache is already empty (no .exe or old copies found)."
+        )
+    return (
+        True,
+        f"Успешно удалено {deleted_files} файлов инсталляторов и старых копий (освобождено {format_size(total_freed)} памяти).",
+        f"Successfully deleted {deleted_files} installer files and old copies (freed {format_size(total_freed)})."
+    )
 
 
 # ==========================================
@@ -912,7 +932,7 @@ def _launch_elevated_bat(tweak_id: str, bat_content: str) -> bool:
     """Безопасно создает временный .bat файл и запускает его с правами администратора, сохраняя hProcess."""
     import tempfile
     bat_file = Path(tempfile.gettempdir()) / f"ziabl_{tweak_id}.bat"
-    bat_file.write_text(bat_content, encoding="utf-8-sig")
+    bat_file.write_text(bat_content, encoding="utf-8")
 
     info = _SHELLEXECUTEINFOW()
     info.cbSize = ctypes.sizeof(info)
@@ -1257,17 +1277,40 @@ def get_all_tweaks(lang: str = "ru") -> list[dict]:
     return [t.to_dict(lang) for t in TWEAKS]
 
 
+_TWEAK_MSG_EN_FALLBACKS = {
+    "Классическое контекстное меню Windows 11 включено!": "Classic Windows 11 context menu enabled!",
+    "Стандартное меню Windows 11 восстановлено.": "Standard Windows 11 menu restored.",
+    "Отображение расширений файлов включено!": "File extensions display enabled!",
+    "Расширения файлов скрыты.": "File extensions hidden.",
+    "Схема «Максимальная производительность» успешно активирована!": "Ultimate Performance power plan activated!",
+    "Схема питания переключена на сбалансированную.": "Balanced power plan restored.",
+    "Реклама и предложения в меню «Пуск» отключены!": "Start menu ads and suggestions disabled!",
+    "Стандартные подсказки меню «Пуск» включены.": "Standard Start menu suggestions restored.",
+    "Служба индексации (Windows Search) отключена. Нагрузка на SSD снижена!": "Windows Search service disabled. SSD load reduced!",
+    "Служба индексации (Windows Search) включена в автозапуск и запущена.": "Windows Search service enabled and started.",
+    "Строка поиска на панели задач скрыта.": "Taskbar search bar hidden.",
+    "Отображение поиска (поле поиска) на панели задач восстановлено.": "Taskbar search display restored.",
+    "Кнопка «Пуск» и значки перемещены в левый угол панели задач.": "Start button and icons moved to the left corner of taskbar.",
+    "Панель задач возвращена в центр.": "Taskbar returned to center.",
+    "Действие не требует отката.": "Action does not require rollback.",
+    "Действие очистки не требует отката.": "Cleanup action does not require rollback.",
+    "Действие восстановления не требует отката.": "Restore action does not require rollback.",
+}
+
+
 def apply_tweak_by_id(tweak_id: str, lang: str = "ru") -> dict:
     for t in TWEAKS:
         if t.id == tweak_id:
             res = t.apply()
             if isinstance(res, tuple) and len(res) == 3:
                 ok, msg_ru, msg_en = res
-                msg = msg_en if lang == "en" else msg_ru
             else:
                 ok, msg = res
                 msg_ru = msg
-                msg_en = msg
+                msg_en = _TWEAK_MSG_EN_FALLBACKS.get(msg, msg)
+            if lang == "en" and msg_en == msg_ru and msg_ru in _TWEAK_MSG_EN_FALLBACKS:
+                msg_en = _TWEAK_MSG_EN_FALLBACKS[msg_ru]
+            msg = msg_en if lang == "en" else msg_ru
             return {
                 "success": ok,
                 "message": msg,
@@ -1276,7 +1319,7 @@ def apply_tweak_by_id(tweak_id: str, lang: str = "ru") -> dict:
                 "applied": t.is_applied(),
                 "type": t.type
             }
-    return {"success": False, "message": f"Твик '{tweak_id}' не найден."}
+    return {"success": False, "message": f"Твик '{tweak_id}' не найден." if lang != "en" else f"Tweak '{tweak_id}' not found."}
 
 
 def revert_tweak_by_id(tweak_id: str, lang: str = "ru") -> dict:
@@ -1285,11 +1328,13 @@ def revert_tweak_by_id(tweak_id: str, lang: str = "ru") -> dict:
             res = t.revert()
             if isinstance(res, tuple) and len(res) == 3:
                 ok, msg_ru, msg_en = res
-                msg = msg_en if lang == "en" else msg_ru
             else:
                 ok, msg = res
                 msg_ru = msg
-                msg_en = msg
+                msg_en = _TWEAK_MSG_EN_FALLBACKS.get(msg, msg)
+            if lang == "en" and msg_en == msg_ru and msg_ru in _TWEAK_MSG_EN_FALLBACKS:
+                msg_en = _TWEAK_MSG_EN_FALLBACKS[msg_ru]
+            msg = msg_en if lang == "en" else msg_ru
             return {
                 "success": ok,
                 "message": msg,
@@ -1298,4 +1343,4 @@ def revert_tweak_by_id(tweak_id: str, lang: str = "ru") -> dict:
                 "applied": t.is_applied(),
                 "type": t.type
             }
-    return {"success": False, "message": f"Твик '{tweak_id}' не найден."}
+    return {"success": False, "message": f"Твик '{tweak_id}' не найден." if lang != "en" else f"Tweak '{tweak_id}' not found."}

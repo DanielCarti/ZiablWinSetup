@@ -1147,6 +1147,14 @@
       overflow-y: auto;
       display: none;
       margin-top: 4px;
+      user-select: text !important;
+      -webkit-user-select: text !important;
+      cursor: text;
+    }
+    #logBox div {
+      user-select: text !important;
+      -webkit-user-select: text !important;
+      cursor: text;
     }
     #logBox.open {
       display: block;
@@ -2753,8 +2761,13 @@
         <div class="overall-fill" id="overallProgressFill" style="width: 0%; height: 100%; transition: width 0.25s;"></div>
       </div>
       <div style="display: flex; justify-content: space-between; align-items: center;">
-        <div class="log-toggle" onclick="toggleLog()">
-          <span id="logArrow">▶</span> <span id="logLabel">Журнал событий</span>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="log-toggle" onclick="toggleLog()">
+            <span id="logArrow">▶</span> <span id="logLabel">Журнал событий</span>
+          </div>
+          <button id="btnCopyLog" class="btn-action btn-outline" onclick="copyFullLog(event)" style="height: 22px; font-size: 11px; padding: 0 8px; display: inline-flex; align-items: center; gap: 4px; border-radius: 4px; cursor: pointer;" title="Скопировать весь журнал в буфер обмена">
+            <span>📋</span> <span id="btnCopyLogText">Копировать всё</span>
+          </button>
         </div>
         <div class="overall-status" id="overallStatusText" style="text-align: right; min-width: unset;">Готов к работе</div>
       </div>
@@ -2936,7 +2949,7 @@
               <div class="settings-row-icon">🔍</div>
               <div>
                 <div class="settings-row-title" id="lblUiScaleTitle">Масштаб интерфейса</div>
-                <div class="settings-row-desc">Настройка размера элементов под разрешение экрана (75% – 130%)</div>
+                <div class="settings-row-desc" id="lblUiScaleDesc">Настройка размера элементов под разрешение экрана (75% – 130%)</div>
               </div>
             </div>
             <div class="settings-row-right">
@@ -2965,7 +2978,7 @@
             </div>
             <div style="display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap;">
               <button class="btn-browse" id="btnBrowse" onclick="browseFolder()" style="padding: 5px 12px; font-size: 12px;" title="Выбрать папку вручную">📂 Обзор...</button>
-              <button class="btn-browse" onclick="setPathDesktop()" style="padding: 5px 12px; font-size: 12px;" title="Распаковывать на Рабочий стол">🖥️ Desktop</button>
+              <button class="btn-browse" id="btnPathDesktop" onclick="setPathDesktop()" style="padding: 5px 12px; font-size: 12px;" title="Распаковывать на Рабочий стол">🖥️ Desktop</button>
               <button class="btn-browse" id="btnPathExeDir" onclick="setPathExeDir()" style="padding: 5px 12px; font-size: 12px;" title="Распаковывать в папку рядом с программой">📁 Рядом</button>
             </div>
           </div>
@@ -2983,7 +2996,7 @@
               <div class="settings-row-icon" style="background: rgba(168, 85, 247, 0.1); color: #c084fc;">📥</div>
               <div>
                 <div class="settings-row-title" id="lblMinimizeToTray">В трей при закрытии</div>
-                <div class="settings-row-desc">Сворачивать в системный трей вместо полного закрытия приложения</div>
+                <div class="settings-row-desc" id="lblMinimizeToTrayDesc">Сворачивать в системный трей вместо полного закрытия приложения</div>
               </div>
             </div>
             <div class="settings-row-right">
@@ -2999,7 +3012,7 @@
               <div class="settings-row-icon" style="background: rgba(34, 197, 94, 0.1); color: #4ade80;">🚀</div>
               <div>
                 <div class="settings-row-title" id="lblAutostartApp">Автозапуск с Windows</div>
-                <div class="settings-row-desc">Автоматически запускать программу в фоне при старте системы</div>
+                <div class="settings-row-desc" id="lblAutostartAppDesc">Автоматически запускать программу в фоне при старте системы</div>
               </div>
             </div>
             <div class="settings-row-right">
@@ -3015,7 +3028,7 @@
               <div class="settings-row-icon" style="background: rgba(56, 189, 248, 0.1); color: #38bdf8;">🔄</div>
               <div>
                 <div class="settings-row-title" id="lblAutoCheckAppUpdates">Автопоиск обновлений ZiablWinSetup</div>
-                <div class="settings-row-desc">Автоматически проверять наличие новой версии ZiablWinSetup при запуске</div>
+                <div class="settings-row-desc" id="lblAutoCheckAppUpdatesDesc">Автоматически проверять наличие новой версии ZiablWinSetup при запуске</div>
               </div>
             </div>
             <div class="settings-row-right">
@@ -3031,7 +3044,7 @@
               <div class="settings-row-icon" style="background: rgba(34, 197, 94, 0.1); color: #22c55e;">⬆️</div>
               <div>
                 <div class="settings-row-title" id="lblAutoCheckSoftwareUpdates">Автопоиск обновлений программ</div>
-                <div class="settings-row-desc">Фоновая проверка свежих версий установленных в Windows программ при старте</div>
+                <div class="settings-row-desc" id="lblAutoCheckSoftwareUpdatesDesc">Фоновая проверка свежих версий установленных в Windows программ при старте</div>
               </div>
             </div>
             <div class="settings-row-right">
@@ -3047,7 +3060,7 @@
               <div class="settings-row-icon" style="background: rgba(239, 68, 68, 0.1); color: #f87171;">🧹</div>
               <div>
                 <div class="settings-row-title" id="lblAutoCleanLeftovers">Автоочистка остатков после удаления</div>
-                <div class="settings-row-desc">Автоматически удалять хвосты реестра и папок без всплывающего запроса</div>
+                <div class="settings-row-desc" id="lblAutoCleanLeftoversDesc">Автоматически удалять хвосты реестра и папок без всплывающего запроса</div>
               </div>
             </div>
             <div class="settings-row-right">
@@ -3070,18 +3083,18 @@
             <div class="settings-row-left">
               <div class="settings-row-icon" style="background: rgba(168, 85, 247, 0.1); color: #c084fc;">💾</div>
               <div>
-                <div class="settings-row-title">Резервная копия и восстановление программ</div>
-                <div class="settings-row-desc">Экспорт списка установленного ПО для восстановления после переустановки Windows</div>
+                <div class="settings-row-title" id="lblBackupAppsTitle">Резервная копия и восстановление программ</div>
+                <div class="settings-row-desc" id="lblBackupAppsDesc">Экспорт списка установленного ПО для восстановления после переустановки Windows</div>
               </div>
             </div>
             <div class="settings-row-right" style="display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end;">
               <button class="btn-action btn-outline" onclick="exportAppsBackup()" style="display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; font-size: 11.5px;" title="Создать резервную копию установленных программ">
                 <span>💾</span>
-                <span>Создать бэкап</span>
+                <span id="btnExportAppsText">Создать бэкап</span>
               </button>
               <button class="btn-action btn-primary" onclick="importAppsBackup()" style="display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; font-size: 11.5px;" title="Импортировать программы из файла бэкапа">
                 <span>📥</span>
-                <span>Восстановить</span>
+                <span id="btnImportAppsText">Восстановить</span>
               </button>
             </div>
           </div>
@@ -3091,12 +3104,12 @@
               <div class="settings-row-icon" style="background: rgba(234, 179, 8, 0.1); color: #facc15;">🛡️</div>
               <div>
                 <div class="settings-row-title" id="lblExclusionsRowTitle">Исключения автообновления</div>
-                <div class="settings-row-desc">Настроить программы каталога, которые не должны обновляться автоматически</div>
+                <div class="settings-row-desc" id="lblExclusionsRowDesc">Настроить программы каталога, которые не должны обновляться автоматически</div>
               </div>
             </div>
             <div class="settings-row-right">
               <button class="btn-action btn-outline" id="btnExclusionsSetting" onclick="openExclusionsModal()" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; font-size: 12px;">
-                <span>⚙️ Настроить</span>
+                <span id="btnExclusionsSettingText">⚙️ Настроить</span>
                 <span id="exclusionsBadge" style="background: rgba(234, 179, 8, 0.2); color: #facc15; font-size: 10.5px; font-weight: 700; padding: 1px 6px; border-radius: 10px;">0</span>
               </button>
             </div>
@@ -3124,7 +3137,7 @@
               <div class="settings-row-icon" style="background: rgba(56, 189, 248, 0.1); color: #38bdf8;">⚡</div>
               <div>
                 <div class="settings-row-title" id="lblCheckUpdateRowTitle">Обновление ZiablWinSetup</div>
-                <div class="settings-row-desc">Проверить наличие новой версии программы на GitHub</div>
+                <div class="settings-row-desc" id="lblCheckUpdateRowDesc">Проверить наличие новой версии программы на GitHub</div>
               </div>
             </div>
             <div class="settings-row-right" style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
@@ -3139,8 +3152,8 @@
       </div>
 
       <div style="padding: 12px 20px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.2);">
-        <div style="font-size: 11.5px; color: var(--text-dim); opacity: 0.8;" id="sidebarAppVerDisplay">ZiablWinSetup v1.4.21</div>
-        <button class="btn-action btn-primary" onclick="closeSettingsModal()" style="padding: 6px 20px; font-size: 12px; font-weight: 600;">Готово</button>
+        <div style="font-size: 11.5px; color: var(--text-dim); opacity: 0.8;" id="sidebarAppVerDisplay">ZiablWinSetup</div>
+        <button class="btn-action btn-primary" id="btnSettingsModalDone" onclick="closeSettingsModal()" style="padding: 6px 20px; font-size: 12px; font-weight: 600;">Готово</button>
       </div>
     </div>
   </div>
@@ -3451,6 +3464,56 @@
       box.scrollTop = box.scrollHeight;
     }
 
+    function copyFullLog(event) {
+      if (event) event.stopPropagation();
+      const box = document.getElementById('logBox');
+      if (!box) return;
+      const divs = box.querySelectorAll('div');
+      let text = '';
+      if (divs.length > 0) {
+        text = Array.from(divs).map(d => d.textContent).join('\n');
+      } else {
+        text = box.innerText || box.textContent || '';
+      }
+      if (!text || !text.trim()) {
+        showToast(appData.lang === 'en' ? 'Event log is empty' : 'Журнал событий пуст', 'info');
+        return;
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          showToast(appData.lang === 'en' ? 'Event log copied to clipboard' : 'Журнал событий скопирован в буфер обмена', 'success');
+        }).catch(() => {
+          fallbackCopyText(text);
+        });
+      } else {
+        fallbackCopyText(text);
+      }
+    }
+    window.copyFullLog = copyFullLog;
+
+    function fallbackCopyText(text) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      ta.style.top = '-9999px';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      try {
+        const ok = document.execCommand('copy');
+        if (ok) {
+          showToast(appData.lang === 'en' ? 'Event log copied to clipboard' : 'Журнал событий скопирован в буфер обмена', 'success');
+        } else {
+          showToast(appData.lang === 'en' ? 'Failed to copy log' : 'Не удалось скопировать журнал', 'error');
+        }
+      } catch (err) {
+        showToast(appData.lang === 'en' ? 'Failed to copy log' : 'Не удалось скопировать журнал', 'error');
+      }
+      document.body.removeChild(ta);
+    }
+    window.fallbackCopyText = fallbackCopyText;
+
     function escapeHtml(str) {
       if (!str) return '';
       return String(str)
@@ -3696,37 +3759,106 @@
       const btnRegRest = document.getElementById('btnRegRestoreBackupText');
       if (btnRegRest) btnRegRest.textContent = `🔄 ${s.reg_btn_restore_backup || 'Восстановить из бэкапа'}`;
 
+      // Settings Modal translations
+      const isEn = appData.lang === 'en';
       const setModalTitle = document.getElementById('settingsModalTitle');
-      if (setModalTitle) setModalTitle.textContent = appData.lang === 'ru' ? 'Настройки приложения' : 'Application Settings';
+      if (setModalTitle) setModalTitle.textContent = isEn ? 'Application Settings' : 'Настройки приложения';
       const setViewTitle = document.getElementById('settingsViewTitle');
-      if (setViewTitle) setViewTitle.textContent = s.settings_view_title || (appData.lang === 'ru' ? 'Настройки ZiablWinSetup' : 'ZiablWinSetup Settings');
+      if (setViewTitle) setViewTitle.textContent = s.settings_view_title || (isEn ? 'ZiablWinSetup Settings' : 'Настройки ZiablWinSetup');
       const setViewSub = document.getElementById('settingsViewSubtitle');
-      if (setViewSub) setViewSub.textContent = s.settings_view_subtitle || (appData.lang === 'ru' ? 'Параметры масштабирования, путей распаковки, фонового режима и системных инструментов.' : 'UI scaling, extraction paths, background behavior, and maintenance tools.');
-      const uiScaleTitle = document.getElementById('lblUiScaleTitle');
-      if (uiScaleTitle) uiScaleTitle.textContent = appData.lang === 'ru' ? 'Масштаб интерфейса' : 'UI Scale';
-      const exclSelAll = document.getElementById('lblExclSelectAll');
-      if (exclSelAll) exclSelAll.textContent = s.select_all || (appData.lang === 'ru' ? 'Выбрать все' : 'Select all');
-      const exclDeselAll = document.getElementById('lblExclDeselectAll');
-      if (exclDeselAll) exclDeselAll.textContent = s.deselect_all || (appData.lang === 'ru' ? 'Снять все' : 'Deselect all');
-      const sysGroupTitle = document.getElementById('lblSystemGroupTitle');
-      if (sysGroupTitle) sysGroupTitle.textContent = s.system_group_title || (appData.lang === 'ru' ? 'Параметры работы' : 'Operation Settings');
-      const toolsGroupTitle = document.getElementById('lblToolsGroupTitle');
-      if (toolsGroupTitle) toolsGroupTitle.textContent = s.tools_group_title || (appData.lang === 'ru' ? 'Инструменты и обслуживание' : 'Tools & Maintenance');
+      if (setViewSub) setViewSub.textContent = s.settings_view_subtitle || (isEn ? 'UI scaling, extraction paths, background behavior, and maintenance tools.' : 'Параметры масштабирования, путей распаковки, фонового режима и системных инструментов.');
+      
       const uiGroupTitle = document.getElementById('lblUiScaleGroupHeader');
-      if (uiGroupTitle) uiGroupTitle.textContent = s.ui_group_title || (appData.lang === 'ru' ? 'Интерфейс и масштабирование' : 'Interface & Scaling');
+      if (uiGroupTitle) uiGroupTitle.textContent = s.ui_group_title || (isEn ? 'Interface & Scaling' : 'Интерфейс и масштабирование');
+      const uiScaleTitle = document.getElementById('lblUiScaleTitle');
+      if (uiScaleTitle) uiScaleTitle.textContent = isEn ? 'UI Scale' : 'Масштаб интерфейса';
+      const uiScaleDesc = document.getElementById('lblUiScaleDesc');
+      if (uiScaleDesc) uiScaleDesc.textContent = isEn ? 'Adjust element sizes for screen resolution (75% – 130%)' : 'Настройка размера элементов под разрешение экрана (75% – 130%)';
+
       const pathsGroupTitle = document.getElementById('lblPathsGroupHeader');
-      if (pathsGroupTitle) pathsGroupTitle.textContent = s.paths_group_title || (appData.lang === 'ru' ? 'Пути распаковки и сохранения' : 'Extraction & Storage Paths');
-      updateExclusionsBadge();
-      const cleanInstBtn = document.getElementById('lblCleanInstallersBtn');
-      if (cleanInstBtn) cleanInstBtn.textContent = s.btn_clean_installers || 'Очистить кэш (.exe)';
-      const checkSelfBtn = document.getElementById('lblCheckSelfUpdateBtn');
-      if (checkSelfBtn) checkSelfBtn.textContent = appData.lang === 'ru' ? 'Обновление программы' : 'Check App Updates';
+      if (pathsGroupTitle) pathsGroupTitle.textContent = s.paths_group_title || (isEn ? 'Extraction & Storage Paths' : 'Пути распаковки и сохранения');
+      const extractPathLbl = document.getElementById('lblExtractPath');
+      if (extractPathLbl) extractPathLbl.textContent = isEn ? 'Extraction folder for ZIP archives' : 'Папка распаковки ZIP-архивов';
+      const btnBrowse = document.getElementById('btnBrowse');
+      if (btnBrowse) btnBrowse.textContent = isEn ? '📂 Browse...' : '📂 Обзор...';
+      const btnPathDesktop = document.getElementById('btnPathDesktop');
+      if (btnPathDesktop) btnPathDesktop.textContent = isEn ? '🖥️ Desktop' : '🖥️ Desktop';
+      const btnPathExeDir = document.getElementById('btnPathExeDir');
+      if (btnPathExeDir) btnPathExeDir.textContent = isEn ? '📁 App Folder' : '📁 Рядом';
+
+      const sysGroupTitle = document.getElementById('lblSystemGroupTitle');
+      if (sysGroupTitle) sysGroupTitle.textContent = s.system_group_title || (isEn ? 'Operation Settings' : 'Параметры работы');
       const minTray = document.getElementById('lblMinimizeToTray');
-      if (minTray) minTray.textContent = appData.lang === 'ru' ? 'В трей при закрытии' : 'Minimize to tray on close';
+      if (minTray) minTray.textContent = isEn ? 'Minimize to tray on close' : 'В трей при закрытии';
+      const minTrayDesc = document.getElementById('lblMinimizeToTrayDesc');
+      if (minTrayDesc) minTrayDesc.textContent = isEn ? 'Minimize to system tray instead of closing application' : 'Сворачивать в системный трей вместо полного закрытия приложения';
       const autostartApp = document.getElementById('lblAutostartApp');
-      if (autostartApp) autostartApp.textContent = appData.lang === 'ru' ? 'Автозапуск с Windows' : 'Start with Windows';
+      if (autostartApp) autostartApp.textContent = isEn ? 'Launch with Windows' : 'Автозапуск с Windows';
+      const autostartAppDesc = document.getElementById('lblAutostartAppDesc');
+      if (autostartAppDesc) autostartAppDesc.textContent = isEn ? 'Launch app automatically in background on Windows startup' : 'Автоматически запускать программу в фоне при старте системы';
       const autoCheckApp = document.getElementById('lblAutoCheckAppUpdates');
-      if (autoCheckApp) autoCheckApp.textContent = appData.lang === 'ru' ? 'Автопоиск обновлений' : 'Auto check app updates';
+      if (autoCheckApp) autoCheckApp.textContent = isEn ? 'Auto-check ZiablWinSetup updates' : 'Автопоиск обновлений ZiablWinSetup';
+      const autoCheckAppDesc = document.getElementById('lblAutoCheckAppUpdatesDesc');
+      if (autoCheckAppDesc) autoCheckAppDesc.textContent = isEn ? 'Check for new ZiablWinSetup versions on launch' : 'Автоматически проверять наличие новой версии ZiablWinSetup при запуске';
+      const autoCheckSoft = document.getElementById('lblAutoCheckSoftwareUpdates');
+      if (autoCheckSoft) autoCheckSoft.textContent = isEn ? 'Auto-check software updates' : 'Автопоиск обновлений программ';
+      const autoCheckSoftDesc = document.getElementById('lblAutoCheckSoftwareUpdatesDesc');
+      if (autoCheckSoftDesc) autoCheckSoftDesc.textContent = isEn ? 'Check for updates of installed software on startup' : 'Фоновая проверка свежих версий установленных в Windows программ при старте';
+      const autoCleanLeft = document.getElementById('lblAutoCleanLeftovers');
+      if (autoCleanLeft) autoCleanLeft.textContent = isEn ? 'Auto-clean leftovers after uninstall' : 'Автоочистка остатков после удаления';
+      const autoCleanLeftDesc = document.getElementById('lblAutoCleanLeftoversDesc');
+      if (autoCleanLeftDesc) autoCleanLeftDesc.textContent = isEn ? 'Automatically clean leftover registry keys and folders without prompt' : 'Автоматически удалять хвосты реестра и папок без всплывающего запроса';
+
+      const toolsGroupTitle = document.getElementById('lblToolsGroupTitle');
+      if (toolsGroupTitle) toolsGroupTitle.textContent = s.tools_group_title || (isEn ? 'Tools & Maintenance' : 'Инструменты и обслуживание');
+      const bkpAppsTitle = document.getElementById('lblBackupAppsTitle');
+      if (bkpAppsTitle) bkpAppsTitle.textContent = isEn ? 'Backup & restore installed apps' : 'Резервная копия и восстановление программ';
+      const bkpAppsDesc = document.getElementById('lblBackupAppsDesc');
+      if (bkpAppsDesc) bkpAppsDesc.textContent = isEn ? 'Export list of installed software for restoration after Windows reinstall' : 'Экспорт списка установленного ПО для восстановления после переустановки Windows';
+      const btnExportAppsText = document.getElementById('btnExportAppsText');
+      if (btnExportAppsText) btnExportAppsText.textContent = isEn ? 'Create Backup' : 'Создать бэкап';
+      const btnImportAppsText = document.getElementById('btnImportAppsText');
+      if (btnImportAppsText) btnImportAppsText.textContent = isEn ? 'Restore' : 'Восстановить';
+
+      const exclRowTitle = document.getElementById('lblExclusionsRowTitle');
+      if (exclRowTitle) exclRowTitle.textContent = isEn ? 'Auto-update exclusions' : 'Исключения автообновления';
+      const exclRowDesc = document.getElementById('lblExclusionsRowDesc');
+      if (exclRowDesc) exclRowDesc.textContent = isEn ? 'Exclude specific catalog apps from bulk update' : 'Настроить программы каталога, которые не должны обновляться автоматически';
+      const btnExclSetting = document.getElementById('btnExclusionsSettingText');
+      if (btnExclSetting) btnExclSetting.textContent = isEn ? '⚙️ Configure' : '⚙️ Настроить';
+      const exclSelAll = document.getElementById('lblExclSelectAll');
+      if (exclSelAll) exclSelAll.textContent = s.select_all || (isEn ? 'Select all' : 'Выбрать все');
+      const exclDeselAll = document.getElementById('lblExclDeselectAll');
+      if (exclDeselAll) exclDeselAll.textContent = s.deselect_all || (isEn ? 'Deselect all' : 'Снять все');
+
+      const cleanInstTitle = document.getElementById('lblCleanInstallersRowTitle');
+      if (cleanInstTitle) cleanInstTitle.textContent = isEn ? 'Clean cache (.exe)' : 'Очистить кэш (.exe)';
+      const cleanInstDesc = document.getElementById('cleanInstallersDesc');
+      if (cleanInstDesc) cleanInstDesc.textContent = isEn ? 'Remove downloaded installers from temporary folder' : 'Удалить загруженные установщики программ из временной папки';
+      const cleanInstBtn = document.getElementById('lblCleanInstallersBtn');
+      if (cleanInstBtn) cleanInstBtn.textContent = s.btn_clean_installers || (isEn ? 'Clean Cache' : 'Очистить кэш');
+
+      const checkSelfTitle = document.getElementById('lblCheckUpdateRowTitle');
+      if (checkSelfTitle) checkSelfTitle.textContent = isEn ? 'ZiablWinSetup update' : 'Обновление ZiablWinSetup';
+      const checkSelfDesc = document.getElementById('lblCheckUpdateRowDesc');
+      if (checkSelfDesc) checkSelfDesc.textContent = isEn ? 'Check for new app release on GitHub' : 'Проверить наличие новой версии программы на GitHub';
+      const checkSelfBtn = document.getElementById('lblCheckSelfUpdateBtn');
+      if (checkSelfBtn) checkSelfBtn.textContent = isEn ? 'Check' : 'Проверить';
+
+      const btnSettingsDone = document.getElementById('btnSettingsModalDone');
+      if (btnSettingsDone) btnSettingsDone.textContent = isEn ? 'Done' : 'Готово';
+
+      // Footer event log & copy button
+      const logLbl = document.getElementById('logLabel');
+      if (logLbl) logLbl.textContent = isEn ? 'Event Log' : 'Журнал событий';
+      const btnCopyLogText = document.getElementById('btnCopyLogText');
+      if (btnCopyLogText) btnCopyLogText.textContent = isEn ? 'Copy all' : 'Копировать всё';
+      const overallStatus = document.getElementById('overallStatusText');
+      if (overallStatus && overallStatus.textContent && (overallStatus.textContent === 'Готов к работе' || overallStatus.textContent === 'Ready')) {
+        overallStatus.textContent = isEn ? 'Ready' : 'Готов к работе';
+      }
+
+      updateExclusionsBadge();
 
       // Tabs & Tweaks translation
       const tabApps = document.getElementById('tabBtnApps');
@@ -3947,9 +4079,9 @@
         applyTranslations();
         renderCategories();
         renderCards();
-        if (typeof renderTweaks === 'function' && currentMainTab === 'tweaks') renderTweaks();
-        if (typeof renderMetro === 'function' && currentMainTab === 'metro') renderMetro();
-        if (typeof renderStartup === 'function' && currentMainTab === 'startup') renderStartup();
+        if (typeof renderTweaks === 'function') renderTweaks();
+        if (typeof renderMetro === 'function') renderMetro();
+        if (typeof renderStartup === 'function') renderStartup();
         updateFooter();
 
         // Сохранение и фоновая синхронизация с Python
@@ -3965,9 +4097,9 @@
             applyTranslations();
             renderCategories();
             renderCards();
-            if (typeof renderTweaks === 'function' && currentMainTab === 'tweaks') renderTweaks();
-            if (typeof renderMetro === 'function' && currentMainTab === 'metro') renderMetro();
-            if (typeof renderStartup === 'function' && currentMainTab === 'startup') renderStartup();
+            if (typeof renderTweaks === 'function') renderTweaks();
+            if (typeof renderMetro === 'function') renderMetro();
+            if (typeof renderStartup === 'function') renderStartup();
             updateFooter();
           }
         }

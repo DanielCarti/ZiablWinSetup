@@ -2,6 +2,6 @@
 ZiablWinSetup — Версия приложения.
 """
 
-__version__ = "1.4.22"
+__version__ = "1.4.23"
 APP_NAME = "ZiablWinSetup"
 GITHUB_REPO = "DanielCarti/ZiablWinSetup"
