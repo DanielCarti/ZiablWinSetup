@@ -69,6 +69,8 @@ def _build_catalog() -> list[AppEntry]:
             winget_id="Google.Chrome",
             silent_args=["/silent", "/install"],
             recommended=True,
+            notes="Зачем нужен: Быстрый доступ в интернет и синхронизация закладок, паролей и истории с телефоном через аккаунт Google. Поддерживает самый большой каталог расширений (блокировщики рекламы, переводчики, темы). Идеален для повседневного сёрфинга и работы.",
+            notes_en="Why you need it: Fast web browsing with seamless syncing of bookmarks, passwords, and tabs across phones and PCs via Google account. Largest library of extensions and built-in Google services.",
         ),
         AppEntry(
             id="opera-gx",
@@ -78,6 +80,8 @@ def _build_catalog() -> list[AppEntry]:
             category="browsers",
             winget_id="Opera.OperaGX",
             silent_args=["/silent", "/norestart"],
+            notes="Зачем нужен: Специальный браузер для геймеров. Позволяет ограничить потребление оперативной памяти, процессора и сети, чтобы браузер не замедлял игры. Включает встроенный блокировщик рекламы, интеграцию с Discord, Twitch и стильный кастомный дизайн.",
+            notes_en="Why you need it: Gamer-oriented browser with RAM, CPU, and network limiters so background tabs do not cause lag in games. Features built-in Discord, Twitch, and ad blocker.",
         ),
         AppEntry(
             id="firefox",
@@ -89,6 +93,8 @@ def _build_catalog() -> list[AppEntry]:
             direct_url="https://download.mozilla.org/?product=firefox-latest&os=win64&lang=ru",
             silent_args=["-ms"],
             recommended=True,
+            notes="Зачем нужен: Независимый браузер с открытым исходным кодом без слежки корпораций. Не использует движок Chromium, что обеспечивает максимальную конфиденциальность и свободную работу блокировщиков рекламы (uBlock Origin) без ограничений Manifest V3.",
+            notes_en="Why you need it: Independent, privacy-respecting browser not based on Chromium. Keeps ad blockers fully functional and provides complete user control over data.",
         ),
         AppEntry(
             id="brave",
@@ -99,6 +105,8 @@ def _build_catalog() -> list[AppEntry]:
             winget_id="Brave.Brave",
             silent_args=["/silent", "/install"],
             recommended=True,
+            notes="Зачем нужен: Браузер со встроенной аппаратной блокировкой рекламы, всплывающих окон и трекеров слежки из коробки. Сайты загружаются в 2–3 раза быстрее, экономя трафик и ресурсы ПК без необходимости ставить сторонние расширения.",
+            notes_en="Why you need it: Fast Chromium-based browser with out-of-the-box ad and tracker blocking. Pages load significantly quicker without needing third-party extensions.",
         ),
         AppEntry(
             id="dolphinanty",
@@ -109,6 +117,8 @@ def _build_catalog() -> list[AppEntry]:
             winget_id="Dolphin.Anty",
             direct_url="https://dolphin-anty-cdn.com/anty-app/dolphin-anty-win-x64-latest.exe",
             silent_args=["/S"],
+            notes="Зачем нужен: Антидетект-браузер для работы с несколькими аккаунтами на сайтах, в соцсетях и на маркетплейсах. Каждый профиль полностью изолирован и имеет уникальный цифровой отпечаток (IP, Canvas, WebGL, железо), защищая от блокировок за мультиаккаунт.",
+            notes_en="Why you need it: Anti-detect browser for managing multiple accounts simultaneously with isolated digital browser fingerprints, avoiding bans.",
         ),
 
         # ========================
@@ -123,6 +133,8 @@ def _build_catalog() -> list[AppEntry]:
             winget_id="VideoLAN.VLC",
             silent_args=["/S"],
             recommended=True,
+            notes="Зачем нужен: Всеядный медиаплеер, воспроизводящий абсолютно любые форматы видео и аудио (MKV, MP4, AVI, FLAC и др.) без установки дополнительных кодеков. Умеет усиливать звук до 200%, автоматически подтягивать субтитры и воспроизводить повреждённые файлы.",
+            notes_en="Why you need it: Universal media player that plays any video and audio format out of the box without extra codecs. Boosts volume up to 200% and repairs broken video streams.",
         ),
         AppEntry(
             id="klite",
@@ -132,6 +144,8 @@ def _build_catalog() -> list[AppEntry]:
             category="media",
             winget_id="CodecGuide.K-LiteCodecPack.Full",
             silent_args=["/verysilent"],
+            notes="Зачем нужен: Полный набор системных аудио- и видеокодеков + легендарный лёгкий плеер Media Player Classic (MPC-HC). Необходим, если стандартные плееры Windows воспроизводят видео без звука, с тормозами или выдают ошибку неподдерживаемого формата.",
+            notes_en="Why you need it: Complete collection of system audio and video codecs plus lightweight MPC-HC player. Fixes missing audio, stuttering, and unplayable formats in Windows.",
         ),
         AppEntry(
             id="picasa3",
@@ -141,6 +155,8 @@ def _build_catalog() -> list[AppEntry]:
             category="media",
             direct_url="https://archive.org/download/picasa-3.9.141.259/picasa39-setup.exe",
             silent_args=["/S"],
+            notes="Зачем нужен: Молниеносный классический просмотрщик изображений от Google. Открывает тяжелые фотографии мгновенно (в отличие от медленного встроенного приложения Windows), содержит удобные инструменты кадрирования, устранения эффекта красных глаз и быстрой цветокоррекции.",
+            notes_en="Why you need it: Lightning-fast classic photo viewer by Google. Opens high-res photos instantly with quick cropping, red-eye removal, and batch photo tools.",
         ),
         AppEntry(
             id="obs",
@@ -153,6 +169,8 @@ def _build_catalog() -> list[AppEntry]:
             github_asset_pattern="*x64-Installer.exe",
             silent_args=["/S"],
             recommended=True,
+            notes="Зачем нужен: Бесплатная программа мирового уровня для записи видео с экрана компьютера и проведения прямых трансляций (YouTube, Twitch, VK). Позволяет накладывать веб-камеру, микрофон, системный звук и захватывать игры без потери кадров и водяных знаков.",
+            notes_en="Why you need it: Free, industry-standard tool for screen recording and live streaming to YouTube, Twitch, or Kick. Capture games and webcam with no watermarks.",
         ),
         AppEntry(
             id="photoshop",
@@ -161,6 +179,8 @@ def _build_catalog() -> list[AppEntry]:
             description_en="Industry-standard graphics and photo editing software (via 1progs.ru)",
             category="media",
             web_url="https://1progs.ru/adobe-photoshop/",
+            notes="Зачем нужен: Мировой эталон для обработки и ретуши фотографий, создания графики, баннеров и иллюстраций. Включает профессиональные инструменты выделения, слои, фильтры и встроенную генеративную обработку изображений.",
+            notes_en="Why you need it: Industry standard for photo editing, retouching, and graphic design with advanced layers, masking, and creative tools.",
         ),
         AppEntry(
             id="premiere",
@@ -169,6 +189,8 @@ def _build_catalog() -> list[AppEntry]:
             description_en="Professional video editing and post-production suite (via 1progs.ru)",
             category="media",
             web_url="https://1progs.ru/adobe-premiere/",
+            notes="Зачем нужен: Профессиональный видеоредактор для монтажа любого уровня — от коротких роликов для YouTube и TikTok до полноценных фильмов. Поддерживает работу с мультикамерой, цветокоррекцию Lumetri, автоматические субтитры и работу со звуком.",
+            notes_en="Why you need it: Leading video editing suite for YouTube clips, reels, and films with robust color grading, multi-camera, and auto-subtitles.",
         ),
 
         # ========================
@@ -184,6 +206,8 @@ def _build_catalog() -> list[AppEntry]:
             direct_url="https://www.7-zip.org/a/7z2408-x64.exe",
             silent_args=["/S"],
             recommended=True,
+            notes="Зачем нужен: Мощный и полностью бесплатный архиватор. Легко открывает любые архивы (ZIP, RAR, 7z, TAR, ISO), а также сжимает файлы в формат 7z значительно плотнее, чем стандартные средства Windows, экономя место на диске.",
+            notes_en="Why you need it: Essential free archiver. Extracts all compressed formats (ZIP, RAR, 7z, ISO) with superior compression ratios compared to standard Windows tools.",
         ),
         AppEntry(
             id="winrar",
@@ -193,6 +217,8 @@ def _build_catalog() -> list[AppEntry]:
             category="utilities",
             winget_id="RARLab.WinRAR",
             silent_args=["/s"],
+            notes="Зачем нужен: Самый популярный архиватор с удобным интерфейсом. Позволяет распаковывать и создавать RAR и ZIP архивы, защищать файлы надёжным паролем и восстанавливать повреждённые архивы при ошибках скачивания.",
+            notes_en="Why you need it: Famous archiver with seamless Windows shell integration, password protection, and repair of damaged archives.",
         ),
         AppEntry(
             id="everything",
@@ -204,6 +230,8 @@ def _build_catalog() -> list[AppEntry]:
             direct_url="https://www.voidtools.com/Everything-1.4.1.1026.x64-Setup.exe",
             silent_args=["/S"],
             recommended=True,
+            notes="Зачем нужен: Мгновенный поиск файлов по всем дискам компьютера. В отличие от медленного стандартного поиска Windows, находит любые документы, видео или папки буквально за миллисекунду прямо во время набора названия.",
+            notes_en="Why you need it: Blazing-fast file search across all drives. Finds any file or folder instantaneously as you type, unlike sluggish Windows Search.",
         ),
         AppEntry(
             id="total-commander",
@@ -213,6 +241,8 @@ def _build_catalog() -> list[AppEntry]:
             category="utilities",
             winget_id="Ghisler.TotalCommander",
             silent_args=["/auto=1"],
+            notes="Зачем нужен: Легендарный двухпанельный файловый менеджер. Позволяет в два клика копировать, перемещать, сравнивать папки, работать с FTP-серверами, архивами и массово переименовывать сотни файлов по правилам.",
+            notes_en="Why you need it: Dual-pane file manager for efficient file management, batch renaming, archive viewing, and FTP transfers.",
         ),
         AppEntry(
             id="eartrumpet",
@@ -222,6 +252,8 @@ def _build_catalog() -> list[AppEntry]:
             category="utilities",
             winget_id="File-New-Project.EarTrumpet",
             recommended=True,
+            notes="Зачем нужен: Удобный регулятор громкости для панели задач Windows. Позволяет настраивать громкость для каждого запущенного приложения отдельно (браузер, игра, Discord, плеер) прямо из системного трея одним кликом.",
+            notes_en="Why you need it: Per-app volume control in the Windows taskbar. Independently adjust volume for Discord, browser, games, and music.",
         ),
         AppEntry(
             id="cpuz",
@@ -232,6 +264,8 @@ def _build_catalog() -> list[AppEntry]:
             winget_id="CPUID.CPU-Z",
             silent_args=["/VERYSILENT"],
             recommended=True,
+            notes="Зачем нужен: Утилита для точной диагностики процессора, материнской платы и оперативной памяти вашего ПК. Помогает узнать точную модель процессора, частоты, тайминги и тип установленной памяти без разборки системного блока.",
+            notes_en="Why you need it: Quick hardware diagnostics. Shows exact specs, speeds, socket, and timings for your CPU, motherboard, and RAM.",
         ),
         AppEntry(
             id="hwinfo",
@@ -242,6 +276,8 @@ def _build_catalog() -> list[AppEntry]:
             winget_id="REALiX.HWiNFO",
             direct_url="https://www.sac.sk/download/utildiag/hwi_852x.exe",
             silent_args=["/VERYSILENT"],
+            notes="Зачем нужен: Подробнейший мониторинг состояния компьютера в реальном времени. Отображает температуры процессора и видеокарты, напряжения блока питания, скорости вентиляторов и помогает выявить перегрев или сбои компонентов.",
+            notes_en="Why you need it: Comprehensive real-time sensor monitoring. Tracks CPU/GPU temperatures, fan speeds, and voltages to detect overheating.",
         ),
         AppEntry(
             id="sharex",
@@ -254,6 +290,8 @@ def _build_catalog() -> list[AppEntry]:
             github_asset_pattern="*setup.exe",
             silent_args=["/VERYSILENT"],
             recommended=True,
+            notes="Зачем нужен: Лучшая бесплатная программа для создания скриншотов и записи экрана. Позволяет мгновенно делать снимки областей, рисовать стрелки, рамки, блюрить конфиденциальные данные и автоматически загружать картинки в облако.",
+            notes_en="Why you need it: Advanced screenshot and screen recording tool. Quickly capture, annotate, blur sensitive info, and auto-upload.",
         ),
         AppEntry(
             id="powertoys",
@@ -266,6 +304,8 @@ def _build_catalog() -> list[AppEntry]:
             github_asset_pattern="PowerToysSetup*x64.exe",
             silent_args=["--silent"],
             recommended=True,
+            notes="Зачем нужен: Набор мощных системных утилит от Microsoft для прокачки Windows: удобная сетка окон (FancyZones), быстрый поиск файлов и приложений (Alt+Space), экранная пипетка цвета, массовое переименование и пакетное сжатие фото.",
+            notes_en="Why you need it: Official Microsoft power utilities for Windows: FancyZones layout manager, quick launcher (Alt+Space), color picker, and bulk image resizer.",
         ),
         AppEntry(
             id="crystaldiskinfo",
@@ -276,6 +316,8 @@ def _build_catalog() -> list[AppEntry]:
             winget_id="CrystalDewWorld.CrystalDiskInfo",
             silent_args=["/VERYSILENT", "/NORESTART"],
             recommended=True,
+            notes="Зачем нужен: Проверка здоровья и температуры ваших накопителей (SSD и HDD). Показывает остаточный ресурс диска, предупреждает о появлении битых секторов и позволяет вовремя спасти важные файлы до внезапного выхода диска из строя.",
+            notes_en="Why you need it: HDD and SSD health and temperature monitoring. Checks S.M.A.R.T. health status and warns before a drive fails.",
         ),
         AppEntry(
             id="crystaldiskmark",
@@ -286,6 +328,8 @@ def _build_catalog() -> list[AppEntry]:
             winget_id="CrystalDewWorld.CrystalDiskMark",
             silent_args=["/VERYSILENT", "/NORESTART"],
             recommended=True,
+            notes="Зачем нужен: Быстрый тест скорости чтения и записи накопителей (SSD, HDD, USB-флешек). Помогает проверить реальную производительность диска и убедиться, что он работает на заявленной производителем скорости.",
+            notes_en="Why you need it: Benchmark tool to test read and write speeds of SSDs, HDDs, and USB flash drives.",
         ),
         AppEntry(
             id="occt",
@@ -295,6 +339,8 @@ def _build_catalog() -> list[AppEntry]:
             category="utilities",
             winget_id="OCBase.OCCT.Personal",
             silent_args=["/S"],
+            notes="Зачем нужен: Комплексный стресс-тест стабильности компьютера. Нагружает процессор, видеокарту, память и блок питания до предела, помогая выявить скрытый перегрев, троттлинг и причины внезапных вылетов в играх или синих экранов.",
+            notes_en="Why you need it: Hardware stability and stress-testing tool. Tests CPU, GPU, RAM, and power supply under load to detect crashes and throttling.",
         ),
         AppEntry(
             id="uninstalltool",
@@ -305,6 +351,8 @@ def _build_catalog() -> list[AppEntry]:
             winget_id="CrystalIDEASoftware.UninstallTool",
             silent_args=["/VERYSILENT"],
             recommended=True,
+            notes="Зачем нужен: Продвинутая замена стандартного удаления программ Windows. Полностью удаляет приложения, очищает забытые файлы, папки и хвосты в реестре, а также находит скрытый и неудаляемый софт.",
+            notes_en="Why you need it: Clean uninstaller that removes stubborn software along with leftover registry entries and temporary files.",
         ),
         AppEntry(
             id="unlocker",
@@ -315,6 +363,8 @@ def _build_catalog() -> list[AppEntry]:
             winget_id="IObit.Unlocker",
             direct_url="https://download.iobit.com/unlocker-setup.exe",
             silent_args=["/VERYSILENT", "/SUPPRESSMSGBOXES"],
+            notes="Зачем нужен: Помогает удалить или переименовать файлы и папки, заблокированные системой с ошибкой 'Файл занят другим процессом'. Завершает блокирующий дескриптор в один клик без перезагрузки компьютера.",
+            notes_en="Why you need it: Unlocks and deletes files or folders held open by system processes with 'File in use' errors.",
         ),
         AppEntry(
             id="unchecker",
@@ -326,6 +376,8 @@ def _build_catalog() -> list[AppEntry]:
             direct_url="https://unchecker.com/dl/unchecker_setup.exe",
             silent_args=["/VERYSILENT"],
             recommended=True,
+            notes="Зачем нужен: Автоматически снимает галочки с навязываемого рекламного софта (панели поиска, сторонние браузеры, яндекс-бары, мусорные утилиты) при установке любых программ, защищая систему от засорения.",
+            notes_en="Why you need it: Silently unchecks unwanted bundled adware, toolbars, and bloatware during application installers.",
         ),
         AppEntry(
             id="hitmanpro",
@@ -336,6 +388,8 @@ def _build_catalog() -> list[AppEntry]:
             direct_url="https://dl.surfright.nl/HitmanPro_x64.exe",
             silent_args=["/quiet"],
             recommended=True,
+            notes="Зачем нужен: Быстрый антивирусный сканер второго мнения. Находит скрытые вирусы, трояны, руткиты и рекламные модули, которые пропустил ваш основной антивирус, не требуя постоянной работы в фоне и не нагружая систему.",
+            notes_en="Why you need it: Second-opinion malware scanner. Catches rootkits, spyware, and adware missed by primary antivirus programs.",
         ),
 
         # ========================
@@ -351,6 +405,8 @@ def _build_catalog() -> list[AppEntry]:
             direct_url="https://telegram.org/dl/desktop/win64",
             silent_args=["/VERYSILENT"],
             recommended=True,
+            notes="Зачем нужен: Быстрый и безопасный мессенджер для переписки, звонков, передачи любых файлов до 2 ГБ, чтения тематических каналов и использования ботов. Мгновенно синхронизирует все чаты с телефоном.",
+            notes_en="Why you need it: Fast, secure messenger with unlimited cloud storage, large file sharing up to 2GB, voice/video calls, and channels.",
         ),
         AppEntry(
             id="discord",
@@ -360,6 +416,8 @@ def _build_catalog() -> list[AppEntry]:
             category="communication",
             winget_id="Discord.Discord",
             recommended=True,
+            notes="Зачем нужен: Популярная платформа для голосового и текстового общения с друзьями и сообществами. Незаменима для голосовой связи во время игр, проведения стримов экрана в 60 FPS и создания серверов по интересам.",
+            notes_en="Why you need it: Voice, video, and text communication platform popular for gaming, screen sharing, and interest-based communities.",
         ),
         AppEntry(
             id="claude",
@@ -370,6 +428,8 @@ def _build_catalog() -> list[AppEntry]:
             winget_id="Anthropic.Claude",
             silent_args=["/S"],
             recommended=True,
+            notes="Зачем нужен: Официальное приложение мощного искусственного интеллекта Claude от Anthropic для рабочего стола. Помогает писать статьи, составлять планы, анализировать файлы, генерировать идеи и автоматизировать рутинные задачи.",
+            notes_en="Why you need it: Official desktop app for Claude AI by Anthropic. Helps with writing, data analysis, coding, and brainstorming.",
         ),
         AppEntry(
             id="chatgpt",
@@ -379,6 +439,8 @@ def _build_catalog() -> list[AppEntry]:
             category="communication",
             winget_id="9PLM9XGG6VKS",
             recommended=True,
+            notes="Зачем нужен: Официальное приложение ChatGPT от OpenAI для Windows. Обеспечивает быстрый вызов по горячей клавише, голосовой ввод, работу с документами и решение любых интеллектуальных и учебных задач.",
+            notes_en="Why you need it: Official desktop app for ChatGPT by OpenAI. Fast hotkey access, voice chat, web search, and file analysis.",
         ),
 
         # ========================
@@ -393,6 +455,8 @@ def _build_catalog() -> list[AppEntry]:
             winget_id="Microsoft.VisualStudioCode",
             silent_args=["/VERYSILENT", "/NORESTART", "/MERGETASKS=!runcode,addcontextmenufiles,addcontextmenufolders"],
             recommended=True,
+            notes="Зачем нужен: Самый популярный редактор кода от Microsoft. Поддерживает практически любые языки программирования через плагины, имеет встроенный терминал, Git, интеллектуальное автодополнение и отладчик.",
+            notes_en="Why you need it: Most popular extensible code editor with integrated Git, terminal, debugging, and thousands of extensions.",
         ),
         AppEntry(
             id="pycharm",
@@ -403,6 +467,8 @@ def _build_catalog() -> list[AppEntry]:
             winget_id="JetBrains.PyCharm.Community",
             silent_args=["/S"],
             recommended=True,
+            notes="Зачем нужен: Полноценная среда разработки (IDE) для языка Python. Включает умный анализ кода, автодополнение, автоматический рефакторинг, подсветку ошибок и удобный графический отладчик.",
+            notes_en="Why you need it: Dedicated IDE for Python development featuring intelligent auto-completion, refactoring, and debugging.",
         ),
         AppEntry(
             id="sublimetext",
@@ -412,6 +478,8 @@ def _build_catalog() -> list[AppEntry]:
             category="development",
             winget_id="SublimeHQ.SublimeText.4",
             silent_args=["/VERYSILENT"],
+            notes="Зачем нужен: Сверхбыстрый и компактный текстовый редактор. Мгновенно открывает огромные файлы логов и кода размером в сотни мегабайт, поддерживает мультикурсор и подсветку синтаксиса.",
+            notes_en="Why you need it: Ultra-fast and lightweight text and code editor capable of opening massive files and logs instantly.",
         ),
         AppEntry(
             id="notepadpp",
@@ -425,6 +493,8 @@ def _build_catalog() -> list[AppEntry]:
             direct_url="https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.9.8/npp.8.9.8.Installer.x64.exe",
             silent_args=["/S"],
             recommended=True,
+            notes="Зачем нужен: Продвинутый блокнот для Windows с вкладками, поиском и заменой регулярными выражениями, переключением кодировок (UTF-8, ANSI) и подсветкой синтаксиса. Незаменим для быстрого редактирования конфигов и скриптов.",
+            notes_en="Why you need it: Tabbed Windows Notepad replacement with syntax highlighting, regex search/replace, and encoding support.",
         ),
         AppEntry(
             id="git",
@@ -437,6 +507,8 @@ def _build_catalog() -> list[AppEntry]:
             github_asset_pattern="*64-bit.exe",
             silent_args=["/VERYSILENT", "/NORESTART", "/CLOSEAPPLICATIONS", "/RESTARTAPPLICATIONS"],
             recommended=True,
+            notes="Зачем нужен: Консольная система контроля версий для отслеживания изменений в файлах и проектах. Необходима разработчикам для фиксации истории правок и совместной работы через GitHub и GitLab.",
+            notes_en="Why you need it: Essential distributed version control system for tracking source code changes and collaborating on projects.",
         ),
         AppEntry(
             id="python",
@@ -447,6 +519,8 @@ def _build_catalog() -> list[AppEntry]:
             winget_id="Python.Python.3.12",
             silent_args=["/quiet", "PrependPath=1", "Include_pip=1"],
             recommended=True,
+            notes="Зачем нужен: Интерпретатор современного языка программирования Python. Необходим для запуска прикладных скриптов, автоматизации рутины, работы с нейросетями и сторонних утилит.",
+            notes_en="Why you need it: Modern programming language runtime required for automation scripts, data science, AI, and many tools.",
         ),
         AppEntry(
             id="java",
@@ -457,6 +531,8 @@ def _build_catalog() -> list[AppEntry]:
             winget_id="EclipseAdoptium.Temurin.21.JDK",
             installer_type="msi",
             silent_args=["/quiet", "/norestart"],
+            notes="Зачем нужен: Пакет сред выполнения Java (Eclipse Temurin OpenJDK). Требуется для запуска игр (например, Minecraft), корпоративных систем, банковских клиентов и утилит, написанных на платформе Java.",
+            notes_en="Why you need it: OpenJDK Java runtime needed to run Java-based applications, developer tools, and games like Minecraft.",
         ),
         AppEntry(
             id="codex",
@@ -465,6 +541,8 @@ def _build_catalog() -> list[AppEntry]:
             description_en="Command-line AI coding assistant and agent",
             category="development",
             winget_id="jcv8000.Codex",
+            notes="Зачем нужен: Консольный AI-помощник для терминала. Позволяет преобразовывать запросы на русском языке в готовые системные команды PowerShell и CMD прямо в командной строке.",
+            notes_en="Why you need it: Command-line AI assistant that translates natural language prompts into executable shell commands.",
         ),
         AppEntry(
             id="opencode",
@@ -477,6 +555,8 @@ def _build_catalog() -> list[AppEntry]:
             direct_url="https://github.com/anomalyco/opencode/releases/latest/download/opencode-desktop-win-x64.exe",
             installer_type="exe",
             silent_args=["/S"],
+            notes="Зачем нужен: Локальный инструмент для работы с открытыми моделями ИИ и генерации кода прямо на вашем компьютере без необходимости отправлять приватные данные на сторонние серверы.",
+            notes_en="Why you need it: Local AI coding assistant for offline code generation and analysis without sending data to external clouds.",
         ),
 
         # ========================
@@ -490,8 +570,8 @@ def _build_catalog() -> list[AppEntry]:
             category="gpu_drivers",
             winget_id="XP8CLZL93F5Z4P",
             direct_url="https://uk.download.nvidia.com/nvapp/client/11.0.9.251/NVIDIA_app_v11.0.9.251.exe",
-            notes="Для видеокарт NVIDIA GeForce",
-            notes_en="For NVIDIA GeForce graphics cards",
+            notes="Зачем нужен: Официальный центр управления для видеокарт NVIDIA GeForce. Автоматически обновляет видеодрайверы, настраивает оптимальные графические параметры в играх и записывает геймплей через ShadowPlay.",
+            notes_en="Why you need it: Modern companion for NVIDIA graphics cards. Updates drivers, optimizes game settings, and records gameplay.",
         ),
         AppEntry(
             id="amd-software",
@@ -501,8 +581,8 @@ def _build_catalog() -> list[AppEntry]:
             category="gpu_drivers",
             winget_id="AdvancedMicroDevices.Adrenalin",
             direct_url="https://drivers.amd.com/drivers/installer/26.10/whql/amd-software-adrenalin-edition-26.8.1-minimalsetup-260818_web.exe",
-            notes="Для видеокарт AMD Radeon",
-            notes_en="For AMD Radeon graphics cards",
+            notes="Зачем нужен: Официальный центр управления для видеокарт AMD Radeon. Обновляет видеодрайверы, включает масштабирование FSR, технологию снижения задержки Anti-Lag и позволяет регулировать производительность.",
+            notes_en="Why you need it: Control center for AMD Radeon GPUs. Updates drivers, enables FSR upscaling, and tunes performance.",
         ),
         AppEntry(
             id="gpuz",
@@ -515,8 +595,8 @@ def _build_catalog() -> list[AppEntry]:
             installer_type="portable",
             silent_args=["-installSilent"],
             recommended=True,
-            notes="Портативная утилита, не требует установки",
-            notes_en="Portable standalone utility, runs without installation",
+            notes="Зачем нужен: Утилита для детального анализа видеокарты. Отображает точную модель графического чипа, тип и производителя видеопамяти, рабочие частоты, температуры ядра и скорость вращения кулеров.",
+            notes_en="Why you need it: GPU diagnostic utility showing exact chip specs, VRAM type, clock speeds, and live temperature sensors.",
         ),
         AppEntry(
             id="furmark",
@@ -527,6 +607,8 @@ def _build_catalog() -> list[AppEntry]:
             winget_id="Geeks3D.FurMark.2",
             direct_url="https://geeks3d.com/downloads/2024p/FurMark_2.4.0.0_setup.exe",
             silent_args=["/VERYSILENT", "/NORESTART"],
+            notes="Зачем нужен: Популярный стресс-тест для видеокарт ('бублик'). Нагружает видеокарту на 100%, позволяя проверить стабильность системы охлаждения, отсутствие артефактов и перегрева (особенно полезно при проверке б/у видеокарт).",
+            notes_en="Why you need it: GPU stress test and benchmark. Tests cooling efficiency and hardware stability under maximum load.",
         ),
         AppEntry(
             id="driverbooster",
@@ -537,6 +619,8 @@ def _build_catalog() -> list[AppEntry]:
             winget_id="IObit.DriverBooster",
             silent_args=["/VERYSILENT"],
             web_url="https://1progs.ru/driver-booster-pro/",
+            notes="Зачем нужен: Программа для автоматического сканирования и обновления устаревших или отсутствующих системных драйверов (звук, сеть, USB, чипсет) в один клик для стабильной работы Windows.",
+            notes_en="Why you need it: One-click driver updater. Scans and updates outdated or missing hardware drivers for system stability.",
         ),
         AppEntry(
             id="nvidiabroadcast",
@@ -547,6 +631,8 @@ def _build_catalog() -> list[AppEntry]:
             winget_id="Nvidia.Broadcast",
             direct_url="https://international.download.nvidia.com/Windows/broadcast/1.4.0.29/NVIDIA_Broadcast_v1.4.0.29.exe",
             silent_args=["-s"],
+            notes="Зачем нужен: Превращает микрофон и веб-камеру в профессиональное студийное оборудование с помощью ИИ на видеокартах GeForce RTX. Полностью удаляет посторонний шум (лай собак, шум клавиатуры) и размывает фон на видео.",
+            notes_en="Why you need it: AI-powered audio/video studio for NVIDIA RTX GPUs. Eliminates background mic noise and enhances webcam video.",
         ),
 
         # ========================
@@ -562,6 +648,8 @@ def _build_catalog() -> list[AppEntry]:
             github_repo="amnezia-vpn/amnezia-client",
             github_asset_pattern="*windows*x64*.exe",
             installer_type="exe",
+            notes="Зачем нужен: Бесплатный клиент для подключения к собственному независимому VPN на личном VPS-сервере. Поддерживает протоколы с маскировкой трафика (AmneziaWG, ShadowSocks, OpenVPN), устойчивые к блокировкам провайдеров.",
+            notes_en="Why you need it: Open-source VPN client designed to bypass censorship and censorship-resistant protocols with self-hosted servers.",
         ),
         AppEntry(
             id="zapret",
@@ -573,9 +661,9 @@ def _build_catalog() -> list[AppEntry]:
             github_repo="Flowseal/zapret-discord-youtube",
             github_asset_pattern="*.zip",
             installer_type="zip",
-            notes="Распакуется на Рабочий стол с готовым ярлыком для запуска",
-            notes_en="Extracts to Desktop with an auto-created launch shortcut",
             recommended=True,
+            notes="Зачем нужен: Автономная утилита для восстановления нормальной скорости YouTube, работы Discord и заблокированных сайтов в РФ без использования VPN. Модифицирует пакеты на уровне Windows, сохраняя максимальную скорость вашего интернета.",
+            notes_en="Why you need it: DPI bypass utility for restoring access to YouTube and Discord in Russia without using external VPN tunnels.",
         ),
         AppEntry(
             id="yogadns",
@@ -585,6 +673,8 @@ def _build_catalog() -> list[AppEntry]:
             category="vpn_network",
             winget_id="Initex.YogaDNS",
             silent_args=["/VERYSILENT"],
+            notes="Зачем нужен: Продвинутый DNS-клиент для Windows с поддержкой шифрования DNS-over-HTTPS (DoH) и DNS-over-TLS (DoT). Защищает DNS-запросы от перехвата провайдером и помогает ускорить открытие сайтов.",
+            notes_en="Why you need it: Advanced encrypted DNS client supporting DNS-over-HTTPS. Protects queries from ISP interception and bypasses DNS blocks.",
         ),
         AppEntry(
             id="tgwsproxy",
@@ -596,8 +686,8 @@ def _build_catalog() -> list[AppEntry]:
             github_asset_pattern="*windows.exe",
             installer_type="portable",
             recommended=True,
-            notes="Портативная консольная утилита",
-            notes_en="Portable standalone CLI utility",
+            notes="Зачем нужен: Специализированный легковесный локальный прокси для восстановления стабильной работы голосовых каналов Discord и видеозвонков в Telegram в условиях сетевых блокировок.",
+            notes_en="Why you need it: Specialized local proxy to restore stable Discord voice channels and Telegram calls under network restrictions.",
         ),
         AppEntry(
             id="operaproxy",
@@ -608,8 +698,8 @@ def _build_catalog() -> list[AppEntry]:
             github_repo="Alexey71/opera-proxy",
             github_asset_pattern="*windows-amd64.exe",
             installer_type="portable",
-            notes="Портативная консольная утилита",
-            notes_en="Portable standalone CLI utility",
+            notes="Зачем нужен: Автономный прокси-клиент, использующий бесплатные быстрые прокси-сервера Opera для свободного серфинга в любых браузерах Windows без необходимости покупать платный VPN.",
+            notes_en="Why you need it: Standalone client routing traffic through fast Opera proxy servers for unblocked browsing across all apps.",
         ),
         AppEntry(
             id="anydesk",
@@ -620,6 +710,8 @@ def _build_catalog() -> list[AppEntry]:
             winget_id="AnyDesk.AnyDesk",
             direct_url="https://download.anydesk.com/AnyDesk.exe",
             silent_args=["--install", "C:\\Program Files (x86)\\AnyDesk", "--silent"],
+            notes="Зачем нужен: Программа для быстрого удалённого подключения к рабочему столу другого компьютера через интернет. Позволяет легко помогать родственникам или коллегам с настройкой ПК на расстоянии.",
+            notes_en="Why you need it: Fast remote desktop software. Connect to and assist friends, family, or colleagues on distant PCs over the internet.",
         ),
 
         # ========================
@@ -634,6 +726,8 @@ def _build_catalog() -> list[AppEntry]:
             winget_id="Valve.Steam",
             silent_args=["/S"],
             recommended=True,
+            notes="Зачем нужен: Главная цифровая игровая платформа для ПК в мире. Позволяет покупать, скачивать и обновлять тысячи игр, общаться с друзьями в чате, играть по сети и сохранять игровой прогресс в облаке.",
+            notes_en="Why you need it: World's leading digital gaming storefront and platform. Download, update, and manage your PC game collection.",
         ),
         AppEntry(
             id="qbittorrent",
@@ -647,6 +741,8 @@ def _build_catalog() -> list[AppEntry]:
             direct_url="https://sourceforge.net/projects/qbittorrent/files/qbittorrent-win32/qbittorrent-5.0.4/qbittorrent_5.0.4_x64_setup.exe/download",
             silent_args=["/S"],
             recommended=True,
+            notes="Зачем нужен: Лучший торрент-клиент без рекламы и скрытого майнинга. Быстро скачивает тяжелые файлы, фильмы, игры и дистрибутивы, поддерживает последовательную загрузку (для просмотра видео до окончания скачивания).",
+            notes_en="Why you need it: Ad-free, lightweight torrent client. Downloads large files quickly with sequential download support for instant media preview.",
         ),
         AppEntry(
             id="bittorrent",
@@ -657,6 +753,8 @@ def _build_catalog() -> list[AppEntry]:
             winget_id="BitTorrent.BitTorrent",
             direct_url="https://download-new.utorrent.com/endpoint/bittorrent/os/windows/track/stable/",
             silent_args=["/S"],
+            notes="Зачем нужен: Классический торрент-клиент для скачивания файлов по протоколу BitTorrent с возможностью настройки расписания скорости и приоритетов раздач.",
+            notes_en="Why you need it: Classic torrent client for peer-to-peer downloading with bandwidth scheduling and priority management.",
         ),
         AppEntry(
             id="dropbox",
@@ -666,6 +764,8 @@ def _build_catalog() -> list[AppEntry]:
             category="gaming",
             winget_id="Dropbox.Dropbox",
             silent_args=["/S"],
+            notes="Зачем нужен: Облачное хранилище для автоматической синхронизации документов и фотографий между компьютером и телефоном, а также быстрого обмена файлами по ссылке.",
+            notes_en="Why you need it: Cloud storage client for seamless file synchronization across computers, mobile devices, and easy file sharing.",
         ),
         AppEntry(
             id="roblox",
@@ -677,6 +777,8 @@ def _build_catalog() -> list[AppEntry]:
             direct_url="https://setup.rbxcdn.com/RobloxPlayerInstaller.exe",
             silent_args=["/silent"],
             recommended=True,
+            notes="Зачем нужен: Популярная игровая онлайн-платформа и песочница, где миллионы игроков создают собственные виртуальные миры, мини-игры (тайкуны, гонки, симуляторы) и играют вместе с друзьями.",
+            notes_en="Why you need it: Popular multiplayer online gaming platform and creation sandbox with millions of user-created virtual worlds.",
         ),
         AppEntry(
             id="tlauncher",
@@ -688,6 +790,8 @@ def _build_catalog() -> list[AppEntry]:
             direct_url="https://tlauncher.org/installer",
             silent_args=["/VERYSILENT", "/NORESTART"],
             recommended=True,
+            notes="Зачем нужен: Удобный лаунчер для Minecraft с простым выбором любых версий игры, быстрой установкой модов Forge/Fabric, текстур-паков и пользовательских скинов в один клик.",
+            notes_en="Why you need it: Easy-to-use Minecraft launcher with one-click installation of game versions, Forge/Fabric, and modpacks.",
         ),
 
         # ========================
@@ -704,6 +808,8 @@ def _build_catalog() -> list[AppEntry]:
             github_asset_pattern="Obsidian*x64.exe",
             silent_args=["/S"],
             recommended=True,
+            notes="Зачем нужен: Мощная программа для ведения базы личных знаний, заметок и конспектов. Все заметки сохраняются в обычных Markdown-файлах прямо на вашем компьютере, гарантируя полную конфиденциальность без привязки к чужим серверам.",
+            notes_en="Why you need it: Powerful personal knowledge base and markdown note-taking app that stores everything locally in plain text.",
         ),
         AppEntry(
             id="libreoffice",
@@ -713,6 +819,8 @@ def _build_catalog() -> list[AppEntry]:
             category="office",
             winget_id="TheDocumentFoundation.LibreOffice",
             silent_args=["/qn"],
+            notes="Зачем нужен: Полноценный и бесплатный аналог Microsoft Office. Включает текстовый редактор Writer (Word), таблицы Calc (Excel) и презентации Impress (PowerPoint), полностью поддерживая форматы .docx, .xlsx и .pptx.",
+            notes_en="Why you need it: Free, full-featured Microsoft Office alternative. Reads and writes .docx, .xlsx, and .pptx without subscription fees.",
         ),
         AppEntry(
             id="openoffice",
@@ -722,6 +830,8 @@ def _build_catalog() -> list[AppEntry]:
             category="office",
             winget_id="Apache.OpenOffice",
             silent_args=["/qn"],
+            notes="Зачем нужен: Классический бесплатный офисный пакет для работы с текстовыми документами, электронными таблицами, презентациями и математическими формулами.",
+            notes_en="Why you need it: Classic open-source office suite for text documents, spreadsheets, presentations, and drawing.",
         ),
         AppEntry(
             id="todoist",
@@ -730,6 +840,8 @@ def _build_catalog() -> list[AppEntry]:
             description_en="Organize your work and personal life with task manager",
             category="office",
             winget_id="Doist.Todoist",
+            notes="Зачем нужен: Удобный планировщик задач и списков дел. Помогает структурировать распорядок дня, ставить напоминания, делить крупные проекты на подзадачи и ничего не упускать из виду.",
+            notes_en="Why you need it: Popular task manager and to-do list app to organize daily workflow, deadlines, and project tasks.",
         ),
 
         # ========================
@@ -745,6 +857,8 @@ def _build_catalog() -> list[AppEntry]:
             direct_url="https://download.microsoft.com/download/1/7/1/1718CCC4-6316-448E-938E-11910E20D5F4/directx_Jun2010_redist.exe",
             silent_args=["/Q"],
             recommended=True,
+            notes="Зачем нужен: Набор системных библиотек DirectX 9/10/11. Критически необходим для запуска старых и классических игр, чтобы избежать частых ошибок 'd3dx9_43.dll не найден'.",
+            notes_en="Why you need it: Essential legacy DirectX runtimes required to run older PC games without 'missing d3dx9_43.dll' errors.",
         ),
         AppEntry(
             id="vcredist_aio",
@@ -756,6 +870,8 @@ def _build_catalog() -> list[AppEntry]:
             direct_url="https://github.com/abbodi1406/vcredist/releases/latest/download/Visual-C-Runtimes-All-in-One-Setup.zip",
             silent_args=["/y"],
             recommended=True,
+            notes="Зачем нужен: Полный универсальный сборник всех библиотек Microsoft Visual C++ (с 2005 по 2022 год). Решает 99% ошибок запуска программ и игр вида 'MSVCP140.dll / VCRUNTIME140.dll отсутствует'.",
+            notes_en="Why you need it: Complete All-in-One installer for all Visual C++ redistributables. Fixes missing MSVCP/VCRUNTIME DLL errors in games and apps.",
         ),
         AppEntry(
             id="vcredist_2015_2022_x64",
@@ -767,6 +883,8 @@ def _build_catalog() -> list[AppEntry]:
             direct_url="https://aka.ms/vs/17/release/vc_redist.x64.exe",
             silent_args=["/quiet", "/norestart"],
             recommended=True,
+            notes="Зачем нужен: Официальные 64-битные системные библиотеки Visual C++ 2015-2022 от Microsoft. Требуются большинству современных программ и игр на Windows.",
+            notes_en="Why you need it: Official 64-bit Microsoft Visual C++ 2015-2022 runtime needed by modern applications and games.",
         ),
         AppEntry(
             id="vcredist_2015_2022_x86",
@@ -777,6 +895,8 @@ def _build_catalog() -> list[AppEntry]:
             winget_id="Microsoft.VCRedist.2015+.x86",
             direct_url="https://aka.ms/vs/17/release/vc_redist.x86.exe",
             silent_args=["/quiet", "/norestart"],
+            notes="Зачем нужен: Официальные 32-битные системные библиотеки Visual C++ 2015-2022 от Microsoft. Необходимы для работы 32-разрядных игр и софта на 64-битной Windows.",
+            notes_en="Why you need it: Official 32-bit Microsoft Visual C++ 2015-2022 runtime required by 32-bit games and utilities.",
         ),
         AppEntry(
             id="dotnet_desktop_8",
@@ -788,6 +908,8 @@ def _build_catalog() -> list[AppEntry]:
             direct_url="https://aka.ms/dotnet/8.0/windowsdesktop-runtime-win-x64.exe",
             silent_args=["/install", "/quiet", "/norestart"],
             recommended=True,
+            notes="Зачем нужен: Официальная среда выполнения .NET 8 Desktop Runtime (с длительной поддержкой LTS). Требуется для запуска современных приложений Windows нового поколения.",
+            notes_en="Why you need it: Official .NET 8 Desktop LTS runtime required to run modern Windows applications built on .NET 8.",
         ),
         AppEntry(
             id="dotnet_desktop_9",
@@ -798,6 +920,8 @@ def _build_catalog() -> list[AppEntry]:
             winget_id="Microsoft.DotNet.DesktopRuntime.9",
             direct_url="https://aka.ms/dotnet/9.0/windowsdesktop-runtime-win-x64.exe",
             silent_args=["/install", "/quiet", "/norestart"],
+            notes="Зачем нужен: Новейшая среда выполнения .NET 9 Desktop Runtime от Microsoft. Необходима для работы передовых программ и утилит 2024-2025 годов.",
+            notes_en="Why you need it: Latest .NET 9 Desktop runtime from Microsoft for cutting-edge Windows software.",
         ),
         AppEntry(
             id="dotnet_desktop_6",
@@ -808,6 +932,8 @@ def _build_catalog() -> list[AppEntry]:
             winget_id="Microsoft.DotNet.DesktopRuntime.6",
             direct_url="https://aka.ms/dotnet/6.0/windowsdesktop-runtime-win-x64.exe",
             silent_args=["/install", "/quiet", "/norestart"],
+            notes="Зачем нужен: Среда выполнения .NET 6 Desktop Runtime. Необходима для приложений, написанных под платформу .NET 6.",
+            notes_en="Why you need it: .NET 6 Desktop runtime required by applications compiled targeting the .NET 6 platform.",
         ),
         AppEntry(
             id="dotnet_framework_481",
@@ -818,6 +944,8 @@ def _build_catalog() -> list[AppEntry]:
             winget_id="Microsoft.DotNet.Framework.Runtime.4.8.1",
             direct_url="https://go.microsoft.com/fwlink/?linkid=2203305",
             silent_args=["/q", "/norestart"],
+            notes="Зачем нужен: Системный компонент .NET Framework 4.8.1. Требуется для стабильной работы огромного числа традиционных настольных программ Windows.",
+            notes_en="Why you need it: .NET Framework 4.8.1 runtime essential for traditional Windows desktop applications.",
         ),
         AppEntry(
             id="dotnet_framework_35",
@@ -827,6 +955,8 @@ def _build_catalog() -> list[AppEntry]:
             category="runtimes",
             winget_id="Microsoft.DotNet.Framework.DeveloperPack_3.5",
             silent_args=["/q", "/norestart"],
+            notes="Зачем нужен: Компонент совместимости .NET Framework 3.5 (включая 2.0 и 3.0). Необходим для запуска классических старых программ и игр, созданных во времена Windows 7 и XP.",
+            notes_en="Why you need it: Legacy .NET Framework 3.5 runtime required for running classic older games and software from the Windows 7/XP era.",
         ),
     ]
 

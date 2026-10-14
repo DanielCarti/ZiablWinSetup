@@ -12,7 +12,7 @@ from pathlib import Path
 
 
 def ensure_winget_in_path():
-    """Добавляет директорию WindowsApps в os.environ['PATH'], если её там нет."""
+    """Добавляет директории WindowsApps в os.environ['PATH'], если их там нет."""
     localappdata = os.environ.get("LOCALAPPDATA", "")
     if localappdata:
         apps_dir = str(Path(localappdata) / "Microsoft" / "WindowsApps")
@@ -20,6 +20,20 @@ def ensure_winget_in_path():
             current_path = os.environ.get("PATH", "")
             if apps_dir.lower() not in current_path.lower():
                 os.environ["PATH"] = f"{apps_dir};{current_path}"
+
+    program_files = os.environ.get("ProgramFiles", "C:\\Program Files")
+    windows_apps = Path(program_files) / "WindowsApps"
+    if windows_apps.is_dir():
+        try:
+            for p in windows_apps.glob("Microsoft.DesktopAppInstaller_*_x64__8wekyb3d8bbwe"):
+                if (p / "winget.exe").is_file():
+                    p_str = str(p)
+                    current_path = os.environ.get("PATH", "")
+                    if p_str.lower() not in current_path.lower():
+                        os.environ["PATH"] = f"{p_str};{current_path}"
+                    break
+        except Exception:
+            pass
 
 
 def check_winget() -> bool:
@@ -64,6 +78,63 @@ def open_winget_store():
         logger.warning(f"Failed to open Microsoft Store: {e}")
 
 
+def _download_file(
+    urls: list[str],
+    dest_path: Path,
+    progress_cb,
+    start_pct: int,
+    end_pct: int,
+    label: str,
+    min_valid_size: int = 1000,
+) -> bool:
+    """
+    Надёжно скачивает файл по списку fallback-URL с отображением прогресса в МБ и процентах.
+    """
+    import socket
+    import urllib.request
+    socket.setdefaulttimeout(30)
+
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+
+    for url in urls:
+        try:
+            logger.info(f"Downloading {label} from {url}...")
+            req = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                total_size = resp.headers.get("Content-Length")
+                total_size = int(total_size) if total_size else None
+                downloaded = 0
+                block_size = 65536
+
+                with open(dest_path, "wb") as f:
+                    while True:
+                        chunk = resp.read(block_size)
+                        if not chunk:
+                            break
+                        f.write(chunk)
+                        downloaded += len(chunk)
+                        if total_size and total_size > 0:
+                            ratio = min(1.0, downloaded / total_size)
+                            pct = int(start_pct + ratio * (end_pct - start_pct))
+                            dl_mb = downloaded / (1024 * 1024)
+                            tot_mb = total_size / (1024 * 1024)
+                            progress_cb(pct, f"{label}: {dl_mb:.1f} / {tot_mb:.1f} МБ ({int(ratio * 100)}%)")
+                        else:
+                            dl_mb = downloaded / (1024 * 1024)
+                            progress_cb(start_pct, f"{label}: {dl_mb:.1f} МБ")
+
+            if dest_path.exists() and dest_path.stat().st_size >= min_valid_size:
+                logger.info(f"Successfully downloaded {label} ({dest_path.stat().st_size} bytes)")
+                return True
+        except Exception as e:
+            logger.warning(f"Download attempt failed for {url}: {e}")
+            continue
+
+    return False
+
+
 def install_winget(progress_cb=None) -> tuple[bool, str]:
     """
     Автоматически скачивает и устанавливает официальный пакет Winget (DesktopAppInstaller).
@@ -72,76 +143,89 @@ def install_winget(progress_cb=None) -> tuple[bool, str]:
     cb = progress_cb or (lambda *_: None)
 
     try:
-        cb(10, "Получение официальной ссылки на Winget...")
-
-        # 1. Поиск последней версии через GitHub API
-        msix_url = "https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"
-        try:
-            import json
-            import urllib.request
-            req = urllib.request.Request(
-                "https://api.github.com/repos/microsoft/winget-cli/releases/latest",
-                headers={"User-Agent": "Mozilla/5.0"}
-            )
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-                for asset in data.get("assets", []):
-                    if asset.get("name", "").endswith(".msixbundle"):
-                        msix_url = asset.get("browser_download_url", msix_url)
-                        break
-        except Exception as e:
-            logger.info(f"Using default fallback URL for winget msixbundle: {e}")
-
-        # 2. Скачивание пакета во временную директорию
-        cb(25, "Скачивание Microsoft.DesktopAppInstaller...")
+        cb(5, "Подготовка к загрузке Winget...")
         temp_dir = Path(tempfile.gettempdir()) / "WinSetup_Winget"
         temp_dir.mkdir(parents=True, exist_ok=True)
+
         bundle_path = temp_dir / "DesktopAppInstaller.msixbundle"
+        vclibs_path = temp_dir / "Microsoft.VCLibs.x64.14.00.Desktop.appx"
+        xaml_path = temp_dir / "Microsoft.UI.Xaml.2.8.x64.appx"
 
-        import urllib.request
-        req = urllib.request.Request(msix_url, headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(req, timeout=120) as resp:
-            total_size = resp.headers.get("Content-Length")
-            total_size = int(total_size) if total_size else None
-            downloaded = 0
-            block_size = 65536
+        # 1. Скачивание основного пакета (msixbundle ~207 МБ)
+        winget_urls = [
+            "https://aka.ms/getwinget",
+            "https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle",
+        ]
+        cb(10, "Скачивание Microsoft.DesktopAppInstaller...")
+        if not bundle_path.exists() or bundle_path.stat().st_size < 10_000_000:
+            ok = _download_file(
+                winget_urls,
+                bundle_path,
+                cb,
+                start_pct=10,
+                end_pct=70,
+                label="Скачивание Winget",
+                min_valid_size=10_000_000,
+            )
+            if not ok:
+                return False, "Не удалось скачать пакет DesktopAppInstaller. Проверьте интернет или используйте Microsoft Store."
 
-            with open(bundle_path, "wb") as f:
-                while True:
-                    chunk = resp.read(block_size)
-                    if not chunk:
-                        break
-                    f.write(chunk)
-                    downloaded += len(chunk)
-                    if total_size:
-                        pct = int(25 + (downloaded / total_size) * 45)  # 25% to 70%
-                        cb(pct, f"Скачивание... {int((downloaded / total_size) * 100)}%")
-
-        # 3. Скачивание зависимостей VCLibs и UI.Xaml (для систем, где их нет)
+        # 2. Скачивание зависимостей (VCLibs и UI.Xaml)
         dependencies = []
-        try:
-            # VCLibs
-            vclibs_path = temp_dir / "Microsoft.VCLibs.x64.14.00.Desktop.appx"
-            if not vclibs_path.exists():
-                cb(72, "Скачивание VCLibs...")
-                vclibs_url = "https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx"
-                urllib.request.urlretrieve(vclibs_url, vclibs_path)
-            if vclibs_path.exists() and vclibs_path.stat().st_size > 1000:
-                dependencies.append(str(vclibs_path))
 
-            # Microsoft.UI.Xaml 2.8
-            xaml_path = temp_dir / "Microsoft.UI.Xaml.2.8.x64.appx"
-            if not xaml_path.exists():
-                cb(78, "Скачивание UI.Xaml...")
-                xaml_url = "https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.6/Microsoft.UI.Xaml.2.8.x64.appx"
-                urllib.request.urlretrieve(xaml_url, xaml_path)
-            if xaml_path.exists() and xaml_path.stat().st_size > 1000:
-                dependencies.append(str(xaml_path))
-        except Exception as e:
-            logger.info(f"Optional dependencies download note: {e}")
+        # VCLibs (~6.7 MB)
+        vclibs_urls = [
+            "https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx",
+            "https://download.microsoft.com/download/4/7/c/47c6134b-d61f-4024-83bd-b9c9ea951c25/Microsoft.VCLibs.x64.14.00.Desktop.appx",
+        ]
+        if not vclibs_path.exists() or vclibs_path.stat().st_size < 100_000:
+            cb(72, "Скачивание зависимостей (VCLibs)...")
+            _download_file(
+                vclibs_urls,
+                vclibs_path,
+                cb,
+                start_pct=72,
+                end_pct=77,
+                label="Скачивание VCLibs",
+                min_valid_size=100_000,
+            )
+        if vclibs_path.exists() and vclibs_path.stat().st_size > 100_000:
+            dependencies.append(str(vclibs_path))
 
-        # 4. Установка через Add-AppxPackage
-        cb(85, "Установка пакета в систему...")
+        # UI.Xaml 2.8 (~5.1 MB)
+        xaml_urls = [
+            "https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.6/Microsoft.UI.Xaml.2.8.x64.appx",
+            "https://aka.ms/Microsoft.UI.Xaml.2.8.x64.appx",
+        ]
+        if not xaml_path.exists() or xaml_path.stat().st_size < 100_000:
+            cb(78, "Скачивание зависимостей (UI.Xaml)...")
+            _download_file(
+                xaml_urls,
+                xaml_path,
+                cb,
+                start_pct=78,
+                end_pct=83,
+                label="Скачивание UI.Xaml",
+                min_valid_size=100_000,
+            )
+        if xaml_path.exists() and xaml_path.stat().st_size > 100_000:
+            dependencies.append(str(xaml_path))
+
+        # 3. Установка зависимостей по отдельности
+        cb(85, "Установка компонентов в систему...")
+        for dep in dependencies:
+            try:
+                subprocess.run(
+                    ["powershell", "-NoProfile", "-NonInteractive", "-Command", f'Add-AppxPackage -Path "{dep}" -ErrorAction SilentlyContinue'],
+                    capture_output=True,
+                    timeout=60,
+                    creationflags=subprocess.CREATE_NO_WINDOW,
+                )
+            except Exception as e:
+                logger.warning(f"Note installing dependency {dep}: {e}")
+
+        # 4. Установка основного пакета Winget
+        cb(88, "Установка Windows Package Manager...")
         ps_cmd = f'Add-AppxPackage -Path "{bundle_path}"'
         if dependencies:
             dep_paths = '", "'.join(dependencies)
@@ -157,20 +241,21 @@ def install_winget(progress_cb=None) -> tuple[bool, str]:
         )
 
         if res.returncode != 0:
-            logger.warning(f"Add-AppxPackage stderr: {res.stderr.strip()}")
-            if dependencies:
-                logger.info("Retrying Add-AppxPackage without explicit dependencies...")
-                res = subprocess.run(
-                    ["powershell", "-NoProfile", "-NonInteractive", "-Command", f'Add-AppxPackage -Path "{bundle_path}"'],
-                    capture_output=True,
-                    text=True,
-                    timeout=120,
-                    creationflags=subprocess.CREATE_NO_WINDOW,
-                )
+            logger.warning(f"Add-AppxPackage with dependencies failed: {res.stderr.strip()}")
+            logger.info("Retrying Add-AppxPackage directly...")
+            res = subprocess.run(
+                ["powershell", "-NoProfile", "-NonInteractive", "-Command", f'Add-AppxPackage -Path "{bundle_path}"'],
+                capture_output=True,
+                text=True,
+                timeout=120,
+                creationflags=subprocess.CREATE_NO_WINDOW,
+            )
 
-        cb(95, "Проверка установки Winget...")
+        cb(94, "Проверка готовности Winget...")
         import time
         time.sleep(2)
+
+        ensure_winget_in_path()
 
         # 5. Проверяем результат
         if check_winget():
@@ -178,7 +263,7 @@ def install_winget(progress_cb=None) -> tuple[bool, str]:
             cb(100, f"Winget {ver} успешно установлен!")
             return True, ver
         else:
-            err_msg = res.stderr.strip() if res.stderr else "Пакет установлен, но winget не обнаружен в PATH (может потребоваться перезапуск)."
+            err_msg = res.stderr.strip() if res.stderr else "Пакет установлен, но winget пока не обнаружен в PATH (может потребоваться перезапуск приложения или системы)."
             return False, err_msg
 
     except Exception as e:
