@@ -2668,9 +2668,9 @@
           </div>
           <div style="display: flex; align-items: center; gap: 10px;">
             <a id="vtOnlineLink" href="#" target="_blank" class="btn-action btn-outline" style="height: 34px; font-size: 12px; padding: 0 14px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
-              <span>Открыть отчет на VirusTotal ↗</span>
+              <span id="lblVtOnlineReport">Открыть отчет на VirusTotal ↗</span>
             </a>
-            <button class="btn-action btn-outline" onclick="resetVtScanner()" style="height: 34px; font-size: 12px; padding: 0 14px;">
+            <button class="btn-action btn-outline" id="btnVtCheckOther" onclick="resetVtScanner()" style="height: 34px; font-size: 12px; padding: 0 14px;">
               Проверить другой файл
             </button>
           </div>
@@ -2680,19 +2680,19 @@
         <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 16px 20px;">
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; font-size: 12.5px;">
             <div>
-              <span style="color: var(--text-muted); display: block; margin-bottom: 2px;">Имя файла:</span>
+              <span style="color: var(--text-muted); display: block; margin-bottom: 2px;" id="lblVtFileName">Имя файла:</span>
               <strong id="vtResFileName" style="color: var(--text-main); word-break: break-all;">-</strong>
             </div>
             <div>
-              <span style="color: var(--text-muted); display: block; margin-bottom: 2px;">Размер:</span>
+              <span style="color: var(--text-muted); display: block; margin-bottom: 2px;" id="lblVtFileSize">Размер:</span>
               <strong id="vtResFileSize" style="color: var(--text-main);">-</strong>
             </div>
             <div>
-              <span style="color: var(--text-muted); display: block; margin-bottom: 2px;">Дата анализа:</span>
+              <span style="color: var(--text-muted); display: block; margin-bottom: 2px;" id="lblVtDate">Дата анализа:</span>
               <strong id="vtResDate" style="color: var(--text-main);">-</strong>
             </div>
             <div>
-              <span style="color: var(--text-muted); display: block; margin-bottom: 2px;">Тип:</span>
+              <span style="color: var(--text-muted); display: block; margin-bottom: 2px;" id="lblVtType">Тип:</span>
               <strong id="vtResType" style="color: var(--text-main);">-</strong>
             </div>
           </div>
@@ -2700,14 +2700,14 @@
             <div style="font-family: monospace; font-size: 11.5px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
               SHA-256: <span id="vtResSha256" style="color: #38bdf8;">-</span>
             </div>
-            <button class="btn-browse" onclick="copyVtSha256()" style="padding: 2px 8px; font-size: 11px;">📋 Скопировать хэш</button>
+            <button class="btn-browse" id="btnCopyVtHash" onclick="copyVtSha256()" style="padding: 2px 8px; font-size: 11px;">📋 Скопировать хэш</button>
           </div>
         </div>
 
         <!-- Engines Table Card -->
         <div style="background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); overflow: hidden;">
           <div style="padding: 12px 20px; border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-            <div style="font-size: 13.5px; font-weight: 600; color: var(--text-main);">
+            <div style="font-size: 13.5px; font-weight: 600; color: var(--text-main);" id="lblVtEnginesHeader">
               Движки антивирусов (<span id="vtEnginesCount">0</span>)
             </div>
             <div style="display: flex; gap: 6px;">
@@ -2724,7 +2724,7 @@
       <!-- Result Card: File Not Found (404) in VT -->
       <div id="vtNotFoundCard" style="display: none; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 32px 24px; text-align: center;">
         <div style="font-size: 38px; margin-bottom: 10px;">🔍</div>
-        <div style="font-size: 16px; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Файл ранее не сканировался на VirusTotal</div>
+        <div style="font-size: 16px; font-weight: 600; color: var(--text-main); margin-bottom: 6px;" id="lblVtNotFoundTitle">Файл ранее не сканировался на VirusTotal</div>
         <div style="font-size: 13px; color: var(--text-muted); max-width: 520px; margin: 0 auto 16px auto;" id="vtNotFoundDesc">
           Хэш файла отсутствует в базе данных VirusTotal. Никто ранее не отправлял этот файл на проверку.
         </div>
@@ -2735,7 +2735,7 @@
           <button id="btnVtUploadFile" class="btn-action btn-primary" onclick="uploadCurrentVtFile()" style="height: 36px; padding: 0 18px; font-size: 12.5px;">
             📤 Отправить файл на сканирование (до 32 МБ)
           </button>
-          <button class="btn-action btn-outline" onclick="resetVtScanner()" style="height: 36px; padding: 0 18px; font-size: 12.5px;">
+          <button class="btn-action btn-outline" id="btnVtNotFoundOther" onclick="resetVtScanner()" style="height: 36px; padding: 0 18px; font-size: 12.5px;">
             Выбрать другой файл
           </button>
         </div>
@@ -3273,8 +3273,8 @@
         <div style="display: flex; align-items: center; gap: 10px;">
           <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(239, 68, 68, 0.18); color: #f87171; display: flex; align-items: center; justify-content: center; font-size: 16px;">🧹</div>
           <div>
-            <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #f1f5f9;">Очистка и оптимизация реестра Windows</h3>
-            <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">Поиск недействительных путей, удалённых деинсталляторов и устаревшего кэша</div>
+            <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #f1f5f9;" id="lblRegCleanerTitle">Очистка и оптимизация реестра Windows</h3>
+            <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;" id="lblRegCleanerSubtitle">Поиск недействительных путей, удалённых деинсталляторов и устаревшего кэша</div>
           </div>
         </div>
         <button onclick="closeRegistryCleanerModal()" style="background:none; border:none; color:#94a3b8; font-size:20px; cursor:pointer; line-height: 1; padding: 4px;" title="Закрыть">✕</button>
@@ -3297,14 +3297,14 @@
         </div>
 
         <div style="display: flex; gap: 6px;">
-          <button class="btn-browse" onclick="setAllRegistryChecked(true)" style="padding: 4px 9px; font-size: 11px;">☑️ Все</button>
-          <button class="btn-browse" onclick="setAllRegistryChecked(false)" style="padding: 4px 9px; font-size: 11px;">⬜ Снять</button>
+          <button class="btn-browse" id="btnRegSelectAll" onclick="setAllRegistryChecked(true)" style="padding: 4px 9px; font-size: 11px;">☑️ Все</button>
+          <button class="btn-browse" id="btnRegDeselectAll" onclick="setAllRegistryChecked(false)" style="padding: 4px 9px; font-size: 11px;">⬜ Снять</button>
         </div>
       </div>
 
       <!-- Issues List -->
       <div style="flex: 1; overflow-y: auto; padding: 14px 22px;" id="registryIssuesContainer">
-        <div style="text-align: center; color: var(--text-dim); padding: 80px 20px; font-size: 13.5px;">
+        <div style="text-align: center; color: var(--text-dim); padding: 80px 20px; font-size: 13.5px;" id="lblRegInitialHint">
           Нажмите кнопку <b>«Сканировать реестр»</b> для поиска устаревших записей.<br>
           <span style="font-size: 12px; color: #10b981; margin-top: 8px; display: inline-block;">🛡️ Перед любым удалением автоматически создается .reg файл для быстрого отката.</span>
         </div>
@@ -3322,7 +3322,7 @@
           <span id="registryCleanStatusText" style="font-size: 12px; color: #10b981;"></span>
         </div>
         <div style="display: flex; gap: 8px;">
-          <button class="modal-btn modal-btn-cancel" onclick="closeRegistryCleanerModal()" style="padding: 6px 16px; font-size: 12px;">Закрыть</button>
+          <button class="modal-btn modal-btn-cancel" id="btnRegClose" onclick="closeRegistryCleanerModal()" style="padding: 6px 16px; font-size: 12px;">Закрыть</button>
           <button class="modal-btn modal-btn-danger" id="btnCleanRegistryIssues" onclick="cleanSelectedRegistryIssues()" style="padding: 7px 22px; font-size: 12.5px; font-weight: 600;" disabled>🛡️ Исправить выбранные с бэкапом</button>
         </div>
       </div>
@@ -3740,6 +3740,19 @@
         updateQaLabel('qaAllSilent', isEn ? 'All → Silent' : (s.all_silent || 'Все → Тихая'));
         updateQaLabel('qaAllInteractive', isEn ? 'All → Interactive' : (s.all_interactive || 'Все → Интерактивная'));
 
+        // Sidebar Tools section
+        const secTools = document.getElementById('secSystemTools');
+        if (secTools) secTools.textContent = isEn ? 'Tools' : (s.sec_system_tools || 'Инструменты');
+        updateQaLabel('qaRegistryCleaner', isEn ? 'Registry Cleaner' : (s.tool_registry_cleaner || 'Очистка реестра'));
+        const btnRc = document.getElementById('qaRegistryCleaner');
+        if (btnRc) btnRc.title = isEn ? 'Windows registry cleaner and optimizer' : 'Очистка и оптимизация реестра Windows';
+        updateQaLabel('qaBackupExport', isEn ? 'Create Backup' : (s.tool_backup_export || 'Создать бэкап'));
+        const btnBe = document.getElementById('qaBackupExport');
+        if (btnBe) btnBe.title = isEn ? 'Create backup of installed programs in Documents' : 'Создать резервную копию установленных программ в Документах';
+        updateQaLabel('qaBackupRestore', isEn ? 'Restore' : (s.tool_backup_restore || 'Восстановить'));
+        const btnBrStore = document.getElementById('qaBackupRestore');
+        if (btnBrStore) btnBrStore.title = isEn ? 'Restore programs from backup file' : 'Восстановить программы из файла бэкапа';
+
         const exclBtnLbl = document.getElementById('lblExclusionsBtn');
         if (exclBtnLbl) exclBtnLbl.textContent = isEn ? 'Update Exclusions' : (s.settings_exclusions || 'Исключения автообновления');
         const secSet = document.getElementById('secSettings');
@@ -3755,6 +3768,18 @@
         const btnInstAll = document.getElementById('btnInstallAll');
         if (btnInstAll) btnInstAll.textContent = isEn ? 'Install all downloaded' : (s.btn_install_all || 'Установить все скачанные');
 
+        // Updates banner
+        const bannerText = document.getElementById('updatesBannerText');
+        if (bannerText && typeof getActiveUpdatesCount === 'function') {
+          const actCount = getActiveUpdatesCount();
+          const tpl = isEn
+            ? ((s && s.updates_available_banner) || '✨ Updates available for {count} applications')
+            : ((s && s.updates_available_banner) || '✨ Доступны обновления для {count} приложений');
+          bannerText.textContent = tpl.replace('{count}', actCount);
+        }
+        const bannerInfo = document.querySelector('.updates-banner-info');
+        if (bannerInfo) bannerInfo.title = isEn ? 'Show only apps requiring updates' : 'Показать только приложения, требующие обновления';
+
         // VirusTotal section
         const tabVT = document.getElementById('tabLabelVirusTotal');
         if (tabVT) tabVT.textContent = 'VirusTotal';
@@ -3764,6 +3789,14 @@
         if (vtSub) vtSub.textContent = isEn ? 'Instant multi-engine antivirus file verification via official VirusTotal API.' : (s.vt_subtitle || 'Мгновенная проверка файлов и инсталляторов по базе 70+ антивирусных движков через официальный API.');
         const vtKeyTitle = document.getElementById('vtKeyCardTitle');
         if (vtKeyTitle) vtKeyTitle.textContent = `🔑 ${isEn ? 'Official Free VirusTotal API Key' : (s.vt_api_key_title || 'Официальный бесплатный API ключ VirusTotal')}`;
+        const vtKeyDesc = document.getElementById('vtKeyCardDesc');
+        if (vtKeyDesc) {
+          vtKeyDesc.innerHTML = isEn
+            ? `Free key allows checking up to 500 files per day (up to 4 requests per minute). Register at <a href="https://www.virustotal.com" target="_blank" onclick="event.preventDefault(); window.pywebview && window.pywebview.api.open_external_url ? window.pywebview.api.open_external_url('https://www.virustotal.com') : window.open('https://www.virustotal.com', '_blank');" style="color: #38bdf8; text-decoration: underline;">virustotal.com</a>, go to profile ➔ <b>API key</b> and paste it here. The key is stored locally on your PC.`
+            : `Бесплатный ключ позволяет проверять до 500 файлов в день (до 4 запросов в минуту). Зарегистрируйтесь на <a href="https://www.virustotal.com" target="_blank" onclick="event.preventDefault(); window.pywebview && window.pywebview.api.open_external_url ? window.pywebview.api.open_external_url('https://www.virustotal.com') : window.open('https://www.virustotal.com', '_blank');" style="color: #38bdf8; text-decoration: underline;">virustotal.com</a>, перейдите в профиль ➔ <b>API key</b> и вставьте его сюда. Ключ сохраняется локально на вашем компьютере.`;
+        }
+        const inputVtKey = document.getElementById('inputVtApiKey');
+        if (inputVtKey) inputVtKey.placeholder = isEn ? 'Paste your 64-character VirusTotal API key...' : 'Вставьте ваш 64-значный API ключ VirusTotal...';
         const vtSaveKeyBtn = document.getElementById('btnVtSaveKey');
         if (vtSaveKeyBtn) vtSaveKeyBtn.textContent = isEn ? 'Save Key' : (s.vt_save_key_btn || 'Сохранить ключ');
         const vtDropTitle = document.getElementById('vtDropTitle');
@@ -3780,6 +3813,79 @@
         if (btnVtUpload) btnVtUpload.textContent = isEn ? '📤 Upload file for scanning (up to 32 MB)' : (s.vt_btn_upload || '📤 Отправить файл на сканирование (до 32 МБ)');
         const vtNotFoundDesc = document.getElementById('vtNotFoundDesc');
         if (vtNotFoundDesc) vtNotFoundDesc.textContent = isEn ? 'File hash not found in VirusTotal database. You can upload it for analysis.' : (s.vt_upload_hint || 'Хэш файла отсутствует в базе данных VirusTotal. Вы можете отправить его на анализ.');
+
+        const lblVtFileName = document.getElementById('lblVtFileName');
+        if (lblVtFileName) lblVtFileName.textContent = isEn ? 'File name:' : 'Имя файла:';
+        const lblVtFileSize = document.getElementById('lblVtFileSize');
+        if (lblVtFileSize) lblVtFileSize.textContent = isEn ? 'Size:' : 'Размер:';
+        const lblVtDate = document.getElementById('lblVtDate');
+        if (lblVtDate) lblVtDate.textContent = isEn ? 'Analysis date:' : 'Дата анализа:';
+        const lblVtType = document.getElementById('lblVtType');
+        if (lblVtType) lblVtType.textContent = isEn ? 'Type:' : 'Тип:';
+        const btnCopyVtHash = document.getElementById('btnCopyVtHash');
+        if (btnCopyVtHash) btnCopyVtHash.textContent = isEn ? '📋 Copy hash' : '📋 Скопировать хэш';
+        const lblVtEnginesHeader = document.getElementById('lblVtEnginesHeader');
+        if (lblVtEnginesHeader) {
+          const engCountSpan = document.getElementById('vtEnginesCount');
+          const engCount = engCountSpan ? engCountSpan.textContent : '0';
+          lblVtEnginesHeader.innerHTML = `${isEn ? 'Antivirus Engines' : 'Движки антивирусов'} (<span id="vtEnginesCount">${engCount}</span>)`;
+        }
+        const lblVtOnlineReport = document.getElementById('lblVtOnlineReport');
+        if (lblVtOnlineReport) lblVtOnlineReport.textContent = isEn ? 'Open report on VirusTotal ↗' : 'Открыть отчет на VirusTotal ↗';
+        const btnVtCheckOther = document.getElementById('btnVtCheckOther');
+        if (btnVtCheckOther) btnVtCheckOther.textContent = isEn ? 'Check another file' : 'Проверить другой файл';
+        const lblVtNotFoundTitle = document.getElementById('lblVtNotFoundTitle');
+        if (lblVtNotFoundTitle) lblVtNotFoundTitle.textContent = isEn ? 'File was not previously scanned on VirusTotal' : 'Файл ранее не сканировался на VirusTotal';
+        const btnVtNotFoundOther = document.getElementById('btnVtNotFoundOther');
+        if (btnVtNotFoundOther) btnVtNotFoundOther.textContent = isEn ? 'Choose another file' : 'Выбрать другой файл';
+
+        // Synchronize VT API key status pill and button
+        if (typeof lastVtConfig !== 'undefined' && lastVtConfig !== null) {
+          const indicator = document.getElementById('vtKeyIndicator');
+          const text = document.getElementById('vtKeyText');
+          const btn = document.getElementById('btnToggleVtKey');
+          if (lastVtConfig.has_key) {
+            if (indicator) indicator.textContent = '🟢';
+            if (text) text.textContent = isEn ? `Key: ${lastVtConfig.masked_key || 'Connected'}` : `Ключ: ${lastVtConfig.masked_key || 'Подключен'}`;
+            if (btn) btn.textContent = isEn ? '⚙️ Change key' : '⚙️ Изменить ключ';
+          } else {
+            if (indicator) indicator.textContent = '⚪';
+            if (text) text.textContent = isEn ? 'API key not configured' : 'API ключ не настроен';
+            if (btn) btn.textContent = isEn ? '🔑 Enter API key' : '🔑 Ввести ключ';
+          }
+        }
+        try { if (typeof checkVirusTotalApiKey === 'function') checkVirusTotalApiKey(); } catch (_) {}
+
+        // Registry Cleaner modal translations
+        const lblRegTitle = document.getElementById('lblRegCleanerTitle');
+        if (lblRegTitle) lblRegTitle.textContent = isEn ? 'Windows Registry Cleaner & Optimizer' : 'Очистка и оптимизация реестра Windows';
+        const lblRegSubtitle = document.getElementById('lblRegCleanerSubtitle');
+        if (lblRegSubtitle) lblRegSubtitle.textContent = isEn ? 'Search for invalid paths, uninstaller leftovers, and obsolete cache' : 'Поиск недействительных путей, удалённых деинсталляторов и устаревшего кэша';
+        const btnRegSelAll = document.getElementById('btnRegSelectAll');
+        if (btnRegSelAll) btnRegSelAll.textContent = isEn ? '☑️ All' : '☑️ Все';
+        const btnRegDeselAll = document.getElementById('btnRegDeselectAll');
+        if (btnRegDeselAll) btnRegDeselAll.textContent = isEn ? '⬜ Clear' : '⬜ Снять';
+        const btnRegClose = document.getElementById('btnRegClose');
+        if (btnRegClose) btnRegClose.textContent = isEn ? 'Close' : 'Закрыть';
+        const lblRegHint = document.getElementById('lblRegInitialHint');
+        if (lblRegHint) {
+          lblRegHint.innerHTML = isEn
+            ? 'Click the <b>"Scan Registry"</b> button to search for obsolete entries.<br><span style="font-size: 12px; color: #10b981; margin-top: 8px; display: inline-block;">🛡️ A .reg backup file is automatically created before any deletion for quick restore.</span>'
+            : 'Нажмите кнопку <b>«Сканировать реестр»</b> для поиска устаревших записей.<br><span style="font-size: 12px; color: #10b981; margin-top: 8px; display: inline-block;">🛡️ Перед любым удалением автоматически создается .reg файл для быстрого отката.</span>';
+        }
+
+        const setRegChip = (id, label, countId) => {
+          const chip = document.getElementById(id);
+          const countSpan = document.getElementById(countId);
+          if (chip && countSpan) {
+            chip.innerHTML = `${label} (<span id="${countId}">${countSpan.textContent}</span>)`;
+          }
+        };
+        setRegChip('chipRegAll', isEn ? 'All' : 'Все', 'countRegAll');
+        setRegChip('chipRegUninst', isEn ? 'Uninstall' : 'Деинсталляция', 'countRegUninst');
+        setRegChip('chipRegAuto', isEn ? 'Startup' : 'Автозапуск', 'countRegAuto');
+        setRegChip('chipRegAppPaths', 'App Paths', 'countRegAppPaths');
+        setRegChip('chipRegMui', 'MuiCache', 'countRegMui');
 
         const btnRegBkp = document.getElementById('btnRegBackupsFolderText');
         if (btnRegBkp) btnRegBkp.textContent = `📁 ${isEn ? 'Backups folder' : (s.reg_btn_backups_folder || 'Папка бэкапов')}`;
@@ -4021,6 +4127,13 @@
         setChipText('chipStartupUwp', isEn ? 'Store / UWP' : (s.startup_tab_uwp || 'Store / UWP'), 'countStartupUwp');
         setChipText('chipStartupService', isEn ? 'Services' : (s.startup_tab_services || 'Службы'), 'countStartupService');
 
+        const stBadge = document.getElementById('startupCounterBadge');
+        if (stBadge && typeof startupItems !== 'undefined') {
+          const tot = startupItems.length;
+          const en = startupItems.filter(i => i.enabled).length;
+          stBadge.textContent = isEn ? `Total: ${tot} (Enabled: ${en})` : `Всего: ${tot} (Включено: ${en})`;
+        }
+
         // Add Startup Item Modal
         const modalStTitle = document.getElementById('addStartupModalTitle');
         if (modalStTitle) modalStTitle.textContent = isEn ? 'Add Program to Startup' : (s.startup_add_modal_title || 'Добавить программу в автозапуск');
@@ -4078,6 +4191,8 @@
         if (suBtnSkip) suBtnSkip.textContent = isEn ? 'Skip this version' : (s.self_update_btn_skip || 'Пропустить эту версию');
         const suBtnGh = document.getElementById('btnSelfUpdateGithub');
         if (suBtnGh) suBtnGh.textContent = 'GitHub';
+
+        try { if (typeof syncUpdatesUi === 'function') syncUpdatesUi(); } catch (_) {}
       } catch (err) {
         console.error('applyTranslations error:', err);
       }
@@ -4098,6 +4213,7 @@
         if (typeof renderTweaks === 'function') renderTweaks();
         if (typeof renderMetro === 'function') renderMetro();
         if (typeof renderStartup === 'function') renderStartup();
+        if (typeof syncUpdatesUi === 'function') syncUpdatesUi();
         updateFooter();
 
         // Сохранение и фоновая синхронизация с Python
@@ -4116,6 +4232,7 @@
             if (typeof renderTweaks === 'function') renderTweaks();
             if (typeof renderMetro === 'function') renderMetro();
             if (typeof renderStartup === 'function') renderStartup();
+            if (typeof syncUpdatesUi === 'function') syncUpdatesUi();
             updateFooter();
           }
         }
@@ -4397,7 +4514,10 @@
         if (banner) banner.style.display = 'flex';
         if (qaAll) qaAll.style.display = 'block';
         if (qaSel) qaSel.style.display = 'block';
-        const tpl = (appData.strings && appData.strings.updates_available_banner) || '✨ Доступно обновлений: {count}';
+        const isEn = appData.lang === 'en';
+        const tpl = isEn
+          ? ((appData.strings && appData.strings.updates_available_banner) || '✨ Updates available for {count} applications')
+          : ((appData.strings && appData.strings.updates_available_banner) || '✨ Доступны обновления для {count} приложений');
         if (bannerText) bannerText.textContent = tpl.replace('{count}', activeCount);
       } else {
         if (badge) badge.style.display = 'none';
@@ -6083,9 +6203,10 @@
       const cSvc = document.getElementById('countStartupService');
       if (cSvc) cSvc.textContent = svcCount;
 
+      const isEn = appData.lang === 'en';
       const badge = document.getElementById('startupCounterBadge');
       if (badge) {
-        badge.textContent = `Всего: ${totalCount} (Включено: ${enabledCount})`;
+        badge.textContent = isEn ? `Total: ${totalCount} (Enabled: ${enabledCount})` : `Всего: ${totalCount} (Включено: ${enabledCount})`;
       }
 
       let filtered = startupItems;
@@ -6137,7 +6258,7 @@
         card.id = `startup_${item.id}`;
 
         let badgeClass = 'badge-source-hkcu';
-        let badgeText = item.source_label || 'Реестр';
+        let badgeText = item.source_label || (isEn ? 'Registry' : 'Реестр');
         if (item.source_type === 'registry_machine') {
           badgeClass = 'badge-source-hklm';
         } else if (item.source_type === 'startup_folder') {
@@ -6150,17 +6271,33 @@
           badgeClass = 'badge-source-service';
         }
 
+        if (isEn) {
+          if (item.source_type === 'windows_service') {
+            badgeText = 'Windows Service';
+          } else if (item.source_type === 'scheduled_task') {
+            badgeText = 'Task Scheduler';
+          } else if (item.source_type === 'startup_folder') {
+            badgeText = 'Startup Folder';
+          } else if (item.source_type === 'uwp_startup') {
+            badgeText = 'Store / UWP';
+          } else {
+            badgeText = badgeText.replace(/Реестр/gi, 'Registry').replace(/откл\./gi, 'dis.');
+          }
+        }
+
         const fallbackEmoji = item.source_type === 'scheduled_task' ? '⏰' : (item.source_type === 'startup_folder' ? '📁' : (item.source_type === 'uwp_startup' ? '🛍️' : (item.source_type === 'windows_service' ? '⚙️' : '⚡')));
         const iconHtml = item.icon_data
           ? `<img class="startup-item-img" src="${item.icon_data}" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';"><span style="display:none;">${fallbackEmoji}</span>`
           : `<span>${fallbackEmoji}</span>`;
 
-        const publisherHtml = item.publisher ? `<span class="startup-item-publisher" title="Издатель: ${item.publisher}">🏢 ${item.publisher}</span>` : '';
+        let pubDisplay = item.publisher || '';
+        if (isEn && pubDisplay === 'Служба Windows') pubDisplay = 'Windows Service';
+        const publisherHtml = pubDisplay ? `<span class="startup-item-publisher" title="${isEn ? 'Publisher' : 'Издатель'}: ${pubDisplay}">🏢 ${pubDisplay}</span>` : '';
         const commandText = item.command || item.location || '';
 
         card.innerHTML = `
           <div class="startup-item-left">
-            <div class="startup-toggle-wrap" title="${item.enabled ? 'Отключить автозапуск' : 'Включить автозапуск'}">
+            <div class="startup-toggle-wrap" title="${item.enabled ? (isEn ? 'Disable startup' : 'Отключить автозапуск') : (isEn ? 'Enable startup' : 'Включить автозапуск')}">
               <label class="switch-toggle">
                 <input type="checkbox" id="chk_startup_${item.id}" ${item.enabled ? 'checked' : ''} onchange="handleToggleStartup('${item.id}', this.checked)">
                 <span class="switch-slider"></span>
@@ -6179,10 +6316,10 @@
             </div>
           </div>
           <div class="startup-item-right">
-            <button class="btn-icon-action" onclick="handleOpenStartupFolder('${item.id}')" title="Открыть папку с файлом в Проводнике">
+            <button class="btn-icon-action" onclick="handleOpenStartupFolder('${item.id}')" title="${isEn ? 'Open file folder in Explorer' : 'Открыть папку с файлом в Проводнике'}">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
             </button>
-            <button class="btn-icon-action btn-trash" onclick="handleDeleteStartup('${item.id}', '${item.name.replace(/'/g, "\\'")}')" title="Удалить из автозагрузки">
+            <button class="btn-icon-action btn-trash" onclick="handleDeleteStartup('${item.id}', '${item.name.replace(/'/g, "\\'")}')" title="${isEn ? 'Remove from startup' : 'Удалить из автозагрузки'}">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
             </button>
           </div>
@@ -6210,7 +6347,7 @@
             if (cDis) cDis.textContent = disabledCount;
             const badge = document.getElementById('startupCounterBadge');
             if (badge) {
-              badge.textContent = `Всего: ${startupItems.length} (Включено: ${enabledCount})`;
+              badge.textContent = (appData.lang === 'en') ? `Total: ${startupItems.length} (Enabled: ${enabledCount})` : `Всего: ${startupItems.length} (Включено: ${enabledCount})`;
             }
             if (startupFilter === 'enabled' || startupFilter === 'disabled') {
               renderStartup();
@@ -6498,9 +6635,10 @@
       container.innerHTML = list.map(app => {
         const isInst = Boolean(app.already_installed);
         const chkAttr = (app.checked !== false) ? 'checked' : '';
+        const isEn = appData.lang === 'en';
         const statusBadge = isInst 
-          ? '<span style="background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); font-size: 11px; padding: 2px 8px; border-radius: 6px; font-weight: 500;">✓ Уже установлено</span>'
-          : '<span style="background: rgba(56,189,248,0.15); color: #38bdf8; border: 1px solid rgba(56,189,248,0.3); font-size: 11px; padding: 2px 8px; border-radius: 6px;">Будет установлено</span>';
+          ? `<span style="background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); font-size: 11px; padding: 2px 8px; border-radius: 6px; font-weight: 500;">${isEn ? '✓ Already installed' : '✓ Уже установлено'}</span>`
+          : `<span style="background: rgba(56,189,248,0.15); color: #38bdf8; border: 1px solid rgba(56,189,248,0.3); font-size: 11px; padding: 2px 8px; border-radius: 6px;">${isEn ? 'Will be installed' : 'Будет установлено'}</span>`;
 
         return `
           <label style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: 8px; cursor: pointer; transition: background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
@@ -6546,14 +6684,15 @@
       const summary = document.getElementById('backupRestoreSummary');
       if (!summary || !currentBackupData || !currentBackupData.catalog_apps) return;
       const count = currentBackupData.catalog_apps.filter(a => a.checked !== false).length;
-      summary.textContent = `К установке выбрано: ${count} программ каталога`;
+      const isEn = appData.lang === 'en';
+      summary.textContent = isEn ? `Selected for installation: ${count} catalog apps` : `К установке выбрано: ${count} программ каталога`;
     }
 
     function applyBackupCatalogSelection() {
       if (!currentBackupData || !currentBackupData.catalog_apps) return;
       const toSelect = currentBackupData.catalog_apps.filter(a => a.checked !== false);
       if (toSelect.length === 0) {
-        showToast('Не выбрано ни одной программы для установки.', 'info', 2500);
+        showToast(appData.lang === 'en' ? 'No apps selected for installation.' : 'Не выбрано ни одной программы для установки.', 'info', 2500);
         return;
       }
       toSelect.forEach(a => selectedApps.add(a.id));
@@ -6562,8 +6701,8 @@
       closeBackupRestoreModal();
       closeSettingsModal();
       switchMainTab('apps');
-      showToast(`Выбрано ${toSelect.length} программ из бэкапа. Готово к установке!`, 'success', 3500);
-      addLog(`📥 Из бэкапа добавлено в очередь установки ${toSelect.length} программ: ${toSelect.map(a => a.name).join(', ')}.`);
+      showToast(appData.lang === 'en' ? `Selected ${toSelect.length} apps from backup. Ready to install!` : `Выбрано ${toSelect.length} программ из бэкапа. Готово к установке!`, 'success', 3500);
+      addLog(`📥 ${appData.lang === 'en' ? 'Added to install queue from backup' : 'Из бэкапа добавлено в очередь установки'} ${toSelect.length} ${appData.lang === 'en' ? 'apps' : 'программ'}: ${toSelect.map(a => a.name).join(', ')}.`);
     }
     window.applyBackupCatalogSelection = applyBackupCatalogSelection;
 
@@ -6571,9 +6710,10 @@
       const container = document.getElementById('backupSystemList');
       if (!container || !currentBackupData || !currentBackupData.system_apps) return;
       const list = currentBackupData.system_apps;
+      const isEn = appData.lang === 'en';
 
       if (list.length === 0) {
-        container.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 40px 20px;">Сторонних программ не обнаружено.</div>';
+        container.innerHTML = `<div style="color: var(--text-muted); text-align: center; padding: 40px 20px;">${isEn ? 'No third-party programs detected.' : 'Сторонних программ не обнаружено.'}</div>`;
         return;
       }
 
@@ -6583,8 +6723,8 @@
         const wingetBtn = hasWinget && !isInst
           ? `<button class="btn-browse" onclick="installBackupWingetSingle('${escapeHtml(app.winget_id)}')" style="padding: 4px 10px; font-size: 11px; background: rgba(56,189,248,0.15); color: #38bdf8; border: 1px solid rgba(56,189,248,0.3);">📦 Winget (${escapeHtml(app.winget_id)})</button>`
           : '';
-        const searchBtn = `<button class="btn-browse" onclick="openExternalSearch('${escapeHtml(app.name)}')" style="padding: 4px 8px; font-size: 11px;" title="Найти сайт программы в Google">🔍 Поиск</button>`;
-        const instBadge = isInst ? '<span style="font-size: 11px; color: #4ade80;">✓ Установлено</span>' : '';
+        const searchBtn = `<button class="btn-browse" onclick="openExternalSearch('${escapeHtml(app.name)}')" style="padding: 4px 8px; font-size: 11px;" title="${isEn ? 'Search app site on Google' : 'Найти сайт программы в Google'}">🔍 ${isEn ? 'Search' : 'Поиск'}</button>`;
+        const instBadge = isInst ? `<span style="font-size: 11px; color: #4ade80;">${isEn ? '✓ Installed' : '✓ Установлено'}</span>` : '';
 
         return `
           <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: 8px; gap: 10px;">
@@ -6771,6 +6911,7 @@
         return;
       }
 
+      const isEn = appData.lang === 'en';
       container.innerHTML = filtered.map(issue => {
         const isChecked = issue.checked !== false;
         let catColor = '#38bdf8';
@@ -6779,15 +6920,32 @@
         else if (issue.category === 'app_paths') catColor = '#a855f7';
         else if (issue.category === 'muicache') catColor = '#10b981';
 
+        let catTitle = issue.category_title || issue.category;
+        if (isEn) {
+          if (issue.category === 'uninstall') catTitle = 'Invalid Uninstaller';
+          else if (issue.category === 'autostart') catTitle = 'Missing Startup Entry';
+          else if (issue.category === 'app_paths') catTitle = 'Invalid App Path';
+          else if (issue.category === 'muicache') catTitle = 'Obsolete MuiCache';
+        }
+
+        let detailText = issue.detail || '';
+        if (isEn) {
+          detailText = detailText
+            .replace(/Несуществующий файл:\s*/gi, 'Missing file: ')
+            .replace(/Исполняемый файл не найден:\s*/gi, 'Executable not found: ')
+            .replace(/Путь деинсталлятора не существует:\s*/gi, 'Uninstaller path does not exist: ')
+            .replace(/Папка приложения не существует:\s*/gi, 'App folder does not exist: ');
+        }
+
         return `
           <label style="display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: 8px; margin-bottom: 6px; cursor: pointer; transition: background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
             <input type="checkbox" class="reg-issue-cb" data-id="${issue.id}" ${isChecked ? 'checked' : ''} onchange="onRegistryIssueCheck('${issue.id}', this.checked)" style="accent-color: var(--accent); margin-top: 3px; cursor: pointer;">
             <div style="flex: 1; min-width: 0;">
               <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                 <span style="font-weight: 600; color: #f1f5f9; font-size: 13px;">${escapeHtml(issue.title)}</span>
-                <span style="font-size: 10.5px; padding: 1px 6px; border-radius: 4px; background: ${catColor}22; color: ${catColor}; border: 1px solid ${catColor}44;">${escapeHtml(issue.category_title || issue.category)}</span>
+                <span style="font-size: 10.5px; padding: 1px 6px; border-radius: 4px; background: ${catColor}22; color: ${catColor}; border: 1px solid ${catColor}44;">${escapeHtml(catTitle)}</span>
               </div>
-              <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 3px; word-break: break-all;">${escapeHtml(issue.detail)}</div>
+              <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 3px; word-break: break-all;">${escapeHtml(detailText)}</div>
               <div style="font-size: 10.5px; color: var(--text-dim); margin-top: 2px; font-family: monospace; word-break: break-all;">${escapeHtml(issue.root_key)}\\${escapeHtml(issue.subkey_path)}</div>
             </div>
           </label>
@@ -7592,6 +7750,7 @@
     let vtCurrentScanData = null;
     let vtCurrentFilePath = null;
     let vtCurrentEnginesFilter = 'all';
+    let lastVtConfig = null;
 
     async function initVirusTotalView() {
       await checkVirusTotalApiKey();
@@ -7602,24 +7761,26 @@
       try {
         if (window.pywebview && window.pywebview.api && window.pywebview.api.get_virustotal_config) {
           const cfg = await window.pywebview.api.get_virustotal_config();
+          lastVtConfig = cfg;
           const badge = document.getElementById('vtApiKeyStatusBadge');
           const indicator = document.getElementById('vtKeyIndicator');
           const text = document.getElementById('vtKeyText');
           const card = document.getElementById('vtApiKeyCard');
           const btn = document.getElementById('btnToggleVtKey');
+          const isEn = appData.lang === 'en';
 
           if (cfg && cfg.has_key) {
             if (indicator) indicator.textContent = '🟢';
-            if (text) text.textContent = `Ключ: ${cfg.masked_key || 'Подключен'}`;
+            if (text) text.textContent = isEn ? `Key: ${cfg.masked_key || 'Connected'}` : `Ключ: ${cfg.masked_key || 'Подключен'}`;
             if (badge) badge.style.borderColor = 'rgba(34, 197, 94, 0.4)';
             if (card) card.style.display = 'none';
-            if (btn) btn.textContent = '⚙️ Изменить ключ';
+            if (btn) btn.textContent = isEn ? '⚙️ Change key' : '⚙️ Изменить ключ';
           } else {
             if (indicator) indicator.textContent = '⚪';
-            if (text) text.textContent = 'API ключ не настроен';
+            if (text) text.textContent = isEn ? 'API key not configured' : 'API ключ не настроен';
             if (badge) badge.style.borderColor = 'rgba(239, 68, 68, 0.4)';
             if (card) card.style.display = 'block';
-            if (btn) btn.textContent = '🔑 Ввести ключ';
+            if (btn) btn.textContent = isEn ? '🔑 Enter API key' : '🔑 Ввести ключ';
           }
         }
       } catch (err) {
@@ -7795,6 +7956,7 @@
 
         if (scoreElem) scoreElem.textContent = `${malCount} / ${total}`;
 
+        const isEn = appData.lang === 'en';
         if (malCount === 0) {
           if (banner) {
             banner.style.background = 'rgba(34, 197, 94, 0.12)';
@@ -7802,7 +7964,7 @@
           }
           if (iconElem) iconElem.textContent = '🛡️';
           if (scoreElem) scoreElem.style.color = '#22c55e';
-          if (titleElem) titleElem.textContent = 'Угроз не обнаружено (Чисто)';
+          if (titleElem) titleElem.textContent = isEn ? 'No threats detected (Clean)' : 'Угроз не обнаружено (Чисто)';
         } else {
           if (banner) {
             banner.style.background = 'rgba(239, 68, 68, 0.15)';
@@ -7810,13 +7972,13 @@
           }
           if (iconElem) iconElem.textContent = '🚨';
           if (scoreElem) scoreElem.style.color = '#ef4444';
-          if (titleElem) titleElem.textContent = `Обнаружены угрозы безопасности (${malCount} движков)`;
+          if (titleElem) titleElem.textContent = isEn ? `Security threats detected (${malCount} engines)` : `Обнаружены угрозы безопасности (${malCount} движков)`;
         }
 
         const fName = document.getElementById('vtResFileName');
         if (fName) fName.textContent = res.file_name || '-';
         const fSize = document.getElementById('vtResFileSize');
-        if (fSize) fSize.textContent = res.file_size_formatted || `${res.file_size} Б`;
+        if (fSize) fSize.textContent = res.file_size_formatted || `${res.file_size} B`;
         const fDate = document.getElementById('vtResDate');
         if (fDate) fDate.textContent = res.last_analysis_date || '-';
         const fType = document.getElementById('vtResType');
@@ -7856,6 +8018,7 @@
       const countElem = document.getElementById('vtEnginesCount');
       const malBadge = document.getElementById('vtBadgeMalCount');
       if (!container) return;
+      const isEn = appData.lang === 'en';
 
       const malCount = engines.filter(e => e.category === 'malicious' || e.category === 'suspicious').length;
       if (countElem) countElem.textContent = engines.length;
@@ -7867,7 +8030,9 @@
       }
 
       if (filtered.length === 0) {
-        container.innerHTML = '<div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 12.5px;">Детектов не найдено (все движки подтверждают безопасность).</div>';
+        container.innerHTML = isEn
+          ? '<div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 12.5px;">No detections found (all engines confirm file safety).</div>'
+          : '<div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 12.5px;">Детектов не найдено (все движки подтверждают безопасность).</div>';
         return;
       }
 
@@ -7876,18 +8041,18 @@
         const isSusp = eng.category === 'suspicious';
         let badgeBg = 'rgba(34, 197, 94, 0.12)';
         let badgeColor = '#22c55e';
-        let badgeText = 'Чисто';
+        let badgeText = isEn ? 'Clean' : 'Чисто';
         let icon = '✓';
 
         if (isMal) {
           badgeBg = 'rgba(239, 68, 68, 0.15)';
           badgeColor = '#ef4444';
-          badgeText = eng.result || 'Вредоносный';
+          badgeText = eng.result || (isEn ? 'Malicious' : 'Вредоносный');
           icon = '⚠️';
         } else if (isSusp) {
           badgeBg = 'rgba(245, 158, 11, 0.15)';
           badgeColor = '#f59e0b';
-          badgeText = eng.result || 'Подозрительный';
+          badgeText = eng.result || (isEn ? 'Suspicious' : 'Подозрительный');
           icon = '❓';
         }
 

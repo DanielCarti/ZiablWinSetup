@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.abspath("."))
 class TestVersion(unittest.TestCase):
     def test_version_string(self):
         from app.version import __version__, APP_NAME
-        self.assertEqual(__version__, "1.4.25")
+        self.assertEqual(__version__, "1.4.26")
         self.assertEqual(APP_NAME, "ZiablWinSetup")
 
 
@@ -462,8 +462,9 @@ class TestWebAPI(unittest.TestCase):
         bridge = AppBridge()
 
         # Check basic methods return valid structures
+        from app.version import __version__
         init_data = bridge.get_initial_data()
-        self.assertEqual(init_data["system_info"]["app_version"], "1.4.25")
+        self.assertEqual(init_data["system_info"]["app_version"], __version__)
 
         cat = init_data["apps"]
         self.assertIsInstance(cat, list)
@@ -606,6 +607,47 @@ class TestTweakProcessHandling(unittest.TestCase):
         self.assertIn("try { applyTranslations(); }", content, "applyTranslations call in initAppDefaults must be wrapped in try/catch")
         self.assertIn("try { renderCategories(); }", content, "renderCategories call in initAppDefaults must be wrapped in try/catch")
         self.assertIn("try { renderCards(); }", content, "renderCards call in initAppDefaults must be wrapped in try/catch")
+
+    def test_english_localization_coverage(self):
+        html_path = Path("app/ui/index.html")
+        content = html_path.read_text(encoding="utf-8")
+
+        # 1. Sidebar Tools localization in applyTranslations
+        self.assertIn("updateQaLabel('qaRegistryCleaner'", content)
+        self.assertIn("updateQaLabel('qaBackupExport'", content)
+        self.assertIn("updateQaLabel('qaBackupRestore'", content)
+        self.assertIn("secSystemTools", content)
+
+        # 2. Updates Banner bilingual template
+        self.assertIn("✨ Updates available for {count} applications", content)
+        self.assertIn("syncUpdatesUi();", content)
+
+        # 3. Startup Manager badges & counter pill
+        self.assertIn("Total: ${totalCount} (Enabled: ${enabledCount})", content)
+        self.assertIn("Windows Service", content)
+        self.assertIn("Task Scheduler", content)
+        self.assertIn("Startup Folder", content)
+        self.assertIn("Store / UWP", content)
+
+        # 4. VirusTotal status, card description, placeholder & labels
+        self.assertIn("API key not configured", content)
+        self.assertIn("Enter API key", content)
+        self.assertIn("Paste your 64-character VirusTotal API key...", content)
+        self.assertIn("lblVtFileName", content)
+        self.assertIn("lblVtFileSize", content)
+        self.assertIn("lblVtDate", content)
+        self.assertIn("lblVtType", content)
+        self.assertIn("btnCopyVtHash", content)
+
+        # 5. Registry Cleaner modal elements
+        self.assertIn("lblRegCleanerTitle", content)
+        self.assertIn("lblRegCleanerSubtitle", content)
+        self.assertIn("btnRegSelectAll", content)
+        self.assertIn("btnRegDeselectAll", content)
+        self.assertIn("btnRegClose", content)
+        self.assertIn("chipRegAll", content)
+        self.assertIn("chipRegUninst", content)
+        self.assertIn("chipRegAuto", content)
 
 
 if __name__ == "__main__":
