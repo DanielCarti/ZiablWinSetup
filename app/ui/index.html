@@ -3330,6 +3330,26 @@
   </div>
 
   <script>
+    // Global Error Guard & Reporting
+    window.onerror = function(msg, url, line, col, error) {
+      console.error('Global JS Error:', msg, 'at', line + ':' + col, error);
+      try {
+        const logBox = document.getElementById('logBox');
+        if (logBox) {
+          const div = document.createElement('div');
+          div.style.color = '#ef4444';
+          div.style.padding = '2px 0';
+          div.textContent = '[JS Error] ' + msg + ' (line ' + line + ':' + col + ')';
+          logBox.appendChild(div);
+          logBox.scrollTop = logBox.scrollHeight;
+        }
+      } catch (_) {}
+      return false;
+    };
+    window.addEventListener('unhandledrejection', function(event) {
+      console.error('Unhandled Promise Rejection:', event.reason);
+    });
+
     // State
     let appData = {
       lang: 'ru',
@@ -3564,20 +3584,29 @@
 
     function initAppDefaults() {
       if (!appData || !appData.apps) return;
-      appData.apps.forEach(app => {
-        if (!appModes[app.id]) appModes[app.id] = 'interactive';
-        if (!appStatuses[app.id]) appStatuses[app.id] = { status: 'idle', progress: 0, detail: '' };
-      });
-      initUiScale();
-      updateLangPills();
-      applyTranslations();
-      renderCategories();
-      renderCards();
-      updateScanningState(isInitialScanning);
-      updateFooter();
-      updateWingetBanner();
-      if (appData.system_info && appData.system_info.extract_path) {
-        document.getElementById('extractPathDisplay').textContent = appData.system_info.extract_path;
+      try {
+        appData.apps.forEach(app => {
+          if (!appModes[app.id]) appModes[app.id] = 'interactive';
+          if (!appStatuses[app.id]) appStatuses[app.id] = { status: 'idle', progress: 0, detail: '' };
+        });
+      } catch (err) {
+        console.error('initAppDefaults status init error:', err);
+      }
+      try { initUiScale(); } catch (e) { console.error('initUiScale error:', e); }
+      try { updateLangPills(); } catch (e) { console.error('updateLangPills error:', e); }
+      try { applyTranslations(); } catch (e) { console.error('applyTranslations error:', e); }
+      try { renderCategories(); } catch (e) { console.error('renderCategories error:', e); }
+      try { renderCards(); } catch (e) { console.error('renderCards error:', e); }
+      try { updateScanningState(isInitialScanning); } catch (e) { console.error('updateScanningState error:', e); }
+      try { updateFooter(); } catch (e) { console.error('updateFooter error:', e); }
+      try { updateWingetBanner(); } catch (e) { console.error('updateWingetBanner error:', e); }
+      try {
+        if (appData.system_info && appData.system_info.extract_path) {
+          const epd = document.getElementById('extractPathDisplay');
+          if (epd) epd.textContent = appData.system_info.extract_path;
+        }
+      } catch (e) {
+        console.error('extractPathDisplay error:', e);
       }
     }
 
@@ -3672,399 +3701,382 @@
     });
 
     function applyTranslations() {
-      const s = appData.strings || {};
-      const titleElem = document.getElementById('appTitle');
-      if (titleElem) titleElem.textContent = s.app_title || 'ZiablWinSetup';
+      try {
+        const isEn = appData.lang === 'en';
+        const s = appData.strings || {};
 
-      const subElem = document.getElementById('appSubtitle');
-      if (subElem) {
-        let subtitle = s.app_subtitle || '';
-        if (appData.system_info && appData.system_info.winget_available) {
-          subtitle += ` • ${s.winget_found || 'winget'} ${appData.system_info.winget_version}`;
-        } else if (appData.system_info) {
-          subtitle += ` • ${s.winget_not_found || 'winget не найден'}`;
+        const titleElem = document.getElementById('appTitle');
+        if (titleElem) titleElem.textContent = s.app_title || 'ZiablWinSetup';
+
+        const subElem = document.getElementById('appSubtitle');
+        if (subElem) {
+          let subtitle = s.app_subtitle || '';
+          if (appData.system_info && appData.system_info.winget_available) {
+            subtitle += ` • ${s.winget_found || 'winget'} ${appData.system_info.winget_version}`;
+          } else if (appData.system_info) {
+            subtitle += ` • ${s.winget_not_found || (isEn ? 'winget not found' : 'winget не найден')}`;
+          }
+          subElem.textContent = subtitle;
         }
-        subElem.textContent = subtitle;
-      }
 
-      const searchInput = document.getElementById('searchInput');
-      if (searchInput) searchInput.placeholder = s.search_placeholder || 'Поиск приложения...';
-      const secCat = document.getElementById('secCategories');
-      if (secCat) secCat.textContent = s.categories || 'Категории';
-      const secQA = document.getElementById('secQuickActions');
-      if (secQA) secQA.textContent = s.quick_actions || 'Быстрые действия';
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) searchInput.placeholder = isEn ? 'Search applications...' : (s.search_placeholder || 'Поиск приложения...');
+        const secCat = document.getElementById('secCategories');
+        if (secCat) secCat.textContent = isEn ? 'Categories' : (s.categories || 'Категории');
+        const secQA = document.getElementById('secQuickActions');
+        if (secQA) secQA.textContent = isEn ? 'Quick Actions' : (s.quick_actions || 'Быстрые действия');
 
-      const updateQaLabel = (btnId, text) => {
-        const btn = document.getElementById(btnId);
-        if (btn) {
-          const lbl = btn.querySelector('.qa-label');
-          if (lbl) lbl.textContent = text.replace(/^[^\wЀ-ӿ]+\s*/, '').trim();
-          else btn.textContent = text;
+        const updateQaLabel = (btnId, text) => {
+          const btn = document.getElementById(btnId);
+          if (btn) {
+            const lbl = btn.querySelector('.qa-label');
+            if (lbl) lbl.textContent = text.replace(/^[^\wЀ-ӿ]+\s*/, '').trim();
+            else btn.textContent = text;
+          }
+        };
+        updateQaLabel('qaRecommended', isEn ? 'Recommended' : (s.select_recommended || 'Рекомендуемые'));
+        updateQaLabel('qaSelectAll', isEn ? 'Select all' : (s.select_all || 'Выбрать все'));
+        updateQaLabel('qaDeselectAll', isEn ? 'Deselect all' : (s.deselect_all || 'Снять все'));
+        updateQaLabel('qaAllSilent', isEn ? 'All → Silent' : (s.all_silent || 'Все → Тихая'));
+        updateQaLabel('qaAllInteractive', isEn ? 'All → Interactive' : (s.all_interactive || 'Все → Интерактивная'));
+
+        const exclBtnLbl = document.getElementById('lblExclusionsBtn');
+        if (exclBtnLbl) exclBtnLbl.textContent = isEn ? 'Update Exclusions' : (s.settings_exclusions || 'Исключения автообновления');
+        const secSet = document.getElementById('secSettings');
+        if (secSet) secSet.textContent = isEn ? 'Settings' : (s.settings || 'Настройки');
+        const lblExt = document.getElementById('lblExtractPath');
+        if (lblExt) lblExt.textContent = isEn ? 'Extraction folder for ZIP:' : (s.extract_path_label || 'Путь распаковки ZIP:');
+        const btnBr = document.getElementById('btnBrowse');
+        if (btnBr) btnBr.textContent = isEn ? 'Browse...' : (s.browse || 'Обзор...');
+        const btnDown = document.getElementById('btnDownloadSelected');
+        if (btnDown) btnDown.textContent = isDownloading 
+          ? (isEn ? 'Cancel' : (s.btn_cancel || 'Отменить')) 
+          : (isEn ? 'Download selected' : (s.btn_download_selected || 'Скачать выбранное'));
+        const btnInstAll = document.getElementById('btnInstallAll');
+        if (btnInstAll) btnInstAll.textContent = isEn ? 'Install all downloaded' : (s.btn_install_all || 'Установить все скачанные');
+
+        // VirusTotal section
+        const tabVT = document.getElementById('tabLabelVirusTotal');
+        if (tabVT) tabVT.textContent = 'VirusTotal';
+        const vtTitle = document.getElementById('vtMainTitle');
+        if (vtTitle) vtTitle.textContent = `🛡️ ${isEn ? 'VirusTotal File Scanner' : (s.vt_title || 'Сканер файлов VirusTotal')}`;
+        const vtSub = document.getElementById('vtMainSubtitle');
+        if (vtSub) vtSub.textContent = isEn ? 'Instant multi-engine antivirus file verification via official VirusTotal API.' : (s.vt_subtitle || 'Мгновенная проверка файлов и инсталляторов по базе 70+ антивирусных движков через официальный API.');
+        const vtKeyTitle = document.getElementById('vtKeyCardTitle');
+        if (vtKeyTitle) vtKeyTitle.textContent = `🔑 ${isEn ? 'Official Free VirusTotal API Key' : (s.vt_api_key_title || 'Официальный бесплатный API ключ VirusTotal')}`;
+        const vtSaveKeyBtn = document.getElementById('btnVtSaveKey');
+        if (vtSaveKeyBtn) vtSaveKeyBtn.textContent = isEn ? 'Save Key' : (s.vt_save_key_btn || 'Сохранить ключ');
+        const vtDropTitle = document.getElementById('vtDropTitle');
+        if (vtDropTitle) vtDropTitle.textContent = isEn ? 'Click to choose file or drag and drop here' : (s.vt_drop_title || 'Нажмите для выбора файла или перетащите его сюда');
+        const vtDropSub = document.getElementById('vtDropSub');
+        if (vtDropSub) vtDropSub.textContent = isEn ? 'Supports .exe, .msi, .dll, .zip, .7z, .iso and any other files' : (s.vt_drop_subtitle || 'Поддерживаются .exe, .msi, .dll, .zip, .7z, .iso и любые другие файлы');
+        const vtBtnSelectText = document.getElementById('vtBtnSelectText');
+        if (vtBtnSelectText) vtBtnSelectText.textContent = isEn ? '📁 Choose file to scan' : (s.vt_btn_choose || '📁 Выбрать файл для сканирования');
+        const chipVtAll = document.getElementById('chipVtAll');
+        if (chipVtAll) chipVtAll.textContent = isEn ? 'All' : (s.vt_filter_all || 'Все');
+        const chipVtMal = document.getElementById('chipVtMalicious');
+        if (chipVtMal && chipVtMal.childNodes[0]) chipVtMal.childNodes[0].nodeValue = (isEn ? 'Detections only' : (s.vt_filter_malicious || 'Только детекты')) + ' ';
+        const btnVtUpload = document.getElementById('btnVtUploadFile');
+        if (btnVtUpload) btnVtUpload.textContent = isEn ? '📤 Upload file for scanning (up to 32 MB)' : (s.vt_btn_upload || '📤 Отправить файл на сканирование (до 32 МБ)');
+        const vtNotFoundDesc = document.getElementById('vtNotFoundDesc');
+        if (vtNotFoundDesc) vtNotFoundDesc.textContent = isEn ? 'File hash not found in VirusTotal database. You can upload it for analysis.' : (s.vt_upload_hint || 'Хэш файла отсутствует в базе данных VirusTotal. Вы можете отправить его на анализ.');
+
+        const btnRegBkp = document.getElementById('btnRegBackupsFolderText');
+        if (btnRegBkp) btnRegBkp.textContent = `📁 ${isEn ? 'Backups folder' : (s.reg_btn_backups_folder || 'Папка бэкапов')}`;
+        const btnRegRest = document.getElementById('btnRegRestoreBackupText');
+        if (btnRegRest) btnRegRest.textContent = `🔄 ${isEn ? 'Restore from backup' : (s.reg_btn_restore_backup || 'Восстановить из бэкапа')}`;
+
+        // Settings Modal translations
+        const setModalTitle = document.getElementById('settingsModalTitle');
+        if (setModalTitle) setModalTitle.textContent = isEn ? 'Application Settings' : 'Настройки приложения';
+        const setViewTitle = document.getElementById('settingsViewTitle');
+        if (setViewTitle) setViewTitle.textContent = isEn ? 'ZiablWinSetup Settings' : (s.settings_view_title || 'Настройки ZiablWinSetup');
+        const setViewSub = document.getElementById('settingsViewSubtitle');
+        if (setViewSub) setViewSub.textContent = isEn ? 'UI scaling, extraction paths, background behavior, and maintenance tools.' : (s.settings_view_subtitle || 'Параметры масштабирования, путей распаковки, фонового режима и системных инструментов.');
+        
+        const uiGroupTitle = document.getElementById('lblUiScaleGroupHeader');
+        if (uiGroupTitle) uiGroupTitle.textContent = isEn ? 'Interface & Scaling' : (s.ui_group_title || 'Интерфейс и масштабирование');
+        const uiScaleTitle = document.getElementById('lblUiScaleTitle');
+        if (uiScaleTitle) uiScaleTitle.textContent = isEn ? 'UI Scale' : 'Масштаб интерфейса';
+        const uiScaleDesc = document.getElementById('lblUiScaleDesc');
+        if (uiScaleDesc) uiScaleDesc.textContent = isEn ? 'Adjust element sizes for screen resolution (75% – 130%)' : 'Настройка размера элементов под разрешение экрана (75% – 130%)';
+
+        const pathsGroupTitle = document.getElementById('lblPathsGroupHeader');
+        if (pathsGroupTitle) pathsGroupTitle.textContent = isEn ? 'Extraction & Storage Paths' : (s.paths_group_title || 'Пути распаковки и сохранения');
+        const extractPathLbl = document.getElementById('lblExtractPath');
+        if (extractPathLbl) extractPathLbl.textContent = isEn ? 'Extraction folder for ZIP archives' : 'Папка распаковки ZIP-архивов';
+        const btnBrowse = document.getElementById('btnBrowse');
+        if (btnBrowse) btnBrowse.textContent = isEn ? '📂 Browse...' : '📂 Обзор...';
+        const btnPathDesktop = document.getElementById('btnPathDesktop');
+        if (btnPathDesktop) btnPathDesktop.textContent = isEn ? '🖥️ Desktop' : '🖥️ Desktop';
+        const btnPathExeDir = document.getElementById('btnPathExeDir');
+        if (btnPathExeDir) btnPathExeDir.textContent = isEn ? '📁 App Folder' : '📁 Рядом';
+
+        const sysGroupTitle = document.getElementById('lblSystemGroupTitle');
+        if (sysGroupTitle) sysGroupTitle.textContent = isEn ? 'Operation Settings' : (s.system_group_title || 'Параметры работы');
+        const minTray = document.getElementById('lblMinimizeToTray');
+        if (minTray) minTray.textContent = isEn ? 'Minimize to tray on close' : 'В трей при закрытии';
+        const minTrayDesc = document.getElementById('lblMinimizeToTrayDesc');
+        if (minTrayDesc) minTrayDesc.textContent = isEn ? 'Minimize to system tray instead of closing application' : 'Сворачивать в системный трей вместо полного закрытия приложения';
+        const autostartApp = document.getElementById('lblAutostartApp');
+        if (autostartApp) autostartApp.textContent = isEn ? 'Launch with Windows' : 'Автозапуск с Windows';
+        const autostartAppDesc = document.getElementById('lblAutostartAppDesc');
+        if (autostartAppDesc) autostartAppDesc.textContent = isEn ? 'Launch app automatically in background on Windows startup' : 'Автоматически запускать программу в фоне при старте системы';
+        const autoCheckApp = document.getElementById('lblAutoCheckAppUpdates');
+        if (autoCheckApp) autoCheckApp.textContent = isEn ? 'Auto-check ZiablWinSetup updates' : 'Автопоиск обновлений ZiablWinSetup';
+        const autoCheckAppDesc = document.getElementById('lblAutoCheckAppUpdatesDesc');
+        if (autoCheckAppDesc) autoCheckAppDesc.textContent = isEn ? 'Check for new ZiablWinSetup versions on launch' : 'Автоматически проверять наличие новой версии ZiablWinSetup при запуске';
+        const autoCheckSoft = document.getElementById('lblAutoCheckSoftwareUpdates');
+        if (autoCheckSoft) autoCheckSoft.textContent = isEn ? 'Auto-check software updates' : 'Автопоиск обновлений программ';
+        const autoCheckSoftDesc = document.getElementById('lblAutoCheckSoftwareUpdatesDesc');
+        if (autoCheckSoftDesc) autoCheckSoftDesc.textContent = isEn ? 'Check for updates of installed software on startup' : 'Фоновая проверка свежих версий установленных в Windows программ при старте';
+        const autoCleanLeft = document.getElementById('lblAutoCleanLeftovers');
+        if (autoCleanLeft) autoCleanLeft.textContent = isEn ? 'Auto-clean leftovers after uninstall' : 'Автоочистка остатков после удаления';
+        const autoCleanLeftDesc = document.getElementById('lblAutoCleanLeftoversDesc');
+        if (autoCleanLeftDesc) autoCleanLeftDesc.textContent = isEn ? 'Automatically clean leftover registry keys and folders without prompt' : 'Автоматически удалять хвосты реестра и папок без всплывающего запроса';
+
+        const toolsGroupTitle = document.getElementById('lblToolsGroupTitle');
+        if (toolsGroupTitle) toolsGroupTitle.textContent = isEn ? 'Tools & Maintenance' : (s.tools_group_title || 'Инструменты и обслуживание');
+        const bkpAppsTitle = document.getElementById('lblBackupAppsTitle');
+        if (bkpAppsTitle) bkpAppsTitle.textContent = isEn ? 'Backup & restore installed apps' : 'Резервная копия и восстановление программ';
+        const bkpAppsDesc = document.getElementById('lblBackupAppsDesc');
+        if (bkpAppsDesc) bkpAppsDesc.textContent = isEn ? 'Export list of installed software for restoration after Windows reinstall' : 'Экспорт списка установленного ПО для восстановления после переустановки Windows';
+        const btnExportAppsText = document.getElementById('btnExportAppsText');
+        if (btnExportAppsText) btnExportAppsText.textContent = isEn ? 'Create Backup' : 'Создать бэкап';
+        const btnImportAppsText = document.getElementById('btnImportAppsText');
+        if (btnImportAppsText) btnImportAppsText.textContent = isEn ? 'Restore' : 'Восстановить';
+
+        const exclRowTitle = document.getElementById('lblExclusionsRowTitle');
+        if (exclRowTitle) exclRowTitle.textContent = isEn ? 'Auto-update exclusions' : 'Исключения автообновления';
+        const exclRowDesc = document.getElementById('lblExclusionsRowDesc');
+        if (exclRowDesc) exclRowDesc.textContent = isEn ? 'Exclude specific catalog apps from bulk update' : 'Настроить программы каталога, которые не должны обновляться автоматически';
+        const btnExclSetting = document.getElementById('btnExclusionsSettingText');
+        if (btnExclSetting) btnExclSetting.textContent = isEn ? '⚙️ Configure' : '⚙️ Настроить';
+        const exclSelAll = document.getElementById('lblExclSelectAll');
+        if (exclSelAll) exclSelAll.textContent = isEn ? 'Select all' : (s.select_all || 'Выбрать все');
+        const exclDeselAll = document.getElementById('lblExclDeselectAll');
+        if (exclDeselAll) exclDeselAll.textContent = isEn ? 'Deselect all' : (s.deselect_all || 'Снять все');
+
+        const cleanInstTitle = document.getElementById('lblCleanInstallersRowTitle');
+        if (cleanInstTitle) cleanInstTitle.textContent = isEn ? 'Clean cache (.exe)' : 'Очистить кэш (.exe)';
+        const cleanInstDesc = document.getElementById('cleanInstallersDesc');
+        if (cleanInstDesc) cleanInstDesc.textContent = isEn ? 'Remove downloaded installers from temporary folder' : 'Удалить загруженные установщики программ из временной папки';
+        const cleanInstBtn = document.getElementById('lblCleanInstallersBtn');
+        if (cleanInstBtn) cleanInstBtn.textContent = isEn ? 'Clean Cache' : (s.btn_clean_installers || 'Очистить кэш');
+
+        const checkSelfTitle = document.getElementById('lblCheckUpdateRowTitle');
+        if (checkSelfTitle) checkSelfTitle.textContent = isEn ? 'ZiablWinSetup update' : 'Обновление ZiablWinSetup';
+        const checkSelfDesc = document.getElementById('lblCheckUpdateRowDesc');
+        if (checkSelfDesc) checkSelfDesc.textContent = isEn ? 'Check for new app release on GitHub' : 'Проверить наличие новой версии программы на GitHub';
+        const checkSelfBtn = document.getElementById('lblCheckSelfUpdateBtn');
+        if (checkSelfBtn) checkSelfBtn.textContent = isEn ? 'Check' : 'Проверить';
+
+        const btnSettingsDone = document.getElementById('btnSettingsModalDone');
+        if (btnSettingsDone) btnSettingsDone.textContent = isEn ? 'Done' : 'Готово';
+
+        // Footer event log & copy button
+        const logLbl = document.getElementById('logLabel');
+        if (logLbl) logLbl.textContent = isEn ? 'Event Log' : 'Журнал событий';
+        const btnCopyLogText = document.getElementById('btnCopyLogText');
+        if (btnCopyLogText) btnCopyLogText.textContent = isEn ? 'Copy all' : 'Копировать всё';
+        const overallStatus = document.getElementById('overallStatusText');
+        if (overallStatus && overallStatus.textContent && (overallStatus.textContent === 'Готов к работе' || overallStatus.textContent === 'Ready')) {
+          overallStatus.textContent = isEn ? 'Ready' : 'Готов к работе';
         }
-      };
-      updateQaLabel('qaRecommended', s.select_recommended || 'Рекомендуемые');
-      updateQaLabel('qaSelectAll', s.select_all || 'Выбрать все');
-      updateQaLabel('qaDeselectAll', s.deselect_all || 'Снять все');
-      updateQaLabel('qaAllSilent', s.all_silent || 'Все → Тихая');
-      updateQaLabel('qaAllInteractive', s.all_interactive || 'Все → Интерактивная');
 
-      const exclBtnLbl = document.getElementById('lblExclusionsBtn');
-      if (exclBtnLbl) exclBtnLbl.textContent = s.settings_exclusions || 'Исключения автообновления';
-      const secSet = document.getElementById('secSettings');
-      if (secSet) secSet.textContent = s.settings || 'Настройки';
-      const lblExt = document.getElementById('lblExtractPath');
-      if (lblExt) lblExt.textContent = s.extract_path_label || 'Путь распаковки ZIP:';
-      const btnBr = document.getElementById('btnBrowse');
-      if (btnBr) btnBr.textContent = s.browse || 'Обзор...';
-      const btnDown = document.getElementById('btnDownloadSelected');
-      if (btnDown) btnDown.textContent = isDownloading ? (s.btn_cancel || 'Отменить') : (s.btn_download_selected || 'Скачать выбранное');
-      const btnInstAll = document.getElementById('btnInstallAll');
-      if (btnInstAll) btnInstAll.textContent = s.btn_install_all || 'Установить все скачанные';
-      const logLbl = document.getElementById('logLabel');
-      if (logLbl) logLbl.textContent = appData.lang === 'ru' ? 'Журнал событий' : 'Event Log';
+        try { updateExclusionsBadge(); } catch (e) { console.error('updateExclusionsBadge error:', e); }
 
-      // Settings Modal & Exclusions translations
-      const tabSettings = document.getElementById('tabBtnSettings');
-      if (tabSettings) {
-        const lbl = tabSettings.querySelector('.tab-label');
-        if (lbl) lbl.textContent = (s.settings || 'Настройки').replace(/^[^\w\u0400-\u04FF]+\s*/, '').trim();
-      }
-      const tabVT = document.getElementById('tabLabelVirusTotal');
-      if (tabVT) tabVT.textContent = s.tab_virustotal || 'VirusTotal';
-      const vtTitle = document.getElementById('vtMainTitle');
-      if (vtTitle) vtTitle.textContent = `🛡️ ${s.vt_title || 'Сканер файлов VirusTotal'}`;
-      const vtSub = document.getElementById('vtMainSubtitle');
-      if (vtSub) vtSub.textContent = s.vt_subtitle || 'Мгновенная проверка файлов и инсталляторов по базе 70+ антивирусных движков через официальный API.';
-      const vtKeyTitle = document.getElementById('vtKeyCardTitle');
-      if (vtKeyTitle) vtKeyTitle.textContent = `🔑 ${s.vt_api_key_title || 'Официальный бесплатный API ключ VirusTotal'}`;
-      const vtSaveKeyBtn = document.getElementById('btnVtSaveKey');
-      if (vtSaveKeyBtn) vtSaveKeyBtn.textContent = s.vt_save_key_btn || 'Сохранить ключ';
-      const vtDropTitle = document.getElementById('vtDropTitle');
-      if (vtDropTitle) vtDropTitle.textContent = s.vt_drop_title || 'Нажмите для выбора файла или перетащите его сюда';
-      const vtDropSub = document.getElementById('vtDropSub');
-      if (vtDropSub) vtDropSub.textContent = s.vt_drop_subtitle || 'Поддерживаются .exe, .msi, .dll, .zip, .7z, .iso и любые другие файлы';
-      const vtBtnSelectText = document.getElementById('vtBtnSelectText');
-      if (vtBtnSelectText) vtBtnSelectText.textContent = s.vt_btn_choose || '📁 Выбрать файл для сканирования';
-      const chipVtAll = document.getElementById('chipVtAll');
-      if (chipVtAll) chipVtAll.textContent = s.vt_filter_all || 'Все';
-      const chipVtMal = document.getElementById('chipVtMalicious');
-      if (chipVtMal && chipVtMal.childNodes[0]) chipVtMal.childNodes[0].nodeValue = (s.vt_filter_malicious || 'Только детекты') + ' ';
-      const btnVtUpload = document.getElementById('btnVtUploadFile');
-      if (btnVtUpload) btnVtUpload.textContent = s.vt_btn_upload || '📤 Отправить файл на сканирование (до 32 МБ)';
-      const vtNotFoundDesc = document.getElementById('vtNotFoundDesc');
-      if (vtNotFoundDesc) vtNotFoundDesc.textContent = s.vt_upload_hint || 'Хэш файла отсутствует в базе данных VirusTotal. Вы можете отправить его на анализ.';
-
-      const btnRegBkp = document.getElementById('btnRegBackupsFolderText');
-      if (btnRegBkp) btnRegBkp.textContent = `📁 ${s.reg_btn_backups_folder || 'Папка бэкапов'}`;
-      const btnRegRest = document.getElementById('btnRegRestoreBackupText');
-      if (btnRegRest) btnRegRest.textContent = `🔄 ${s.reg_btn_restore_backup || 'Восстановить из бэкапа'}`;
-
-      // Settings Modal translations
-      const isEn = appData.lang === 'en';
-      const setModalTitle = document.getElementById('settingsModalTitle');
-      if (setModalTitle) setModalTitle.textContent = isEn ? 'Application Settings' : 'Настройки приложения';
-      const setViewTitle = document.getElementById('settingsViewTitle');
-      if (setViewTitle) setViewTitle.textContent = s.settings_view_title || (isEn ? 'ZiablWinSetup Settings' : 'Настройки ZiablWinSetup');
-      const setViewSub = document.getElementById('settingsViewSubtitle');
-      if (setViewSub) setViewSub.textContent = s.settings_view_subtitle || (isEn ? 'UI scaling, extraction paths, background behavior, and maintenance tools.' : 'Параметры масштабирования, путей распаковки, фонового режима и системных инструментов.');
-      
-      const uiGroupTitle = document.getElementById('lblUiScaleGroupHeader');
-      if (uiGroupTitle) uiGroupTitle.textContent = s.ui_group_title || (isEn ? 'Interface & Scaling' : 'Интерфейс и масштабирование');
-      const uiScaleTitle = document.getElementById('lblUiScaleTitle');
-      if (uiScaleTitle) uiScaleTitle.textContent = isEn ? 'UI Scale' : 'Масштаб интерфейса';
-      const uiScaleDesc = document.getElementById('lblUiScaleDesc');
-      if (uiScaleDesc) uiScaleDesc.textContent = isEn ? 'Adjust element sizes for screen resolution (75% – 130%)' : 'Настройка размера элементов под разрешение экрана (75% – 130%)';
-
-      const pathsGroupTitle = document.getElementById('lblPathsGroupHeader');
-      if (pathsGroupTitle) pathsGroupTitle.textContent = s.paths_group_title || (isEn ? 'Extraction & Storage Paths' : 'Пути распаковки и сохранения');
-      const extractPathLbl = document.getElementById('lblExtractPath');
-      if (extractPathLbl) extractPathLbl.textContent = isEn ? 'Extraction folder for ZIP archives' : 'Папка распаковки ZIP-архивов';
-      const btnBrowse = document.getElementById('btnBrowse');
-      if (btnBrowse) btnBrowse.textContent = isEn ? '📂 Browse...' : '📂 Обзор...';
-      const btnPathDesktop = document.getElementById('btnPathDesktop');
-      if (btnPathDesktop) btnPathDesktop.textContent = isEn ? '🖥️ Desktop' : '🖥️ Desktop';
-      const btnPathExeDir = document.getElementById('btnPathExeDir');
-      if (btnPathExeDir) btnPathExeDir.textContent = isEn ? '📁 App Folder' : '📁 Рядом';
-
-      const sysGroupTitle = document.getElementById('lblSystemGroupTitle');
-      if (sysGroupTitle) sysGroupTitle.textContent = s.system_group_title || (isEn ? 'Operation Settings' : 'Параметры работы');
-      const minTray = document.getElementById('lblMinimizeToTray');
-      if (minTray) minTray.textContent = isEn ? 'Minimize to tray on close' : 'В трей при закрытии';
-      const minTrayDesc = document.getElementById('lblMinimizeToTrayDesc');
-      if (minTrayDesc) minTrayDesc.textContent = isEn ? 'Minimize to system tray instead of closing application' : 'Сворачивать в системный трей вместо полного закрытия приложения';
-      const autostartApp = document.getElementById('lblAutostartApp');
-      if (autostartApp) autostartApp.textContent = isEn ? 'Launch with Windows' : 'Автозапуск с Windows';
-      const autostartAppDesc = document.getElementById('lblAutostartAppDesc');
-      if (autostartAppDesc) autostartAppDesc.textContent = isEn ? 'Launch app automatically in background on Windows startup' : 'Автоматически запускать программу в фоне при старте системы';
-      const autoCheckApp = document.getElementById('lblAutoCheckAppUpdates');
-      if (autoCheckApp) autoCheckApp.textContent = isEn ? 'Auto-check ZiablWinSetup updates' : 'Автопоиск обновлений ZiablWinSetup';
-      const autoCheckAppDesc = document.getElementById('lblAutoCheckAppUpdatesDesc');
-      if (autoCheckAppDesc) autoCheckAppDesc.textContent = isEn ? 'Check for new ZiablWinSetup versions on launch' : 'Автоматически проверять наличие новой версии ZiablWinSetup при запуске';
-      const autoCheckSoft = document.getElementById('lblAutoCheckSoftwareUpdates');
-      if (autoCheckSoft) autoCheckSoft.textContent = isEn ? 'Auto-check software updates' : 'Автопоиск обновлений программ';
-      const autoCheckSoftDesc = document.getElementById('lblAutoCheckSoftwareUpdatesDesc');
-      if (autoCheckSoftDesc) autoCheckSoftDesc.textContent = isEn ? 'Check for updates of installed software on startup' : 'Фоновая проверка свежих версий установленных в Windows программ при старте';
-      const autoCleanLeft = document.getElementById('lblAutoCleanLeftovers');
-      if (autoCleanLeft) autoCleanLeft.textContent = isEn ? 'Auto-clean leftovers after uninstall' : 'Автоочистка остатков после удаления';
-      const autoCleanLeftDesc = document.getElementById('lblAutoCleanLeftoversDesc');
-      if (autoCleanLeftDesc) autoCleanLeftDesc.textContent = isEn ? 'Automatically clean leftover registry keys and folders without prompt' : 'Автоматически удалять хвосты реестра и папок без всплывающего запроса';
-
-      const toolsGroupTitle = document.getElementById('lblToolsGroupTitle');
-      if (toolsGroupTitle) toolsGroupTitle.textContent = s.tools_group_title || (isEn ? 'Tools & Maintenance' : 'Инструменты и обслуживание');
-      const bkpAppsTitle = document.getElementById('lblBackupAppsTitle');
-      if (bkpAppsTitle) bkpAppsTitle.textContent = isEn ? 'Backup & restore installed apps' : 'Резервная копия и восстановление программ';
-      const bkpAppsDesc = document.getElementById('lblBackupAppsDesc');
-      if (bkpAppsDesc) bkpAppsDesc.textContent = isEn ? 'Export list of installed software for restoration after Windows reinstall' : 'Экспорт списка установленного ПО для восстановления после переустановки Windows';
-      const btnExportAppsText = document.getElementById('btnExportAppsText');
-      if (btnExportAppsText) btnExportAppsText.textContent = isEn ? 'Create Backup' : 'Создать бэкап';
-      const btnImportAppsText = document.getElementById('btnImportAppsText');
-      if (btnImportAppsText) btnImportAppsText.textContent = isEn ? 'Restore' : 'Восстановить';
-
-      const exclRowTitle = document.getElementById('lblExclusionsRowTitle');
-      if (exclRowTitle) exclRowTitle.textContent = isEn ? 'Auto-update exclusions' : 'Исключения автообновления';
-      const exclRowDesc = document.getElementById('lblExclusionsRowDesc');
-      if (exclRowDesc) exclRowDesc.textContent = isEn ? 'Exclude specific catalog apps from bulk update' : 'Настроить программы каталога, которые не должны обновляться автоматически';
-      const btnExclSetting = document.getElementById('btnExclusionsSettingText');
-      if (btnExclSetting) btnExclSetting.textContent = isEn ? '⚙️ Configure' : '⚙️ Настроить';
-      const exclSelAll = document.getElementById('lblExclSelectAll');
-      if (exclSelAll) exclSelAll.textContent = s.select_all || (isEn ? 'Select all' : 'Выбрать все');
-      const exclDeselAll = document.getElementById('lblExclDeselectAll');
-      if (exclDeselAll) exclDeselAll.textContent = s.deselect_all || (isEn ? 'Deselect all' : 'Снять все');
-
-      const cleanInstTitle = document.getElementById('lblCleanInstallersRowTitle');
-      if (cleanInstTitle) cleanInstTitle.textContent = isEn ? 'Clean cache (.exe)' : 'Очистить кэш (.exe)';
-      const cleanInstDesc = document.getElementById('cleanInstallersDesc');
-      if (cleanInstDesc) cleanInstDesc.textContent = isEn ? 'Remove downloaded installers from temporary folder' : 'Удалить загруженные установщики программ из временной папки';
-      const cleanInstBtn = document.getElementById('lblCleanInstallersBtn');
-      if (cleanInstBtn) cleanInstBtn.textContent = s.btn_clean_installers || (isEn ? 'Clean Cache' : 'Очистить кэш');
-
-      const checkSelfTitle = document.getElementById('lblCheckUpdateRowTitle');
-      if (checkSelfTitle) checkSelfTitle.textContent = isEn ? 'ZiablWinSetup update' : 'Обновление ZiablWinSetup';
-      const checkSelfDesc = document.getElementById('lblCheckUpdateRowDesc');
-      if (checkSelfDesc) checkSelfDesc.textContent = isEn ? 'Check for new app release on GitHub' : 'Проверить наличие новой версии программы на GitHub';
-      const checkSelfBtn = document.getElementById('lblCheckSelfUpdateBtn');
-      if (checkSelfBtn) checkSelfBtn.textContent = isEn ? 'Check' : 'Проверить';
-
-      const btnSettingsDone = document.getElementById('btnSettingsModalDone');
-      if (btnSettingsDone) btnSettingsDone.textContent = isEn ? 'Done' : 'Готово';
-
-      // Footer event log & copy button
-      const logLbl = document.getElementById('logLabel');
-      if (logLbl) logLbl.textContent = isEn ? 'Event Log' : 'Журнал событий';
-      const btnCopyLogText = document.getElementById('btnCopyLogText');
-      if (btnCopyLogText) btnCopyLogText.textContent = isEn ? 'Copy all' : 'Копировать всё';
-      const overallStatus = document.getElementById('overallStatusText');
-      if (overallStatus && overallStatus.textContent && (overallStatus.textContent === 'Готов к работе' || overallStatus.textContent === 'Ready')) {
-        overallStatus.textContent = isEn ? 'Ready' : 'Готов к работе';
-      }
-
-      updateExclusionsBadge();
-
-      // Tabs & Tweaks translation
-      const tabApps = document.getElementById('tabBtnApps');
-      if (tabApps) {
-        const lbl = tabApps.querySelector('.tab-label');
-        if (lbl) lbl.textContent = (s.tab_apps || 'Приложения').replace(/^[^\w\u0400-\u04FF]+\s*/, '').trim();
-        else tabApps.textContent = s.tab_apps || 'Приложения';
-      }
-      const tabTweaks = document.getElementById('tabBtnTweaks');
-      if (tabTweaks) {
-        const lbl = tabTweaks.querySelector('.tab-label');
-        if (lbl) lbl.textContent = (s.tab_tweaks || 'Твики и фичи').replace(/^[^\w\u0400-\u04FF]+\s*/, '').trim();
-        else tabTweaks.textContent = s.tab_tweaks || 'Твики и фичи';
-      }
-      const updateBtn = document.getElementById('updateBtnText');
-      if (updateBtn) updateBtn.textContent = (s.btn_check_updates || 'Проверить обновления').replace(/^[^\w\u0400-\u04FF]+\s*/, '').trim();
-      const rescanBtn = document.getElementById('rescanBtnText');
-      if (rescanBtn) rescanBtn.textContent = (s.btn_rescan_installed || 'Проверить установленное').replace(/^[^\w\u0400-\u04FF]+\s*/, '').trim();
-      const twTitle = document.getElementById('tweaksTitle');
-      if (twTitle) twTitle.textContent = (s.tab_tweaks || 'Твики и фичи').replace(/^[^\w\u0400-\u04FF]+\s*/, '').trim();
-
-      const btnBUpAll = document.getElementById('btnBannerUpgradeAll');
-      if (btnBUpAll) btnBUpAll.textContent = s.btn_upgrade_all || '⬆️ Обновить все';
-      const btnBUpSel = document.getElementById('btnBannerUpgradeSelected');
-      if (btnBUpSel) btnBUpSel.textContent = s.btn_upgrade_selected || '⬆️ Обновить выбранные';
-
-      // Metro translation
-      const tabMetro = document.getElementById('tabBtnMetro');
-      if (tabMetro) {
-        const lbl = tabMetro.querySelector('.tab-label');
-        if (lbl) lbl.textContent = (s.tab_metro || 'Metro приложения').replace(/^[^\w\u0400-\u04FF]+\s*/, '').trim();
-        else tabMetro.textContent = s.tab_metro || 'Metro приложения';
-      }
-      const metroTitle = document.getElementById('metroTitle');
-      if (metroTitle) metroTitle.textContent = s.metro_title || '🪟 Встроенные Metro / UWP приложения Windows';
-      const metroSub = document.getElementById('metroSubtitle');
-      if (metroSub) metroSub.textContent = s.metro_subtitle || 'Удаляйте ненужные встроенные программы и восстанавливайте нужные в один клик.';
-      const btnMSelAll = document.getElementById('btnMetroSelectAll');
-      if (btnMSelAll) btnMSelAll.textContent = s.metro_select_all || 'Выбрать все';
-      const btnMDeselAll = document.getElementById('btnMetroDeselectAll');
-      if (btnMDeselAll) btnMDeselAll.textContent = s.metro_deselect_all || 'Снять все';
-      const btnMRemSel = document.getElementById('btnMetroRemoveSelected');
-      if (btnMRemSel) btnMRemSel.textContent = `🗑️ ${s.metro_btn_remove_selected || 'Удалить выбранные'}`;
-      const btnMResSel = document.getElementById('btnMetroRestoreSelected');
-      if (btnMResSel) btnMResSel.textContent = `↩️ ${s.metro_btn_restore_selected || 'Восстановить выбранные'}`;
-
-      // Metro filter chips & search translation
-      const setMetroChipText = (chipId, label, countId) => {
-        const chip = document.getElementById(chipId);
-        const countSpan = document.getElementById(countId);
-        if (chip && countSpan) {
-          const count = countSpan.textContent;
-          chip.innerHTML = `${label} (<span id="${countId}">${count}</span>)`;
+        // Tabs compact labels (strictly 1 line, no overflow!)
+        const tabApps = document.getElementById('tabBtnApps');
+        if (tabApps) {
+          const lbl = tabApps.querySelector('.tab-label');
+          if (lbl) lbl.textContent = isEn ? 'Apps' : 'Приложения';
+          else tabApps.textContent = isEn ? 'Apps' : 'Приложения';
         }
-      };
-      setMetroChipText('chipMetroAll', s.metro_filter_all || 'Все', 'countMetroAll');
-      setMetroChipText('chipMetroInstalled', s.metro_filter_installed || 'Установленные', 'countMetroInstalled');
-      setMetroChipText('chipMetroRemoved', s.metro_filter_removed || 'Удалённые', 'countMetroRemoved');
-
-      const mInp = document.getElementById('metroSearchInput');
-      if (mInp) mInp.placeholder = s.metro_search_placeholder || 'Поиск Metro-приложения...';
-
-      // Winget banner translation
-      const wbTitle = document.getElementById('wingetBannerTitle');
-      if (wbTitle) wbTitle.textContent = s.winget_banner_title || 'Windows Package Manager (Winget) не установлен в системе';
-      const wbDesc = document.getElementById('wingetBannerDesc');
-      if (wbDesc) wbDesc.textContent = s.winget_banner_desc || 'Он необходим для быстрой фоновой загрузки и автоматического обновления большинства программ.';
-      const wbBtnAuto = document.getElementById('btnInstallWingetAuto');
-      if (wbBtnAuto && !wbBtnAuto.disabled) wbBtnAuto.textContent = s.btn_install_winget_auto || '⚡ Установить Winget автоматически';
-      const wbBtnStore = document.getElementById('btnOpenWingetStore');
-      if (wbBtnStore) wbBtnStore.textContent = s.btn_open_store || '🛍️ Microsoft Store';
-
-      // Startup translation
-      const tabStartup = document.getElementById('tabBtnStartup');
-      if (tabStartup) {
-        const lbl = tabStartup.querySelector('.tab-label');
-        if (lbl) lbl.textContent = (s.tab_startup || 'Автозагрузка').replace(/^[^\w\u0400-\u04FF]+\s*/, '').trim();
-      }
-      const stTitle = document.getElementById('startupTitle');
-      if (stTitle) stTitle.textContent = s.startup_title || '🚀 Управление автозагрузкой Windows';
-      const stSub = document.getElementById('startupSubtitle');
-      if (stSub) stSub.textContent = s.startup_subtitle || 'Полный контроль автозапуска: Реестр (HKCU/HKLM), Папки «Автозагрузка» и Задачи планировщика Windows.';
-      const btnRSt = document.getElementById('btnRescanStartupText');
-      if (btnRSt) btnRSt.textContent = s.btn_refresh_startup || s.startup_refresh || 'Обновить список';
-      const sInp = document.getElementById('startupSearchInput');
-      if (sInp) sInp.placeholder = s.startup_search_placeholder || 'Поиск по имени или пути...';
-
-      const chipAll = document.getElementById('chipStartupAll');
-      if (chipAll && chipAll.childNodes[0]) chipAll.childNodes[0].nodeValue = (s.filter_all || 'Все') + ' ';
-      const chipReg = document.getElementById('chipStartupRegistry');
-      if (chipReg && chipReg.childNodes[0]) chipReg.childNodes[0].nodeValue = (s.startup_tab_registry || 'Реестр') + ' ';
-      const chipFld = document.getElementById('chipStartupFolder');
-      if (chipFld && chipFld.childNodes[0]) chipFld.childNodes[0].nodeValue = (s.startup_tab_folders || 'Папка') + ' ';
-      const chipTsk = document.getElementById('chipStartupTask');
-      if (chipTsk && chipTsk.childNodes[0]) chipTsk.childNodes[0].nodeValue = (s.startup_tab_scheduler || 'Планировщик') + ' ';
-
-      // Startup add & sort & chips
-      const btnAddStText = document.getElementById('btnAddStartupItemText') || document.getElementById('btnAddStText');
-      if (btnAddStText) btnAddStText.textContent = s.startup_add_btn || 'Добавить программу';
-      const sortBtn = document.getElementById('btnStartupSort');
-      if (sortBtn) {
-        const sortSpan = sortBtn.querySelector('span');
-        if (sortSpan) sortSpan.textContent = s.startup_sort_label || '↕️ Сортировка:';
-      }
-      const lblSort = document.getElementById('lblStartupSort');
-      if (lblSort) {
-        lblSort.textContent = (typeof startupSortMode !== 'undefined' && startupSortMode === 'enabled_first') ? (s.startup_sort_enabled_first || 'Сначала вкл.') : (s.cat_all || 'Все');
-      }
-
-      const setChipText = (chipId, label, countId) => {
-        const chip = document.getElementById(chipId);
-        const countSpan = document.getElementById(countId);
-        if (chip && countSpan) {
-          const count = countSpan.textContent;
-          chip.innerHTML = `${label} (<span id="${countId}">${count}</span>)`;
+        const tabTweaks = document.getElementById('tabBtnTweaks');
+        if (tabTweaks) {
+          const lbl = tabTweaks.querySelector('.tab-label');
+          if (lbl) lbl.textContent = isEn ? 'Tweaks' : 'Твики';
+          else tabTweaks.textContent = isEn ? 'Tweaks' : 'Твики';
         }
-      };
-      setChipText('chipStartupAll', s.startup_filter_all || 'Все', 'countStartupAll');
-      setChipText('chipStartupEnabled', s.startup_filter_enabled || '🟢 Включено', 'countStartupEnabled');
-      setChipText('chipStartupDisabled', s.startup_filter_disabled || '⚪ Отключено', 'countStartupDisabled');
-      setChipText('chipStartupRegistry', s.startup_tab_registry || 'Реестр', 'countStartupRegistry');
-      setChipText('chipStartupFolder', s.startup_tab_folders || 'Папка', 'countStartupFolder');
-      setChipText('chipStartupTask', s.startup_tab_scheduler || 'Планировщик', 'countStartupTask');
-      setChipText('chipStartupUwp', s.startup_tab_uwp || 'Store / UWP', 'countStartupUwp');
-      setChipText('chipStartupService', s.startup_tab_services || 'Службы', 'countStartupService');
+        const tabMetro = document.getElementById('tabBtnMetro');
+        if (tabMetro) {
+          const lbl = tabMetro.querySelector('.tab-label');
+          if (lbl) lbl.textContent = 'Metro';
+          else tabMetro.textContent = 'Metro';
+        }
+        const tabStartup = document.getElementById('tabBtnStartup');
+        if (tabStartup) {
+          const lbl = tabStartup.querySelector('.tab-label');
+          if (lbl) lbl.textContent = isEn ? 'Startup' : 'Автозапуск';
+          else tabStartup.textContent = isEn ? 'Startup' : 'Автозапуск';
+        }
+        const tabSettings = document.getElementById('tabBtnSettings');
+        if (tabSettings) {
+          const lbl = tabSettings.querySelector('.tab-label');
+          if (lbl) lbl.textContent = isEn ? 'Settings' : 'Настройки';
+          else tabSettings.textContent = isEn ? 'Settings' : 'Настройки';
+        }
 
-      // Add Startup Item Modal
-      const modalStTitle = document.getElementById('addStartupModalTitle');
-      if (modalStTitle) modalStTitle.textContent = s.startup_add_modal_title || 'Добавить программу в автозапуск';
-      const modalStDesc = document.getElementById('addStartupModalDesc');
-      if (modalStDesc) modalStDesc.textContent = s.startup_add_modal_desc || 'Программа будет автоматически запускаться при старте Windows.';
-      const lblStName = document.getElementById('lblAddStartupName');
-      if (lblStName) lblStName.textContent = s.startup_add_name_label || 'Название программы:';
-      const lblStPath = document.getElementById('lblAddStartupPath');
-      if (lblStPath) lblStPath.textContent = s.startup_add_path_label || 'Исполняемый файл (.exe / .lnk):';
-      const lblStArgs = document.getElementById('lblAddStartupArgs');
-      if (lblStArgs) lblStArgs.textContent = s.startup_add_args_label || 'Параметры запуска (необязательно):';
-      const btnStCancel = document.getElementById('btnCancelAddStartup');
-      if (btnStCancel) btnStCancel.textContent = s.btn_cancel || 'Отмена';
-      const btnStSubmit = document.getElementById('btnSubmitAddStartup');
-      if (btnStSubmit) btnStSubmit.textContent = s.startup_add_btn_confirm || 'Добавить';
-      const btnStBrowse = document.getElementById('btnBrowseStartup');
-      if (btnStBrowse) btnStBrowse.textContent = `📂 ${s.browse || 'Обзор...'}`;
+        // Header update buttons (strictly 1 line, no overflow!)
+        const updateBtn = document.getElementById('updateBtnText');
+        if (updateBtn) updateBtn.textContent = isEn ? 'Updates' : 'Обновления';
+        const rescanBtn = document.getElementById('rescanBtnText');
+        if (rescanBtn) rescanBtn.textContent = isEn ? 'Installed' : 'Установленное';
 
-      // Leftovers Modal (Uninstall Tool)
-      const lTitle = document.getElementById('leftoversModalTitle');
-      if (lTitle) lTitle.textContent = s.leftovers_modal_title || 'Очистка остатков (Uninstall Tool)';
-      const lDesc = document.getElementById('leftoversModalDesc');
-      if (lDesc) lDesc.textContent = s.leftovers_modal_desc || 'Стандартный деинсталлятор завершил работу. Обнаружены следующие оставшиеся элементы:';
-      const lRem = document.getElementById('lblLeftoversRemember');
-      if (lRem) lRem.textContent = s.leftovers_remember_choice || 'Запомнить выбор (всегда очищать остатки автоматически)';
-      const lSkip = document.getElementById('leftoversSkipBtn');
-      if (lSkip) lSkip.textContent = s.leftovers_btn_skip || 'Пропустить';
-      const lClean = document.getElementById('leftoversCleanBtn');
-      if (lClean) lClean.textContent = s.leftovers_btn_clean || 'Удалить остатки';
+        // Tweaks view headers
+        const twTitle = document.getElementById('tweaksTitle');
+        if (twTitle) twTitle.textContent = isEn ? 'Windows Tweaks & Optimizations' : (s.tab_tweaks || 'Системные твики и оптимизация Windows');
+        const twSub = document.getElementById('tweaksSubtitle');
+        if (twSub) twSub.textContent = isEn ? 'Useful Windows system settings and software optimizations in one click.' : (s.tweaks_subtitle || 'Полезные системные настройки Windows и оптимизации программ в один клик.');
 
-      // Settings modal additions
-      const lblAutoLeftovers = document.getElementById('lblAutoCleanLeftovers');
-      if (lblAutoLeftovers) lblAutoLeftovers.textContent = s.settings_auto_clean_leftovers || 'Автоочистка остатков после удаления';
-      const btnPathExeDir = document.getElementById('btnPathExeDir');
-      if (btnPathExeDir) btnPathExeDir.textContent = s.settings_path_exe_dir || '📁 Рядом';
-      const setDoneBtn = document.getElementById('btnSettingsDone');
-      if (setDoneBtn) setDoneBtn.textContent = s.btn_done || 'Готово';
+        const btnBUpAll = document.getElementById('btnBannerUpgradeAll');
+        if (btnBUpAll) btnBUpAll.textContent = isEn ? '⬆️ Update all' : (s.btn_upgrade_all || '⬆️ Обновить все');
+        const btnBUpSel = document.getElementById('btnBannerUpgradeSelected');
+        if (btnBUpSel) btnBUpSel.textContent = isEn ? '⬆️ Update selected' : (s.btn_upgrade_selected || '⬆️ Обновить выбранные');
 
-      // Exclusions Modal
-      const exclTitle = document.getElementById('exclusionsModalTitle');
-      if (exclTitle) exclTitle.textContent = s.exclusions_modal_title || 'Исключения из автообновлений';
-      const exclDesc = document.getElementById('exclusionsModalDesc');
-      if (exclDesc) exclDesc.textContent = s.exclusions_modal_desc || 'Отмеченные программы будут пропускаться при поиске и предложении обновлений.';
-      const exclDoneBtn = document.getElementById('btnExclusionsCloseBottom');
-      if (exclDoneBtn) exclDoneBtn.textContent = s.btn_done || 'Готово';
+        // Metro translation
+        const metroTitle = document.getElementById('metroTitle');
+        if (metroTitle) metroTitle.textContent = isEn ? '🪟 Windows Built-in Metro / UWP Apps' : (s.metro_title || '🪟 Встроенные Metro / UWP приложения Windows');
+        const metroSub = document.getElementById('metroSubtitle');
+        if (metroSub) metroSub.textContent = isEn ? 'Uninstall bloatware and restore built-in apps with one click.' : (s.metro_subtitle || 'Удаляйте ненужные встроенные программы и восстанавливайте нужные в один клик.');
+        const btnMSelAll = document.getElementById('btnMetroSelectAll');
+        if (btnMSelAll) btnMSelAll.textContent = isEn ? 'Select all' : (s.metro_select_all || 'Выбрать все');
+        const btnMDeselAll = document.getElementById('btnMetroDeselectAll');
+        if (btnMDeselAll) btnMDeselAll.textContent = isEn ? 'Deselect all' : (s.metro_deselect_all || 'Снять все');
+        const btnMRemSel = document.getElementById('btnMetroRemoveSelected');
+        if (btnMRemSel) btnMRemSel.textContent = `🗑️ ${isEn ? 'Remove selected' : (s.metro_btn_remove_selected || 'Удалить выбранные')}`;
+        const btnMResSel = document.getElementById('btnMetroRestoreSelected');
+        if (btnMResSel) btnMResSel.textContent = `↩️ ${isEn ? 'Restore selected' : (s.metro_btn_restore_selected || 'Восстановить выбранные')}`;
 
-      // Tweaks subtitle
-      const twSub = document.getElementById('tweaksSubtitle');
-      if (twSub) twSub.textContent = s.tweaks_subtitle || 'Полезные системные настройки Windows и оптимизации программ в один клик.';
+        // Metro filter chips & search translation
+        const setMetroChipText = (chipId, label, countId) => {
+          const chip = document.getElementById(chipId);
+          const countSpan = document.getElementById(countId);
+          if (chip && countSpan) {
+            const count = countSpan.textContent;
+            chip.innerHTML = `${label} (<span id="${countId}">${count}</span>)`;
+          }
+        };
+        setMetroChipText('chipMetroAll', isEn ? 'All' : (s.metro_filter_all || 'Все'), 'countMetroAll');
+        setMetroChipText('chipMetroInstalled', isEn ? 'Installed' : (s.metro_filter_installed || 'Установленные'), 'countMetroInstalled');
+        setMetroChipText('chipMetroRemoved', isEn ? 'Removed' : (s.metro_filter_removed || 'Удалённые'), 'countMetroRemoved');
 
-      const lblTray = document.getElementById('lblMinimizeToTray');
-      if (lblTray) lblTray.textContent = s.settings_minimize_to_tray || 'В трей при закрытии';
-      const lblAuto = document.getElementById('lblAutostartApp');
-      if (lblAuto) lblAuto.textContent = s.settings_autostart_app || 'Автозапуск с Windows';
+        const mInp = document.getElementById('metroSearchInput');
+        if (mInp) mInp.placeholder = isEn ? 'Search Metro apps...' : (s.metro_search_placeholder || 'Поиск Metro-приложения...');
 
-      // Self-update translations
-      const suTitle = document.getElementById('selfUpdateModalTitle');
-      if (suTitle) suTitle.textContent = s.self_update_modal_title || '🎉 Доступно обновление ZiablWinSetup!';
-      const suDesc = document.getElementById('selfUpdateModalDesc');
-      if (suDesc) suDesc.textContent = s.self_update_modal_desc || 'Вышла новая версия приложения с новыми возможностями и улучшениями.';
-      const suCurLbl = document.getElementById('lblSelfUpdateCurrent');
-      if (suCurLbl) suCurLbl.textContent = s.self_update_current_ver || 'Текущая версия';
-      const suNewLbl = document.getElementById('lblSelfUpdateNew');
-      if (suNewLbl) suNewLbl.textContent = s.self_update_new_ver || 'Новая версия';
-      const suNotesTitle = document.getElementById('selfUpdateNotesTitle');
-      if (suNotesTitle) suNotesTitle.textContent = s.self_update_notes_title || 'Что нового:';
-      const suBtnInst = document.getElementById('btnSelfUpdateInstall');
-      if (suBtnInst && !isSelfUpdating) suBtnInst.textContent = s.self_update_btn_install || '⚡ Обновить и перезапустить';
-      const suBtnLater = document.getElementById('btnSelfUpdateLater');
-      if (suBtnLater) suBtnLater.textContent = s.self_update_btn_later || 'Напомнить позже';
-      const suBtnSkip = document.getElementById('btnSelfUpdateSkip');
-      if (suBtnSkip) suBtnSkip.textContent = s.self_update_btn_skip || 'Пропустить эту версию';
-      const suBtnGh = document.getElementById('btnSelfUpdateGithub');
-      if (suBtnGh) suBtnGh.textContent = s.self_update_btn_github || 'GitHub';
-      const suChkLbl = document.getElementById('lblAutoCheckAppUpdates');
-      if (suChkLbl) suChkLbl.textContent = appData.lang === 'ru' ? 'Автопоиск обновлений ZiablWinSetup' : 'Auto check ZiablWinSetup updates';
-      const suSoftChkLbl = document.getElementById('lblAutoCheckSoftwareUpdates');
-      if (suSoftChkLbl) suSoftChkLbl.textContent = appData.lang === 'ru' ? 'Автопоиск обновлений программ' : 'Auto check software updates';
-      const suBtnCheckLbl = document.getElementById('lblCheckSelfUpdateBtn');
-      if (suBtnCheckLbl) suBtnCheckLbl.textContent = s.btn_check_app_update || 'Обновление программы';
+        // Winget banner translation
+        const wbTitle = document.getElementById('wingetBannerTitle');
+        if (wbTitle) wbTitle.textContent = isEn ? 'Windows Package Manager (Winget) is not installed' : (s.winget_banner_title || 'Windows Package Manager (Winget) не установлен в системе');
+        const wbDesc = document.getElementById('wingetBannerDesc');
+        if (wbDesc) wbDesc.textContent = isEn ? 'It is recommended for fast background downloads and automatic software updates.' : (s.winget_banner_desc || 'Он необходим для быстрой фоновой загрузки и автоматического обновления большинства программ.');
+        const wbBtnAuto = document.getElementById('btnInstallWingetAuto');
+        if (wbBtnAuto && !wbBtnAuto.disabled) wbBtnAuto.textContent = isEn ? '⚡ Install Winget automatically' : (s.btn_install_winget_auto || '⚡ Установить Winget автоматически');
+        const wbBtnStore = document.getElementById('btnOpenWingetStore');
+        if (wbBtnStore) wbBtnStore.textContent = isEn ? '🛍️ Microsoft Store' : (s.btn_open_store || '🛍️ Microsoft Store');
+
+        // Startup translation
+        const stTitle = document.getElementById('startupTitle');
+        if (stTitle) stTitle.textContent = isEn ? '🚀 Windows Startup Management' : (s.startup_title || '🚀 Управление автозагрузкой Windows');
+        const stSub = document.getElementById('startupSubtitle');
+        if (stSub) stSub.textContent = isEn ? 'Full startup control: Registry (HKCU/HKLM), Startup folders, and Task Scheduler.' : (s.startup_subtitle || 'Полный контроль автозапуска: Реестр (HKCU/HKLM), Папки «Автозагрузка» и Задачи планировщика Windows.');
+        const btnRSt = document.getElementById('btnRescanStartupText');
+        if (btnRSt) btnRSt.textContent = isEn ? 'Refresh list' : (s.btn_refresh_startup || 'Обновить список');
+        const sInp = document.getElementById('startupSearchInput');
+        if (sInp) sInp.placeholder = isEn ? 'Search by name or path...' : (s.startup_search_placeholder || 'Поиск по имени или пути...');
+
+        // Startup add & sort & chips
+        const btnAddStText = document.getElementById('btnAddStartupItemText') || document.getElementById('btnAddStText');
+        if (btnAddStText) btnAddStText.textContent = isEn ? 'Add Program' : (s.startup_add_btn || 'Добавить программу');
+        const sortBtn = document.getElementById('btnStartupSort');
+        if (sortBtn) {
+          const sortSpan = sortBtn.querySelector('span');
+          if (sortSpan) sortSpan.textContent = isEn ? '↕️ Sort by:' : (s.startup_sort_label || '↕️ Сортировка:');
+        }
+        const lblSort = document.getElementById('lblStartupSort');
+        if (lblSort) {
+          lblSort.textContent = (typeof startupSortMode !== 'undefined' && startupSortMode === 'enabled_first') 
+            ? (isEn ? 'Enabled first' : (s.startup_sort_enabled_first || 'Сначала вкл.')) 
+            : (isEn ? 'All' : (s.cat_all || 'Все'));
+        }
+
+        const setChipText = (chipId, label, countId) => {
+          const chip = document.getElementById(chipId);
+          const countSpan = document.getElementById(countId);
+          if (chip && countSpan) {
+            const count = countSpan.textContent;
+            chip.innerHTML = `${label} (<span id="${countId}">${count}</span>)`;
+          }
+        };
+        setChipText('chipStartupAll', isEn ? 'All' : (s.startup_filter_all || 'Все'), 'countStartupAll');
+        setChipText('chipStartupEnabled', isEn ? '🟢 Enabled' : (s.startup_filter_enabled || '🟢 Включено'), 'countStartupEnabled');
+        setChipText('chipStartupDisabled', isEn ? '⚪ Disabled' : (s.startup_filter_disabled || '⚪ Отключено'), 'countStartupDisabled');
+        setChipText('chipStartupRegistry', isEn ? 'Registry' : (s.startup_tab_registry || 'Реестр'), 'countStartupRegistry');
+        setChipText('chipStartupFolder', isEn ? 'Folder' : (s.startup_tab_folders || 'Папка'), 'countStartupFolder');
+        setChipText('chipStartupTask', isEn ? 'Scheduler' : (s.startup_tab_scheduler || 'Планировщик'), 'countStartupTask');
+        setChipText('chipStartupUwp', isEn ? 'Store / UWP' : (s.startup_tab_uwp || 'Store / UWP'), 'countStartupUwp');
+        setChipText('chipStartupService', isEn ? 'Services' : (s.startup_tab_services || 'Службы'), 'countStartupService');
+
+        // Add Startup Item Modal
+        const modalStTitle = document.getElementById('addStartupModalTitle');
+        if (modalStTitle) modalStTitle.textContent = isEn ? 'Add Program to Startup' : (s.startup_add_modal_title || 'Добавить программу в автозапуск');
+        const modalStDesc = document.getElementById('addStartupModalDesc');
+        if (modalStDesc) modalStDesc.textContent = isEn ? 'The application will start automatically when Windows boots.' : (s.startup_add_modal_desc || 'Программа будет автоматически запускаться при старте Windows.');
+        const lblStName = document.getElementById('lblAddStartupName');
+        if (lblStName) lblStName.textContent = isEn ? 'Program name:' : (s.startup_add_name_label || 'Название программы:');
+        const lblStPath = document.getElementById('lblAddStartupPath');
+        if (lblStPath) lblStPath.textContent = isEn ? 'Executable file (.exe / .lnk):' : (s.startup_add_path_label || 'Исполняемый файл (.exe / .lnk):');
+        const lblStArgs = document.getElementById('lblAddStartupArgs');
+        if (lblStArgs) lblStArgs.textContent = isEn ? 'Launch arguments (optional):' : (s.startup_add_args_label || 'Параметры запуска (необязательно):');
+        const btnStCancel = document.getElementById('btnCancelAddStartup');
+        if (btnStCancel) btnStCancel.textContent = isEn ? 'Cancel' : (s.btn_cancel || 'Отмена');
+        const btnStSubmit = document.getElementById('btnSubmitAddStartup');
+        if (btnStSubmit) btnStSubmit.textContent = isEn ? 'Add' : (s.startup_add_btn_confirm || 'Добавить');
+        const btnStBrowse = document.getElementById('btnBrowseStartup');
+        if (btnStBrowse) btnStBrowse.textContent = `📂 ${isEn ? 'Browse...' : (s.browse || 'Обзор...')}`;
+
+        // Leftovers Modal (Uninstall Tool)
+        const lTitle = document.getElementById('leftoversModalTitle');
+        if (lTitle) lTitle.textContent = isEn ? 'Leftovers Cleanup (Uninstall Tool)' : (s.leftovers_modal_title || 'Очистка остатков (Uninstall Tool)');
+        const lDesc = document.getElementById('leftoversModalDesc');
+        if (lDesc) lDesc.textContent = isEn ? 'Standard uninstaller has finished. The following residual items were detected:' : (s.leftovers_modal_desc || 'Стандартный деинсталлятор завершил работу. Обнаружены следующие оставшиеся элементы:');
+        const lRem = document.getElementById('lblLeftoversRemember');
+        if (lRem) lRem.textContent = isEn ? 'Remember choice (always clean leftovers automatically)' : (s.leftovers_remember_choice || 'Запомнить выбор (всегда очищать остатки автоматически)');
+        const lSkip = document.getElementById('leftoversSkipBtn');
+        if (lSkip) lSkip.textContent = isEn ? 'Skip' : (s.leftovers_btn_skip || 'Пропустить');
+        const lClean = document.getElementById('leftoversCleanBtn');
+        if (lClean) lClean.textContent = isEn ? 'Delete leftovers' : (s.leftovers_btn_clean || 'Удалить остатки');
+
+        // Exclusions Modal
+        const exclTitle = document.getElementById('exclusionsModalTitle');
+        if (exclTitle) exclTitle.textContent = isEn ? 'Auto-update exclusions' : (s.exclusions_modal_title || 'Исключения из автообновлений');
+        const exclDesc = document.getElementById('exclusionsModalDesc');
+        if (exclDesc) exclDesc.textContent = isEn ? 'Marked applications will be skipped during update checks.' : (s.exclusions_modal_desc || 'Отмеченные программы будут пропускаться при поиске и предложении обновлений.');
+        const exclDoneBtn = document.getElementById('btnExclusionsCloseBottom');
+        if (exclDoneBtn) exclDoneBtn.textContent = isEn ? 'Done' : (s.btn_done || 'Готово');
+
+        // Self-update translations
+        const suTitle = document.getElementById('selfUpdateModalTitle');
+        if (suTitle) suTitle.textContent = isEn ? '🎉 ZiablWinSetup Update Available!' : (s.self_update_modal_title || '🎉 Доступно обновление ZiablWinSetup!');
+        const suDesc = document.getElementById('selfUpdateModalDesc');
+        if (suDesc) suDesc.textContent = isEn ? 'A new version with new features and improvements has been released.' : (s.self_update_modal_desc || 'Вышла новая версия приложения с новыми возможностями и улучшениями.');
+        const suCurLbl = document.getElementById('lblSelfUpdateCurrent');
+        if (suCurLbl) suCurLbl.textContent = isEn ? 'Current version' : (s.self_update_current_ver || 'Текущая версия');
+        const suNewLbl = document.getElementById('lblSelfUpdateNew');
+        if (suNewLbl) suNewLbl.textContent = isEn ? 'New version' : (s.self_update_new_ver || 'Новая версия');
+        const suNotesTitle = document.getElementById('selfUpdateNotesTitle');
+        if (suNotesTitle) suNotesTitle.textContent = isEn ? 'Changelog:' : (s.self_update_notes_title || 'Что нового:');
+        const suBtnInst = document.getElementById('btnSelfUpdateInstall');
+        if (suBtnInst && !isSelfUpdating) suBtnInst.textContent = isEn ? '⚡ Update and restart' : (s.self_update_btn_install || '⚡ Обновить и перезапустить');
+        const suBtnLater = document.getElementById('btnSelfUpdateLater');
+        if (suBtnLater) suBtnLater.textContent = isEn ? 'Remind later' : (s.self_update_btn_later || 'Напомнить позже');
+        const suBtnSkip = document.getElementById('btnSelfUpdateSkip');
+        if (suBtnSkip) suBtnSkip.textContent = isEn ? 'Skip this version' : (s.self_update_btn_skip || 'Пропустить эту версию');
+        const suBtnGh = document.getElementById('btnSelfUpdateGithub');
+        if (suBtnGh) suBtnGh.textContent = 'GitHub';
+      } catch (err) {
+        console.error('applyTranslations error:', err);
+      }
     }
 
     async function toggleLanguage() {
@@ -6856,12 +6868,6 @@
     window.openBackupsFolder = openBackupsFolder;
 
     async function restoreRegistryBackupPrompt() {
-      const regInput = document.getElementById('regBackupFileInput');
-      if (regInput) {
-        regInput.value = '';
-        regInput.click();
-        return;
-      }
       try {
         if (window.pywebview && window.pywebview.api && window.pywebview.api.restore_registry_backup_dialog) {
           const res = await window.pywebview.api.restore_registry_backup_dialog();
@@ -6873,10 +6879,15 @@
           } else if (res && !res.cancelled && res.message) {
             showToast(res.message, 'error');
           }
+          return;
         }
       } catch (err) {
-        console.error('restoreRegistryBackupPrompt error:', err);
-        showToast(`Ошибка восстановления: ${err}`, 'error');
+        console.error('restore_registry_backup_dialog error, falling back to input:', err);
+      }
+      const regInput = document.getElementById('regBackupFileInput');
+      if (regInput) {
+        regInput.value = '';
+        regInput.click();
       }
     }
     window.restoreRegistryBackupPrompt = restoreRegistryBackupPrompt;
@@ -7642,6 +7653,21 @@
       if (event) {
         event.preventDefault();
         event.stopPropagation();
+      }
+      if (window.pywebview && window.pywebview.api && window.pywebview.api.browse_and_scan_virustotal) {
+        window.pywebview.api.browse_and_scan_virustotal().then(res => {
+          if (res && !res.cancelled) {
+            handleVtScanResult(res);
+          }
+        }).catch(err => {
+          console.warn('Native VT browse error, falling back to file input:', err);
+          const fileInput = document.getElementById('vtFileInput');
+          if (fileInput) {
+            fileInput.value = '';
+            fileInput.click();
+          }
+        });
+        return;
       }
       const fileInput = document.getElementById('vtFileInput');
       if (fileInput) {

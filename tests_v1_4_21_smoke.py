@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.abspath("."))
 class TestVersion(unittest.TestCase):
     def test_version_string(self):
         from app.version import __version__, APP_NAME
-        self.assertEqual(__version__, "1.4.23")
+        self.assertEqual(__version__, "1.4.24")
         self.assertEqual(APP_NAME, "ZiablWinSetup")
 
 
@@ -320,7 +320,7 @@ class TestWebAPI(unittest.TestCase):
 
         # Check basic methods return valid structures
         init_data = bridge.get_initial_data()
-        self.assertEqual(init_data["system_info"]["app_version"], "1.4.23")
+        self.assertEqual(init_data["system_info"]["app_version"], "1.4.24")
 
         cat = init_data["apps"]
         self.assertIsInstance(cat, list)
@@ -421,6 +421,42 @@ class TestTweakProcessHandling(unittest.TestCase):
             self.assertEqual(len(saved_file_bytes), 1)
             # UTF-16 LE file must start with BOM FF FE
             self.assertTrue(saved_file_bytes[0].startswith(b"\xff\xfe"), "Registry file must be saved in UTF-16 LE with BOM")
+
+    def test_index_html_javascript_syntax(self):
+        import re, subprocess, shutil
+        node_bin = shutil.which("node")
+        self.assertIsNotNone(node_bin, "Node.js must be installed for JS syntax validation")
+
+        html_path = Path("app/ui/index.html")
+        html = html_path.read_text(encoding="utf-8")
+        scripts = re.findall(r"<script.*?>([\s\S]*?)</script>", html, re.IGNORECASE)
+        valid_scripts = [s for s in scripts if len(s.strip()) > 50]
+        self.assertGreater(len(valid_scripts), 0, "Must find at least one valid script block in index.html")
+
+        import tempfile
+        for idx, s in enumerate(valid_scripts):
+            with tempfile.NamedTemporaryFile("w", encoding="utf-8", suffix=".js", delete=False) as tf:
+                tf.write(s)
+                t_name = tf.name
+            try:
+                res = subprocess.run([node_bin, "--check", t_name], capture_output=True, text=True)
+                self.assertEqual(
+                    res.returncode, 0,
+                    f"JavaScript Syntax Error in script {idx} of app/ui/index.html:\n{res.stderr}"
+                )
+            finally:
+                try:
+                    os.unlink(t_name)
+                except Exception:
+                    pass
+
+    def test_init_app_defaults_and_translations_safety(self):
+        html_path = Path("app/ui/index.html")
+        content = html_path.read_text(encoding="utf-8")
+        self.assertIn("window.onerror", content, "Global error handler window.onerror must exist")
+        self.assertIn("try { applyTranslations(); }", content, "applyTranslations call in initAppDefaults must be wrapped in try/catch")
+        self.assertIn("try { renderCategories(); }", content, "renderCategories call in initAppDefaults must be wrapped in try/catch")
+        self.assertIn("try { renderCards(); }", content, "renderCards call in initAppDefaults must be wrapped in try/catch")
 
 
 if __name__ == "__main__":
