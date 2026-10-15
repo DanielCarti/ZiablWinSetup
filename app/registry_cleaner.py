@@ -57,8 +57,19 @@ def _export_key_to_reg_lines(hkey_constant, subkey_path: str) -> list[str]:
     hkey_name = _get_hkey_name(hkey_constant)
     full_key_header = f"[{hkey_name}\\{subkey_path}]"
 
+    key = None
+    for flag in (winreg.KEY_READ, winreg.KEY_READ | getattr(winreg, "KEY_WOW64_64KEY", 0), winreg.KEY_READ | getattr(winreg, "KEY_WOW64_32KEY", 0)):
+        try:
+            key = winreg.OpenKey(hkey_constant, subkey_path, 0, flag)
+            break
+        except Exception:
+            pass
+
+    if not key:
+        return lines
+
     try:
-        with winreg.OpenKey(hkey_constant, subkey_path, 0, winreg.KEY_READ) as key:
+        with key:
             lines.append(full_key_header)
             num_subkeys, num_values, _ = winreg.QueryInfoKey(key)
 
@@ -67,17 +78,12 @@ def _export_key_to_reg_lines(hkey_constant, subkey_path: str) -> list[str]:
                     vn, val, val_type = winreg.EnumValue(key, i)
                     v_name_escaped = f'"{vn.replace(chr(92), chr(92)*2).replace(chr(34), chr(92)+chr(34))}"' if vn else "@"
 
-                    if val_type == winreg.REG_SZ:
+                    if val_type in (winreg.REG_SZ, winreg.REG_EXPAND_SZ):
                         s_val = str(val).replace("\\", "\\\\").replace('"', '\\"')
-                        lines.append(f'{v_name_escaped}="{s_val}"')
-                    elif val_type == winreg.REG_EXPAND_SZ:
-                        s_val = str(val).replace("\\", "\\\\").replace('"', '\\"')
-                        # REG_EXPAND_SZ можно экспортировать как hex(2) или строку
                         lines.append(f'{v_name_escaped}="{s_val}"')
                     elif val_type == winreg.REG_DWORD:
                         lines.append(f"{v_name_escaped}=dword:{val:08x}")
                     elif val_type == winreg.REG_MULTI_SZ:
-                        # Сериализация списка строк
                         hex_bytes = b"".join(s.encode("utf-16le") + b"\x00\x00" for s in val) + b"\x00\x00"
                         hex_str = ",".join(f"{b:02x}" for b in hex_bytes)
                         lines.append(f"{v_name_escaped}=hex(7):{hex_str}")
@@ -106,48 +112,150 @@ def _export_single_value_to_reg_lines(hkey_constant, subkey_path: str, value_nam
     hkey_name = _get_hkey_name(hkey_constant)
     full_key_header = f"[{hkey_name}\\{subkey_path}]"
 
-    try:
-        with winreg.OpenKey(hkey_constant, subkey_path, 0, winreg.KEY_READ) as key:
-            val, val_type = winreg.QueryValueEx(key, value_name)
-            lines.append(full_key_header)
-            v_name_escaped = f'"{value_name.replace(chr(92), chr(92)*2).replace(chr(34), chr(92)+chr(34))}"' if value_name else "@"
+    for flag in (winreg.KEY_READ, winreg.KEY_READ | getattr(winreg, "KEY_WOW64_64KEY", 0), winreg.KEY_READ | getattr(winreg, "KEY_WOW64_32KEY", 0)):
+        try:
+            with winreg.OpenKey(hkey_constant, subkey_path, 0, flag) as key:
+                val, val_type = winreg.QueryValueEx(key, value_name)
+                lines.append(full_key_header)
+                v_name_escaped = f'"{value_name.replace(chr(92), chr(92)*2).replace(chr(34), chr(92)+chr(34))}"' if value_name else "@"
 
-            if val_type in (winreg.REG_SZ, winreg.REG_EXPAND_SZ):
-                s_val = str(val).replace("\\", "\\\\").replace('"', '\\"')
-                lines.append(f'{v_name_escaped}="{s_val}"')
-            elif val_type == winreg.REG_DWORD:
-                lines.append(f"{v_name_escaped}=dword:{val:08x}")
-            else:
-                s_val = str(val).replace("\\", "\\\\").replace('"', '\\"')
-                lines.append(f'{v_name_escaped}="{s_val}"')
-            lines.append("")
-    except Exception:
-        pass
+                if val_type in (winreg.REG_SZ, winreg.REG_EXPAND_SZ):
+                    s_val = str(val).replace("\\", "\\\\").replace('"', '\\"')
+                    lines.append(f'{v_name_escaped}="{s_val}"')
+                elif val_type == winreg.REG_DWORD:
+                    lines.append(f"{v_name_escaped}=dword:{val:08x}")
+                else:
+                    s_val = str(val).replace("\\", "\\\\").replace('"', '\\"')
+                    lines.append(f'{v_name_escaped}="{s_val}"')
+                lines.append("")
+                return lines
+        except Exception:
+            pass
     return lines
 
 
-def _delete_key_recursively(hkey_constant, subkey_path: str):
-    """Рекурсивное удаление ключа реестра со всеми подпапками."""
+def _item_exists(hkey_constant, subkey_path: str, value_name: str | None = None) -> bool:
+    """Проверяет реальное существование раздела или параметра реестра во всех доступных разрядностях."""
+    flags_to_check = [winreg.KEY_READ]
+    if hasattr(winreg, "KEY_WOW64_64KEY"):
+        flags_to_check.append(winreg.KEY_READ | winreg.KEY_WOW64_64KEY)
+    if hasattr(winreg, "KEY_WOW64_32KEY"):
+        flags_to_check.append(winreg.KEY_READ | winreg.KEY_WOW64_32KEY)
+
+    for flag in flags_to_check:
+        try:
+            with winreg.OpenKey(hkey_constant, subkey_path, 0, flag) as k:
+                if value_name is not None:
+                    try:
+                        winreg.QueryValueEx(k, value_name)
+                        return True
+                    except FileNotFoundError:
+                        pass
+                else:
+                    return True
+        except FileNotFoundError:
+            pass
+        except OSError:
+            # Если ключ существует, но доступ на чтение ограничен
+            return True
+    return False
+
+
+def _delete_key_recursively(hkey_constant, subkey_path: str) -> bool:
+    """Рекурсивное удаление ключа реестра со всеми подпапками (для текущего процесса)."""
     try:
-        with winreg.OpenKey(hkey_constant, subkey_path, 0, winreg.KEY_ALL_ACCESS) as key:
+        with winreg.OpenKey(hkey_constant, subkey_path, 0, winreg.KEY_READ) as key:
+            subkeys = []
             while True:
                 try:
-                    sub_name = winreg.EnumKey(key, 0)
-                    _delete_key_recursively(hkey_constant, f"{subkey_path}\\{sub_name}")
+                    subkeys.append(winreg.EnumKey(key, len(subkeys)))
                 except OSError:
                     break
+        for sub_name in subkeys:
+            _delete_key_recursively(hkey_constant, f"{subkey_path}\\{sub_name}")
     except Exception:
         pass
 
+    parent_path, sep, key_name = subkey_path.rpartition("\\")
+    for flag in (0, getattr(winreg, "KEY_WOW64_64KEY", 0), getattr(winreg, "KEY_WOW64_32KEY", 0)):
+        try:
+            if parent_path:
+                with winreg.OpenKey(hkey_constant, parent_path, 0, (winreg.KEY_SET_VALUE | 0x00010000 | flag)) as parent:
+                    winreg.DeleteKey(parent, key_name)
+            else:
+                winreg.DeleteKey(hkey_constant, key_name)
+            return True
+        except Exception:
+            pass
+    return False
+
+
+def _delete_issues_elevated(issues: list[dict[str, Any]]) -> None:
+    """
+    Удаляет выбранные записи через единый пакетный скрипт с запросом прав Администратора (UAC).
+    Показывает ОДИН UAC-запрос сразу для всех выбранных элементов.
+    """
+    if not issues:
+        return
+
+    import tempfile
+    import uuid
+    from app.installer import run_with_elevation
+
+    temp_id = uuid.uuid4().hex[:8]
+    temp_dir = Path(tempfile.gettempdir())
+    reg_del_file = temp_dir / f"ziabl_clean_{temp_id}.reg"
+    bat_file = temp_dir / f"ziabl_clean_{temp_id}.bat"
+
+    reg_lines = [
+        "Windows Registry Editor Version 5.00",
+        ""
+    ]
+    bat_lines = [
+        "@echo off",
+        "chcp 65001 >nul",
+        f'reg.exe import "{reg_del_file.resolve()}" >nul 2>&1'
+    ]
+
+    for item in issues:
+        root_name = item.get("root_key", "HKEY_LOCAL_MACHINE")
+        short_root = "HKLM" if "LOCAL_MACHINE" in root_name else "HKCU"
+        subkey = item.get("subkey_path", "").strip("\\")
+        act = item.get("action_type")
+        vname = item.get("value_name")
+
+        if act == "delete_key":
+            reg_lines.append(f"[-{root_name}\\{subkey}]")
+            reg_lines.append("")
+            bat_lines.append(f'reg.exe delete "{short_root}\\{subkey}" /f >nul 2>&1')
+            bat_lines.append(f'reg.exe delete "{short_root}\\{subkey}" /f /reg:32 >nul 2>&1')
+            bat_lines.append(f'reg.exe delete "{short_root}\\{subkey}" /f /reg:64 >nul 2>&1')
+            if "wow6432node\\" in subkey.lower():
+                alt_sub = re.sub(r'(?i)wow6432node\\', '', subkey)
+                bat_lines.append(f'reg.exe delete "{short_root}\\{alt_sub}" /f /reg:32 >nul 2>&1')
+
+        elif act == "delete_value" and vname is not None:
+            v_escaped = f'"{vname.replace(chr(92), chr(92)*2).replace(chr(34), chr(92)+chr(34))}"' if vname else "@"
+            reg_lines.append(f"[{root_name}\\{subkey}]")
+            reg_lines.append(f"{v_escaped}=-")
+            reg_lines.append("")
+            v_arg = f'/v "{vname}"' if vname else "/ve"
+            bat_lines.append(f'reg.exe delete "{short_root}\\{subkey}" {v_arg} /f >nul 2>&1')
+            bat_lines.append(f'reg.exe delete "{short_root}\\{subkey}" {v_arg} /f /reg:32 >nul 2>&1')
+            bat_lines.append(f'reg.exe delete "{short_root}\\{subkey}" {v_arg} /f /reg:64 >nul 2>&1')
+
     try:
-        parent_path, sep, key_name = subkey_path.rpartition("\\")
-        if parent_path:
-            with winreg.OpenKey(hkey_constant, parent_path, 0, winreg.KEY_ALL_ACCESS) as parent:
-                winreg.DeleteKey(parent, key_name)
-        else:
-            winreg.DeleteKey(hkey_constant, key_name)
-    except Exception as e:
-        logger.warning(f"Error deleting key {subkey_path}: {e}")
+        reg_del_file.write_text("\r\n".join(reg_lines) + "\r\n", encoding="utf-16")
+        bat_file.write_text("\r\n".join(bat_lines) + "\r\n", encoding="utf-8")
+        run_with_elevation("cmd.exe", ["/c", str(bat_file.resolve())], show_window=False)
+    finally:
+        try:
+            if reg_del_file.is_file():
+                reg_del_file.unlink(missing_ok=True)
+            if bat_file.is_file():
+                bat_file.unlink(missing_ok=True)
+        except Exception:
+            pass
 
 
 def scan_registry_issues() -> list[dict[str, Any]]:
@@ -384,9 +492,18 @@ def scan_registry_issues() -> list[dict[str, Any]]:
 def clean_registry_issues(selected_issues: list[dict[str, Any]]) -> dict[str, Any]:
     """
     Создает откат (.reg файл) и удаляет выбранные ошибочные записи реестра.
+    Гарантирует фактическую проверку удаления через _item_exists().
     """
     if not selected_issues:
-        return {"success": False, "message": "Не выбрано ни одной записи для очистки"}
+        return {
+            "success": False,
+            "cleaned_count": 0,
+            "errors_count": 0,
+            "cleaned_ids": [],
+            "message": "Не выбрано ни одной записи для очистки"
+        }
+
+    from app.utils import is_admin
 
     # 1. Формирование .reg файла для отката
     backup_lines = [
@@ -413,16 +530,22 @@ def clean_registry_issues(selected_issues: list[dict[str, Any]]) -> dict[str, An
     backup_file = backup_dir / f"Registry_Clean_{now_str}.reg"
 
     try:
-        # Редактор реестра Windows предпочитает utf-16-le с BOM или utf-8
+        # Редактор реестра Windows предпочитает utf-16-le с BOM
         backup_content = "\r\n".join(backup_lines) + "\r\n"
         backup_file.write_text(backup_content, encoding="utf-16")
     except Exception as e:
         logger.error(f"Error saving registry backup: {e}")
-        return {"success": False, "message": f"Не удалось создать резервную копию: {e}"}
+        return {
+            "success": False,
+            "cleaned_count": 0,
+            "errors_count": len(selected_issues),
+            "cleaned_ids": [],
+            "message": f"Не удалось создать резервную копию: {e}"
+        }
 
-    # 2. Выполнение безопасного удаления
-    cleaned_count = 0
-    errors_count = 0
+    # 2. Попытка прямого удаления (для HKCU или если процесс запущен от Администратора)
+    remaining_for_elevated = []
+    currently_admin = is_admin()
 
     for item in selected_issues:
         hkey = winreg.HKEY_LOCAL_MACHINE if item.get("root_key") == "HKEY_LOCAL_MACHINE" else winreg.HKEY_CURRENT_USER
@@ -430,25 +553,77 @@ def clean_registry_issues(selected_issues: list[dict[str, Any]]) -> dict[str, An
         act = item.get("action_type")
         vname = item.get("value_name")
 
+        if hkey == winreg.HKEY_CURRENT_USER or currently_admin:
+            try:
+                if act == "delete_key":
+                    _delete_key_recursively(hkey, subkey)
+                elif act == "delete_value" and vname is not None:
+                    with winreg.OpenKey(hkey, subkey, 0, winreg.KEY_SET_VALUE) as key:
+                        winreg.DeleteValue(key, vname)
+            except Exception as e:
+                logger.debug(f"Direct delete failed for {subkey}: {e}")
+
+        # Проверяем, существует ли еще ключ на самом деле
+        if _item_exists(hkey, subkey, vname):
+            remaining_for_elevated.append(item)
+
+    # 3. Если остались системные записи HKLM или требующие прав админа, запускаем единый UAC-скрипт
+    uac_declined = False
+    if remaining_for_elevated:
         try:
-            if act == "delete_key":
-                _delete_key_recursively(hkey, subkey)
-                cleaned_count += 1
-            elif act == "delete_value" and vname is not None:
-                with winreg.OpenKey(hkey, subkey, 0, winreg.KEY_SET_VALUE) as key:
-                    winreg.DeleteValue(key, vname)
-                cleaned_count += 1
+            _delete_issues_elevated(remaining_for_elevated)
+        except PermissionError:
+            uac_declined = True
+            logger.info("UAC elevation was cancelled by user during registry clean.")
         except Exception as e:
-            errors_count += 1
-            logger.warning(f"Failed to delete registry item {subkey} ({vname}): {e}")
+            logger.warning(f"Error during elevated registry clean: {e}")
+
+    # 4. ИТОГОВАЯ ЧЕСТНАЯ ПРОВЕРКА РЕАЛЬНОГО УДАЛЕНИЯ КАЖДОГО ЭЛЕМЕНТА
+    cleaned_ids = []
+    failed_items = []
+
+    for item in selected_issues:
+        hkey = winreg.HKEY_LOCAL_MACHINE if item.get("root_key") == "HKEY_LOCAL_MACHINE" else winreg.HKEY_CURRENT_USER
+        subkey = item.get("subkey_path", "")
+        vname = item.get("value_name")
+
+        if not _item_exists(hkey, subkey, vname):
+            cleaned_ids.append(item["id"])
+        else:
+            failed_items.append(item)
+
+    cleaned_count = len(cleaned_ids)
+    errors_count = len(failed_items)
+
+    if cleaned_count == 0:
+        msg = (
+            "Запрос прав Администратора (UAC) был отклонён. Системные записи реестра не удалены."
+            if uac_declined
+            else "Не удалось удалить выбранные записи реестра (отказано в доступе Windows)."
+        )
+        return {
+            "success": False,
+            "cleaned_count": 0,
+            "errors_count": errors_count,
+            "cleaned_ids": [],
+            "backup_path": str(backup_file),
+            "backup_filename": backup_file.name,
+            "message": msg
+        }
+
+    if errors_count > 0:
+        msg = f"Очищено записей: {cleaned_count}. Не удалось очистить: {errors_count} (требуются права администратора)."
+    else:
+        msg = f"Успешно очищено записей: {cleaned_count}. Бэкап сохранён в «{backup_file.name}»."
 
     return {
         "success": True,
         "cleaned_count": cleaned_count,
         "errors_count": errors_count,
+        "cleaned_ids": cleaned_ids,
         "backup_path": str(backup_file),
         "backup_filename": backup_file.name,
-        "message": f"Успешно очищено записей: {cleaned_count}. Бэкап сохранён в «{backup_file.name}»."
+        "message": msg
     }
 
 
@@ -489,9 +664,12 @@ def restore_registry_backup(reg_file_path: str) -> tuple[bool, str]:
 
         # Если не хватило прав (например, для HKEY_LOCAL_MACHINE), запрашиваем повышение прав
         from app.installer import run_with_elevation
-        code = run_with_elevation("reg.exe", ["import", str(p.resolve())])
-        if code == 0:
-            return True, f"Записи реестра успешно восстановлены с правами Администратора из «{p.name}»."
+        try:
+            code = run_with_elevation("reg.exe", ["import", str(p.resolve())], show_window=False)
+            if code == 0:
+                return True, f"Записи реестра успешно восстановлены с правами Администратора из «{p.name}»."
+        except PermissionError:
+            return False, "Запрос прав Администратора (UAC) был отклонён пользователем."
         if not err_msg:
             err_msg = "Ошибка доступа при импорте в реестр."
         return False, f"Не удалось импортировать файл (код {code}): {err_msg}"

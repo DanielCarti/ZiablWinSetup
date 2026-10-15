@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.abspath("."))
 class TestVersion(unittest.TestCase):
     def test_version_string(self):
         from app.version import __version__, APP_NAME
-        self.assertEqual(__version__, "1.4.24")
+        self.assertEqual(__version__, "1.4.25")
         self.assertEqual(APP_NAME, "ZiablWinSetup")
 
 
@@ -247,6 +247,149 @@ class TestRegistryCleaner(unittest.TestCase):
             if os.path.exists(tname):
                 os.remove(tname)
 
+    def test_item_exists_helper(self):
+        import winreg
+        from app.registry_cleaner import _item_exists, _delete_key_recursively
+        test_sub = r"Software\ZiablTestItemExistsKey"
+        k = winreg.CreateKey(winreg.HKEY_CURRENT_USER, test_sub)
+        winreg.SetValueEx(k, "TestVal", 0, winreg.REG_SZ, "Val1")
+        winreg.CloseKey(k)
+
+        self.assertTrue(_item_exists(winreg.HKEY_CURRENT_USER, test_sub))
+        self.assertTrue(_item_exists(winreg.HKEY_CURRENT_USER, test_sub, "TestVal"))
+        self.assertFalse(_item_exists(winreg.HKEY_CURRENT_USER, test_sub, "NoSuchVal"))
+        self.assertFalse(_item_exists(winreg.HKEY_CURRENT_USER, r"Software\NoSuchKeyPathDoesNotExist"))
+
+        # Clean up
+        _delete_key_recursively(winreg.HKEY_CURRENT_USER, test_sub)
+        self.assertFalse(_item_exists(winreg.HKEY_CURRENT_USER, test_sub))
+
+    def test_clean_registry_issues_empty(self):
+        from app.registry_cleaner import clean_registry_issues
+        res = clean_registry_issues([])
+        self.assertFalse(res["success"])
+        self.assertEqual(res["cleaned_count"], 0)
+        self.assertEqual(res["cleaned_ids"], [])
+
+    def test_clean_registry_issues_hkcu_live(self):
+        import winreg
+        from app.registry_cleaner import clean_registry_issues, _item_exists
+        test_sub = r"Software\ZiablTestCleanLiveKey"
+        k = winreg.CreateKey(winreg.HKEY_CURRENT_USER, test_sub)
+        winreg.SetValueEx(k, "Sample", 0, winreg.REG_SZ, "123")
+        winreg.CloseKey(k)
+
+        issue = {
+            "id": "reg_test_hkcu",
+            "category": "uninstall",
+            "category_title": "Test Category",
+            "title": "Test Title",
+            "detail": "Test Detail",
+            "root_key": "HKEY_CURRENT_USER",
+            "hkey_val": winreg.HKEY_CURRENT_USER,
+            "subkey_path": test_sub,
+            "value_name": None,
+            "action_type": "delete_key",
+            "checked": True,
+        }
+
+        res = clean_registry_issues([issue])
+        self.assertTrue(res["success"])
+        self.assertEqual(res["cleaned_count"], 1)
+        self.assertEqual(res["errors_count"], 0)
+        self.assertEqual(res["cleaned_ids"], ["reg_test_hkcu"])
+        self.assertFalse(_item_exists(winreg.HKEY_CURRENT_USER, test_sub))
+        self.assertTrue(os.path.isfile(res["backup_path"]))
+
+        # Verify backup file starts with UTF-16 LE BOM
+        with open(res["backup_path"], "rb") as bf:
+            bom = bf.read(2)
+            self.assertEqual(bom, b"\xff\xfe", "Backup must be UTF-16 LE with BOM")
+        # Cleanup backup file
+        try:
+            os.remove(res["backup_path"])
+        except Exception:
+            pass
+
+    def test_clean_registry_issues_uac_declined(self):
+        import winreg
+        from unittest.mock import patch
+        from app.registry_cleaner import clean_registry_issues
+
+        issue = {
+            "id": "reg_test_hklm",
+            "category": "app_paths",
+            "category_title": "Test Category",
+            "title": "Test HKLM App",
+            "detail": "Missing file",
+            "root_key": "HKEY_LOCAL_MACHINE",
+            "hkey_val": winreg.HKEY_LOCAL_MACHINE,
+            "subkey_path": r"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\devenv.exe",
+            "value_name": None,
+            "action_type": "delete_key",
+            "checked": True,
+        }
+
+        with patch("app.registry_cleaner._delete_issues_elevated", side_effect=PermissionError("UAC_CANCELLED")):
+            with patch("app.utils.is_admin", return_value=False):
+                res = clean_registry_issues([issue])
+                self.assertFalse(res["success"])
+                self.assertEqual(res["cleaned_count"], 0)
+                self.assertEqual(res["errors_count"], 1)
+                self.assertEqual(res["cleaned_ids"], [])
+                self.assertIn("UAC", res["message"])
+                if os.path.isfile(res["backup_path"]):
+                    try:
+                        os.remove(res["backup_path"])
+                    except Exception:
+                        pass
+
+    def test_clean_registry_issues_elevated_success(self):
+        import winreg
+        from unittest.mock import patch
+        from app.registry_cleaner import clean_registry_issues
+
+        issue = {
+            "id": "reg_test_elevated_sim",
+            "category": "app_paths",
+            "category_title": "Test Category",
+            "title": "Test Elevated Sim",
+            "detail": "Test detail",
+            "root_key": "HKEY_LOCAL_MACHINE",
+            "hkey_val": winreg.HKEY_LOCAL_MACHINE,
+            "subkey_path": r"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\devenv.exe",
+            "value_name": None,
+            "action_type": "delete_key",
+            "checked": True,
+        }
+
+        deleted_items = set()
+
+        def mock_elevated_delete(issues):
+            for i in issues:
+                deleted_items.add(i["id"])
+
+        def mock_item_exists(hkey, sub, vname=None):
+            # If deleted via elevated mock, report False
+            if issue["id"] in deleted_items:
+                return False
+            return True
+
+        with patch("app.utils.is_admin", return_value=False):
+            with patch("app.registry_cleaner._item_exists", side_effect=mock_item_exists):
+                with patch("app.registry_cleaner._delete_issues_elevated", side_effect=mock_elevated_delete) as mock_elev:
+                    res = clean_registry_issues([issue])
+                    self.assertTrue(mock_elev.called)
+                    self.assertTrue(res["success"])
+                    self.assertEqual(res["cleaned_count"], 1)
+                    self.assertEqual(res["errors_count"], 0)
+                    self.assertEqual(res["cleaned_ids"], ["reg_test_elevated_sim"])
+                    if os.path.isfile(res["backup_path"]):
+                        try:
+                            os.remove(res["backup_path"])
+                        except Exception:
+                            pass
+
 
 class TestBackupRestore(unittest.TestCase):
     def test_default_backup_dir(self):
@@ -320,7 +463,7 @@ class TestWebAPI(unittest.TestCase):
 
         # Check basic methods return valid structures
         init_data = bridge.get_initial_data()
-        self.assertEqual(init_data["system_info"]["app_version"], "1.4.24")
+        self.assertEqual(init_data["system_info"]["app_version"], "1.4.25")
 
         cat = init_data["apps"]
         self.assertIsInstance(cat, list)
@@ -364,10 +507,16 @@ class TestWebAPI(unittest.TestCase):
             r_res = bridge.restore_registry_from_text("Windows Registry Editor Version 5.00\n", "test.reg")
             self.assertTrue(r_res.get("success"))
 
-        # Test get_tweak_running_status
-        t_res = bridge.get_tweak_running_status("repair_system_files")
-        self.assertIn("running", t_res)
-        self.assertIn("completed", t_res)
+        # Test clean_registry_selected popping only cleaned_ids
+        bridge._last_registry_issues = {
+            "reg_1": {"id": "reg_1", "title": "Item 1"},
+            "reg_2": {"id": "reg_2", "title": "Item 2"}
+        }
+        with patch("app.web_api.clean_registry_issues", return_value={"success": True, "cleaned_count": 1, "errors_count": 1, "cleaned_ids": ["reg_1"], "message": "Partial"}):
+            c_res = bridge.clean_registry_selected(["reg_1", "reg_2"])
+            self.assertTrue(c_res["success"])
+            self.assertNotIn("reg_1", bridge._last_registry_issues)
+            self.assertIn("reg_2", bridge._last_registry_issues)
 
 
 class TestTweakProcessHandling(unittest.TestCase):

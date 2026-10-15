@@ -201,6 +201,7 @@ def run_with_elevation(
     args: list[str] | None = None,
     cwd: str | Path | None = None,
     on_handle_created=None,
+    show_window: bool = True,
 ) -> int:
     """
     Запускает исполняемый файл с правами администратора через Windows UAC диалог (verb='runas').
@@ -243,7 +244,7 @@ def run_with_elevation(
     sei.lpFile = str(file_path)
     sei.lpParameters = params_str if params_str else None
     sei.lpDirectory = cwd_str
-    sei.nShow = 1  # SW_SHOWNORMAL
+    sei.nShow = 1 if show_window else 0  # 1 = SW_SHOWNORMAL, 0 = SW_HIDE
 
     if not ctypes.windll.shell32.ShellExecuteExW(ctypes.byref(sei)):
         err = ctypes.GetLastError()

@@ -536,15 +536,17 @@ class AppBridge:
         """Очищает выбранные записи реестра с обязательным бэкапом."""
         selected_items = [self._last_registry_issues[iid] for iid in selected_ids if iid in self._last_registry_issues]
         if not selected_items:
-            return {"success": False, "message": "Нет записей для очистки"}
+            return {"success": False, "cleaned_count": 0, "errors_count": 0, "cleaned_ids": [], "message": "Нет записей для очистки"}
 
         res = clean_registry_issues(selected_items)
+        cleaned_ids = res.get("cleaned_ids", [])
+        for iid in cleaned_ids:
+            self._last_registry_issues.pop(iid, None)
+
         if res.get("success"):
-            for iid in selected_ids:
-                self._last_registry_issues.pop(iid, None)
             self.call_js("onLog", f"🧹 {res.get('message')}")
         else:
-            self.call_js("onLog", f"❌ Ошибка очистки реестра: {res.get('message')}")
+            self.call_js("onLog", f"❌ {res.get('message')}")
         return res
 
     def open_backups_directory(self) -> dict[str, Any]:

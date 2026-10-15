@@ -3785,6 +3785,10 @@
         if (btnRegBkp) btnRegBkp.textContent = `📁 ${isEn ? 'Backups folder' : (s.reg_btn_backups_folder || 'Папка бэкапов')}`;
         const btnRegRest = document.getElementById('btnRegRestoreBackupText');
         if (btnRegRest) btnRegRest.textContent = `🔄 ${isEn ? 'Restore from backup' : (s.reg_btn_restore_backup || 'Восстановить из бэкапа')}`;
+        const lblScanReg = document.getElementById('lblScanRegistryBtn');
+        if (lblScanReg) lblScanReg.textContent = isEn ? 'Scan Registry' : 'Сканировать реестр';
+        const btnCleanReg = document.getElementById('btnCleanRegistryIssues');
+        if (btnCleanReg && !btnCleanReg.disabled) btnCleanReg.textContent = isEn ? '🛡️ Clean Selected with Backup' : '🛡️ Исправить выбранные с бэкапом';
 
         // Settings Modal translations
         const setModalTitle = document.getElementById('settingsModalTitle');
@@ -6682,12 +6686,12 @@
 
       if (btn) btn.disabled = true;
       if (icon) icon.textContent = '⏳';
-      if (lbl) lbl.textContent = 'Сканирование...';
+      if (lbl) lbl.textContent = appData.lang === 'en' ? 'Scanning...' : 'Сканирование...';
       if (container) {
         container.innerHTML = `
           <div style="text-align: center; color: var(--text-dim); padding: 80px 20px;">
             <div style="font-size: 24px; margin-bottom: 8px;">🔍</div>
-            <div>Сканирование реестра Windows на предмет мусорных и неактуальных записей...</div>
+            <div>${appData.lang === 'en' ? 'Scanning Windows registry for invalid and obsolete entries...' : 'Сканирование реестра Windows на предмет мусорных и неактуальных записей...'}</div>
           </div>
         `;
       }
@@ -6705,11 +6709,11 @@
         }
       } catch (err) {
         console.error('startScanRegistry error:', err);
-        showToast(`Ошибка сканирования реестра: ${err}`, 'error');
+        showToast(appData.lang === 'en' ? `Registry scan error: ${err}` : `Ошибка сканирования реестра: ${err}`, 'error');
       } finally {
         if (btn) btn.disabled = false;
         if (icon) icon.textContent = '🔍';
-        if (lbl) lbl.textContent = 'Сканировать реестр';
+        if (lbl) lbl.textContent = appData.lang === 'en' ? 'Scan Registry' : 'Сканировать реестр';
       }
     }
     window.startScanRegistry = startScanRegistry;
@@ -6758,11 +6762,11 @@
           container.innerHTML = `
             <div style="text-align: center; color: #10b981; padding: 80px 20px; font-size: 14px;">
               <div style="font-size: 32px; margin-bottom: 8px;">✨</div>
-              <b>Реестр чист!</b> Ошибочных и мусорных записей не обнаружено.
+              <b>${appData.lang === 'en' ? 'Registry is clean!' : 'Реестр чист!'}</b> ${appData.lang === 'en' ? 'No invalid or obsolete entries found.' : 'Ошибочных и мусорных записей не обнаружено.'}
             </div>
           `;
         } else {
-          container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 60px 20px;">В выбранной категории записей не найдено.</div>';
+          container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 60px 20px;">${appData.lang === 'en' ? 'No entries found in selected category.' : 'В выбранной категории записей не найдено.'}</div>`;
         }
         return;
       }
@@ -6813,32 +6817,47 @@
     async function cleanSelectedRegistryIssues() {
       const toClean = registryIssues.filter(i => i.checked !== false);
       if (toClean.length === 0) {
-        showToast('Не выбрано ни одной записи для очистки.', 'info');
+        showToast(appData.lang === 'en' ? 'No items selected for cleaning.' : 'Не выбрано ни одной записи для очистки.', 'info');
         return;
       }
 
-      const confirmed = confirm(`Будет безопасно очищено ${toClean.length} записей реестра.\n\nПеред удалением будет автоматически создан файл отката (.reg) в папке Документы.\nПродолжить?`);
-      if (!confirmed) return;
+      const confirmMsg = appData.lang === 'en'
+        ? `Will safely clean ${toClean.length} registry entries.\n\nA backup file (.reg) will be automatically created in your Documents folder before deletion.\nContinue?`
+        : `Будет безопасно очищено ${toClean.length} записей реестра.\n\nПеред удалением будет автоматически создан файл отката (.reg) в папке Документы.\nПродолжить?`;
+      if (!confirm(confirmMsg)) return;
 
       const btn = document.getElementById('btnCleanRegistryIssues');
       const statusText = document.getElementById('registryCleanStatusText');
-      if (btn) { btn.disabled = true; btn.textContent = '⏳ Очистка и создание бэкапа...'; }
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = appData.lang === 'en' ? '⏳ Cleaning & creating backup...' : '⏳ Очистка и создание бэкапа...';
+      }
 
       try {
         if (window.pywebview && window.pywebview.api && window.pywebview.api.clean_registry_selected) {
           const ids = toClean.map(i => i.id);
           const res = await window.pywebview.api.clean_registry_selected(ids);
           if (res && res.success) {
-            registryIssues = registryIssues.filter(i => !ids.includes(i.id));
+            const cleanedIds = Array.isArray(res.cleaned_ids) ? res.cleaned_ids : ids;
+            registryIssues = registryIssues.filter(i => !cleanedIds.includes(i.id));
             updateRegCounts();
             renderRegistryIssues();
             if (statusText) {
-              statusText.textContent = `✓ Очищено: ${res.cleaned_count} шт. (Бэкап: ${res.backup_filename})`;
+              statusText.textContent = appData.lang === 'en'
+                ? `✓ Cleaned: ${res.cleaned_count} items (Backup: ${res.backup_filename})`
+                : `✓ Очищено: ${res.cleaned_count} шт. (Бэкап: ${res.backup_filename})`;
               setTimeout(() => { statusText.textContent = ''; }, 6000);
             }
-            showToast(`✅ ${res.message}`, 'success', 5000);
+            if (res.errors_count > 0) {
+              const warnMsg = appData.lang === 'en'
+                ? `⚠️ Cleaned: ${res.cleaned_count}, failed to clean: ${res.errors_count}`
+                : `⚠️ Очищено: ${res.cleaned_count}, не удалось очистить: ${res.errors_count}`;
+              showToast(warnMsg, 'warning', 6000);
+            } else {
+              showToast(`✅ ${res.message}`, 'success', 5000);
+            }
           } else {
-            showToast(res ? res.message : 'Ошибка очистки', 'error');
+            showToast(res ? res.message : (appData.lang === 'en' ? 'Cleaning error' : 'Ошибка очистки'), 'error', 6000);
           }
         }
       } catch (err) {
@@ -6847,7 +6866,7 @@
       } finally {
         if (btn) {
           btn.disabled = (registryIssues.length === 0);
-          btn.textContent = '🛡️ Исправить выбранные с бэкапом';
+          btn.textContent = appData.lang === 'en' ? '🛡️ Clean Selected with Backup' : '🛡️ Исправить выбранные с бэкапом';
         }
       }
     }
