@@ -31,6 +31,7 @@ _DEFAULT_SETTINGS = {
     "auto_clean_leftovers": None,
     "skipped_app_version": "",
     "virustotal_api_key": "",
+    "accent_color": "blue",
 }
 
 
@@ -113,3 +114,20 @@ def set_virustotal_api_key(api_key: str) -> bool:
     settings = load_settings()
     settings["virustotal_api_key"] = api_key.strip()
     return save_settings(settings)
+
+
+def get_accent_color() -> str:
+    settings = load_settings()
+    return str(settings.get("accent_color", "blue")).lower()
+
+
+def set_accent_color(accent: str) -> str:
+    settings = load_settings()
+    valid = {"blue", "purple", "green", "orange", "red"}
+    clean_accent = str(accent or "blue").lower()
+    if clean_accent not in valid:
+        clean_accent = "blue"
+    settings["accent_color"] = clean_accent
+    save_settings(settings)
+    return clean_accent
+

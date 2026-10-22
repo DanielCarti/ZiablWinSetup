@@ -16,6 +16,7 @@
       --border-light: #444444;
       --accent: #0078d4;
       --accent-hover: #1084d8;
+      --accent-glow: rgba(0, 120, 212, 0.35);
       --btn-success: #107c41;
       --btn-success-hover: #138c4a;
       --btn-warning: #d97706;
@@ -28,6 +29,107 @@
       --radius-sm: 4px;
       --radius-md: 8px;
       --radius-lg: 12px;
+    }
+
+    body[data-accent="purple"] {
+      --accent: #8b5cf6;
+      --accent-hover: #a78bfa;
+      --accent-glow: rgba(139, 92, 246, 0.35);
+    }
+    body[data-accent="green"] {
+      --accent: #10b981;
+      --accent-hover: #34d399;
+      --accent-glow: rgba(16, 185, 129, 0.35);
+    }
+    body[data-accent="orange"] {
+      --accent: #f97316;
+      --accent-hover: #fb923c;
+      --accent-glow: rgba(249, 115, 22, 0.35);
+    }
+    body[data-accent="red"] {
+      --accent: #ef4444;
+      --accent-hover: #f87171;
+      --accent-glow: rgba(239, 68, 68, 0.35);
+    }
+
+    .accent-swatches {
+      display: inline-flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .accent-swatch {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+      box-sizing: border-box;
+    }
+    .accent-swatch:hover {
+      transform: scale(1.18);
+    }
+    .accent-swatch.active {
+      border-color: #ffffff;
+      box-shadow: 0 0 10px var(--accent);
+      transform: scale(1.18);
+    }
+
+    .admin-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      color: #fbbf24;
+      border-radius: 20px;
+      padding: 3px 9px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.15s;
+      white-space: nowrap;
+    }
+    .admin-status-badge:hover {
+      background: rgba(245, 158, 11, 0.25);
+      transform: scale(1.02);
+    }
+
+    .presets-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 18px;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid var(--border-subtle);
+      flex-wrap: wrap;
+    }
+    .preset-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      background: #252525;
+      border: 1px solid var(--border-light);
+      border-radius: 14px;
+      font-size: 11.5px;
+      font-weight: 500;
+      color: var(--text-main);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+    .preset-chip:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .preset-chip.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+      font-weight: 600;
+      box-shadow: 0 0 8px var(--accent-glow);
     }
 
     * {
@@ -2360,6 +2462,11 @@
         <span id="rescanBtnText">Установленное</span>
       </button>
 
+      <div id="adminStatusBadge" class="admin-status-badge" style="display: none;" onclick="promptRestartAsAdmin()" title="Запущено без прав администратора. Нажмите для перезапуска от имени Администратора.">
+        <span>🛡️</span>
+        <span id="lblAdminStatusText">Без админа</span>
+      </div>
+
       <div class="search-box">
         <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
         <input type="text" id="searchInput" placeholder="Поиск приложения..." oninput="onSearch()">
@@ -2504,6 +2611,20 @@
           </div>
         </div>
         <div style="font-size: 11.5px; color: #38bdf8; font-weight: 500; opacity: 0.9;">⏳ Проверка...</div>
+      </div>
+
+      <!-- App Presets Bar («В 1 клик») -->
+      <div id="presetsBar" class="presets-bar">
+        <span style="font-size: 11px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px;" id="lblPresetsTitle">Пресеты:</span>
+        <button class="preset-chip" onclick="applyAppPreset('essential')" id="presetEssential" title="Базовый набор: Chrome, 7-Zip, Telegram, VLC">
+          <span>⚡</span> <span id="lblPresetEssential">Базовый</span>
+        </button>
+        <button class="preset-chip" onclick="applyAppPreset('gaming')" id="presetGaming" title="Геймерский набор: Steam, Discord, Telegram, 7-Zip, OBS Studio, DirectX, Visual C++">
+          <span>🎮</span> <span id="lblPresetGaming">Гейминг</span>
+        </button>
+        <button class="preset-chip" onclick="applyAppPreset('office')" id="presetOffice" title="Офис / Работа: Chrome, 7-Zip, Telegram, LibreOffice, Notepad++, Everything">
+          <span>💼</span> <span id="lblPresetOffice">Офис</span>
+        </button>
       </div>
 
       <!-- App Cards -->
@@ -2956,6 +3077,25 @@
               <span id="uiScaleDisplay" style="font-weight: 700; color: var(--accent); font-size: 12.5px; min-width: 38px; text-align: right;">100%</span>
               <input type="range" id="uiScaleSlider" min="75" max="130" step="5" value="100" style="width: 120px; accent-color: var(--accent); cursor: pointer;" oninput="setUiScale(this.value)">
               <button class="btn-browse" onclick="setUiScale(100)" style="padding: 4px 10px; font-size: 11px;" title="Сбросить на 100%">100%</button>
+            </div>
+          </div>
+
+          <div class="settings-row">
+            <div class="settings-row-left">
+              <div class="settings-row-icon">🎨</div>
+              <div>
+                <div class="settings-row-title" id="lblAccentColorTitle">Акцентный цвет</div>
+                <div class="settings-row-desc" id="lblAccentColorDesc">Выбор основного цвета кнопок, бейджей и элементов управления</div>
+              </div>
+            </div>
+            <div class="settings-row-right">
+              <div class="accent-swatches">
+                <div class="accent-swatch active" data-color="blue" style="background: #0078d4;" onclick="setAccentColor('blue')" title="Windows Blue"></div>
+                <div class="accent-swatch" data-color="purple" style="background: #8b5cf6;" onclick="setAccentColor('purple')" title="Cyber Purple"></div>
+                <div class="accent-swatch" data-color="green" style="background: #10b981;" onclick="setAccentColor('green')" title="Emerald Green"></div>
+                <div class="accent-swatch" data-color="orange" style="background: #f97316;" onclick="setAccentColor('orange')" title="Sunset Orange"></div>
+                <div class="accent-swatch" data-color="red" style="background: #ef4444;" onclick="setAccentColor('red')" title="Crimson Red"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -3601,6 +3741,24 @@
       try { updateFooter(); } catch (e) { console.error('updateFooter error:', e); }
       try { updateWingetBanner(); } catch (e) { console.error('updateWingetBanner error:', e); }
       try {
+        const accent = (appData.settings && appData.settings.accent_color) || 'blue';
+        setAccentColor(accent, false);
+      } catch (e) {
+        console.error('setAccentColor error:', e);
+      }
+      try {
+        const adminBadge = document.getElementById('adminStatusBadge');
+        const isAdmin = appData.system_info && appData.system_info.is_admin;
+        if (adminBadge) {
+          adminBadge.style.display = (!isAdmin) ? 'inline-flex' : 'none';
+          const isEn = appData.lang === 'en';
+          const lbl = document.getElementById('lblAdminStatusText');
+          if (lbl) lbl.textContent = isEn ? 'Not Admin' : 'Без админа';
+        }
+      } catch (e) {
+        console.error('adminBadge error:', e);
+      }
+      try {
         if (appData.system_info && appData.system_info.extract_path) {
           const epd = document.getElementById('extractPathDisplay');
           if (epd) epd.textContent = appData.system_info.extract_path;
@@ -3757,6 +3915,21 @@
         if (exclBtnLbl) exclBtnLbl.textContent = isEn ? 'Update Exclusions' : (s.settings_exclusions || 'Исключения автообновления');
         const secSet = document.getElementById('secSettings');
         if (secSet) secSet.textContent = isEn ? 'Settings' : (s.settings || 'Настройки');
+        const lblAdm = document.getElementById('lblAdminStatusText');
+        if (lblAdm) lblAdm.textContent = isEn ? 'Not Admin' : 'Без админа';
+        const lblPreTitle = document.getElementById('lblPresetsTitle');
+        if (lblPreTitle) lblPreTitle.textContent = isEn ? 'Presets:' : 'Пресеты:';
+        const lblPreEss = document.getElementById('lblPresetEssential');
+        if (lblPreEss) lblPreEss.textContent = isEn ? 'Essential' : 'Базовый';
+        const lblPreGam = document.getElementById('lblPresetGaming');
+        if (lblPreGam) lblPreGam.textContent = isEn ? 'Gaming' : 'Гейминг';
+        const lblPreOff = document.getElementById('lblPresetOffice');
+        if (lblPreOff) lblPreOff.textContent = isEn ? 'Office' : 'Офис';
+        const lblAccTitle = document.getElementById('lblAccentColorTitle');
+        if (lblAccTitle) lblAccTitle.textContent = isEn ? 'Accent Color' : 'Акцентный цвет';
+        const lblAccDesc = document.getElementById('lblAccentColorDesc');
+        if (lblAccDesc) lblAccDesc.textContent = isEn ? 'Choose primary theme color for buttons, badges, and controls' : 'Выбор основного цвета кнопок, бейджей и элементов управления';
+
         const lblExt = document.getElementById('lblExtractPath');
         if (lblExt) lblExt.textContent = isEn ? 'Extraction folder for ZIP:' : (s.extract_path_label || 'Путь распаковки ZIP:');
         const btnBr = document.getElementById('btnBrowse');
@@ -4422,11 +4595,129 @@
 
     function onSearch() {
       searchQuery = document.getElementById('searchInput').value.trim().toLowerCase();
-      if (searchQuery && currentMainTab !== 'apps') {
-        switchMainTab('apps');
+      if (currentMainTab === 'apps') {
+        renderCards();
+      } else if (currentMainTab === 'tweaks') {
+        filterTweaksList(searchQuery);
+      } else if (currentMainTab === 'metro') {
+        metroSearchQuery = searchQuery;
+        renderMetro();
       }
-      renderCards();
     }
+
+    function filterTweaksList(query) {
+      const q = (query || '').trim().toLowerCase();
+      const tweaks = appData.tweaks || [];
+      const container = document.getElementById('tweaksGrid');
+      if (!container) return;
+
+      let visibleCount = 0;
+      tweaks.forEach(tw => {
+        const card = document.getElementById(`tweak_${tw.id}`);
+        if (!card) return;
+        if (!q) {
+          card.style.display = '';
+          visibleCount++;
+          return;
+        }
+        const titleRu = (tw.title || '').toLowerCase();
+        const titleEn = (tw.title_en || '').toLowerCase();
+        const descRu = (tw.description || '').toLowerCase();
+        const descEn = (tw.description_en || '').toLowerCase();
+        const cat = (tw.category || '').toLowerCase();
+        const match = titleRu.includes(q) || titleEn.includes(q) || descRu.includes(q) || descEn.includes(q) || cat.includes(q);
+        card.style.display = match ? '' : 'none';
+        if (match) visibleCount++;
+      });
+
+      let noMatchDiv = document.getElementById('tweaksNoMatchMessage');
+      if (visibleCount === 0 && q) {
+        if (!noMatchDiv) {
+          noMatchDiv = document.createElement('div');
+          noMatchDiv.id = 'tweaksNoMatchMessage';
+          noMatchDiv.style.cssText = 'grid-column: 1 / -1; padding: 40px; text-align: center; color: var(--text-muted); font-size: 14px;';
+          container.appendChild(noMatchDiv);
+        }
+        noMatchDiv.textContent = appData.lang === 'en' ? '🔍 No tweaks found matching your query.' : '🔍 Твики по вашему запросу не найдены.';
+        noMatchDiv.style.display = 'block';
+      } else if (noMatchDiv) {
+        noMatchDiv.style.display = 'none';
+      }
+    }
+    window.filterTweaksList = filterTweaksList;
+
+    function setAccentColor(color, save = true) {
+      const valid = ['blue', 'purple', 'green', 'orange', 'red'];
+      const c = (color && valid.includes(color.toLowerCase())) ? color.toLowerCase() : 'blue';
+      document.body.setAttribute('data-accent', c);
+      document.querySelectorAll('.accent-swatch').forEach(sw => {
+        sw.classList.toggle('active', sw.getAttribute('data-color') === c);
+      });
+      if (appData.settings) appData.settings.accent_color = c;
+      if (save && window.pywebview && window.pywebview.api && window.pywebview.api.set_accent_color) {
+        window.pywebview.api.set_accent_color(c);
+      }
+    }
+    window.setAccentColor = setAccentColor;
+
+    async function promptRestartAsAdmin() {
+      const isEn = appData && appData.lang === 'en';
+      const question = isEn
+        ? 'Restart ZiablWinSetup with Administrator privileges for full access to all system tweaks, registry, and services?'
+        : 'Перезапустить ZiablWinSetup с правами Администратора для полного доступа ко всем системным твикам, службам и реестру?';
+      if (confirm(question)) {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.restart_as_admin) {
+          addLog(isEn ? '🛡️ Requesting Administrator elevation...' : '🛡️ Запрос прав администратора...');
+          await window.pywebview.api.restart_as_admin();
+        }
+      }
+    }
+    window.promptRestartAsAdmin = promptRestartAsAdmin;
+
+    const APP_PRESETS = {
+      essential: {
+        nameRu: 'Базовый',
+        nameEn: 'Essential',
+        ids: ['chrome', '7zip', 'telegram', 'vlc']
+      },
+      gaming: {
+        nameRu: 'Гейминг',
+        nameEn: 'Gaming',
+        ids: ['steam', 'discord', 'telegram', '7zip', 'obs', 'directx', 'vcredist_aio']
+      },
+      office: {
+        nameRu: 'Офис',
+        nameEn: 'Office',
+        ids: ['chrome', '7zip', 'telegram', 'libreoffice', 'notepadpp', 'everything']
+      }
+    };
+
+    function applyAppPreset(presetKey) {
+      const preset = APP_PRESETS[presetKey];
+      if (!preset) return;
+      const isEn = appData && appData.lang === 'en';
+      const presetName = isEn ? preset.nameEn : preset.nameRu;
+
+      ['essential', 'gaming', 'office'].forEach(key => {
+        const btn = document.getElementById(`preset${key.charAt(0).toUpperCase() + key.slice(1)}`);
+        if (btn) btn.classList.toggle('active', key === presetKey);
+      });
+
+      selectedApps.clear();
+      let addedCount = 0;
+      preset.ids.forEach(id => {
+        const app = (appData.apps || []).find(a => a.id === id);
+        if (app) {
+          selectedApps.add(id);
+          addedCount++;
+        }
+      });
+
+      renderCards();
+      updateFooter();
+      addLog(`⚡ ${isEn ? 'Applied preset' : 'Применён пресет'}: ${presetName} (${isEn ? 'selected' : 'выбрано'}: ${addedCount})`);
+    }
+    window.applyAppPreset = applyAppPreset;
 
     function matchesAppSearch(app, q) {
       if (!q) return true;
@@ -5484,10 +5775,19 @@
       }
     }
 
-    function openWingetStore() {
+    async function openWingetStore() {
       addLog('🛍️ Открытие Microsoft Store (App Installer)...');
       if (window.pywebview && window.pywebview.api && window.pywebview.api.open_winget_store) {
-        window.pywebview.api.open_winget_store();
+        try {
+          const res = await window.pywebview.api.open_winget_store();
+          if (res && res.opened_via === 'browser') {
+            showToast(res.message, 'warning');
+          } else if (res && !res.success) {
+            showToast(res.message, 'error');
+          }
+        } catch (e) {
+          console.error('openWingetStore error:', e);
+        }
       }
     }
 
@@ -5559,6 +5859,17 @@
         return;
       }
       currentMainTab = tab;
+      const searchInp = document.getElementById('searchInput');
+      if (searchInp) {
+        const isEn = appData && appData.lang === 'en';
+        if (tab === 'apps') searchInp.placeholder = isEn ? 'Search applications...' : 'Поиск приложения...';
+        else if (tab === 'tweaks') searchInp.placeholder = isEn ? 'Search tweaks...' : 'Поиск твиков...';
+        else if (tab === 'metro') searchInp.placeholder = isEn ? 'Search Windows apps...' : 'Поиск Metro-приложений...';
+        else searchInp.placeholder = isEn ? 'Search...' : 'Поиск...';
+        if (searchInp.value.trim()) {
+          onSearch();
+        }
+      }
       document.getElementById('tabBtnApps').classList.toggle('active', tab === 'apps');
       document.getElementById('tabBtnTweaks').classList.toggle('active', tab === 'tweaks');
       const tabMetro = document.getElementById('tabBtnMetro');

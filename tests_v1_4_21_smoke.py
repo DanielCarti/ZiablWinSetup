@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.abspath("."))
 class TestVersion(unittest.TestCase):
     def test_version_string(self):
         from app.version import __version__, APP_NAME
-        self.assertEqual(__version__, "1.4.26")
+        self.assertEqual(__version__, "1.4.27")
         self.assertEqual(APP_NAME, "ZiablWinSetup")
 
 
@@ -648,6 +648,58 @@ class TestTweakProcessHandling(unittest.TestCase):
         self.assertIn("chipRegAll", content)
         self.assertIn("chipRegUninst", content)
         self.assertIn("chipRegAuto", content)
+
+    def test_v1_4_27_features(self):
+        from app.settings import get_accent_color, set_accent_color
+        from app.utils import open_winget_store
+        from app.web_api import AppBridge
+
+        # 1. Accent color persistence
+        orig_accent = get_accent_color()
+        try:
+            self.assertEqual(set_accent_color("purple"), "purple")
+            self.assertEqual(get_accent_color(), "purple")
+            self.assertEqual(set_accent_color("invalid_color"), "blue")
+        finally:
+            set_accent_color(orig_accent)
+
+        # 2. AppBridge restart_as_admin & set_accent_color presence
+        self.assertTrue(hasattr(AppBridge, "restart_as_admin"))
+        self.assertTrue(hasattr(AppBridge, "set_accent_color"))
+
+        # 3. open_winget_store returns tuple with status and opened_via
+        res_ok, opened_via = open_winget_store()
+        self.assertTrue(res_ok)
+        self.assertIn(opened_via, ("store_app", "browser"))
+
+        # 4. Frontend UI elements for v1.4.27 in app/ui/index.html
+        html_path = Path("app/ui/index.html")
+        content = html_path.read_text(encoding="utf-8")
+
+        # Accent colors in CSS & Settings
+        self.assertIn('data-accent="purple"', content)
+        self.assertIn('data-accent="green"', content)
+        self.assertIn('data-accent="orange"', content)
+        self.assertIn('data-accent="red"', content)
+        self.assertIn('accent-swatches', content)
+        self.assertIn('setAccentColor', content)
+
+        # Admin status badge & 1-click elevation
+        self.assertIn('id="adminStatusBadge"', content)
+        self.assertIn('promptRestartAsAdmin', content)
+
+        # Quick Presets in Apps catalog
+        self.assertIn('id="presetsBar"', content)
+        self.assertIn('presetEssential', content)
+        self.assertIn('presetGaming', content)
+        self.assertIn('presetOffice', content)
+        self.assertIn('applyAppPreset', content)
+        self.assertIn('APP_PRESETS', content)
+
+        # Contextual search in header without forced apps redirection
+        self.assertIn('filterTweaksList', content)
+        self.assertIn("else if (currentMainTab === 'tweaks')", content)
+        self.assertIn("else if (currentMainTab === 'metro')", content)
 
 
 if __name__ == "__main__":

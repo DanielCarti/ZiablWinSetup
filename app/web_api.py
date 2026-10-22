@@ -1602,10 +1602,72 @@ class AppBridge:
 
         threading.Thread(target=worker, daemon=True).start()
 
-    def open_winget_store(self):
-        """Открывает страницу App Installer в Microsoft Store."""
+    def open_winget_store(self) -> dict[str, Any]:
+        """Открывает страницу App Installer в Microsoft Store или в веб-браузере при его отсутствии."""
         self.call_js("onLog", "🛍️ Открытие страницы Microsoft Store (App Installer)...")
-        open_winget_store()
+        try:
+            ok, opened_via = open_winget_store()
+            if ok:
+                if opened_via == "store_app":
+                    msg = "Приложение Microsoft Store (App Installer) успешно открыто." if self._lang != "en" else "Microsoft Store (App Installer) opened successfully."
+                    self.call_js("onLog", f"🛍️ {msg}")
+                    return {"success": True, "opened_via": "store_app", "message": msg}
+                else:
+                    msg = (
+                        "Microsoft Store не установлен в системе. Открыта официальная страница в браузере."
+                        if self._lang != "en" else
+                        "Microsoft Store is not installed in the system. Opened official web page in browser."
+                    )
+                    self.call_js("onLog", f"⚠️ {msg}")
+                    return {"success": True, "opened_via": "browser", "message": msg}
+            else:
+                msg = (
+                    f"Не удалось открыть Microsoft Store или веб-браузер: {opened_via}"
+                    if self._lang != "en" else
+                    f"Failed to open Microsoft Store or browser: {opened_via}"
+                )
+                self.call_js("onLog", f"❌ {msg}")
+                return {"success": False, "opened_via": "error", "message": msg}
+        except Exception as e:
+            logger.error(f"Error in open_winget_store bridge: {e}")
+            msg = str(e)
+            self.call_js("onLog", f"❌ {msg}")
+            return {"success": False, "opened_via": "error", "message": msg}
+
+    def restart_as_admin(self) -> dict[str, Any]:
+        """Перезапускает приложение с запросом прав администратора (UAC)."""
+        from app.utils import is_admin, request_admin_restart
+        if is_admin():
+            return {"success": True, "already_admin": True}
+        try:
+            self.call_js("onLog", "🛡️ Запрос прав администратора (UAC) и перезапуск...")
+            request_admin_restart()
+            import threading
+            def _delayed_exit():
+                import time
+                time.sleep(1.0)
+                try:
+                    import sys
+                    sys.exit(0)
+                except SystemExit:
+                    pass
+            threading.Thread(target=_delayed_exit, daemon=True).start()
+            return {"success": True, "already_admin": False}
+        except Exception as e:
+            logger.error(f"Failed to restart as admin: {e}")
+            return {"success": False, "error": str(e)}
+
+    def set_accent_color(self, color: str) -> dict[str, Any]:
+        """Устанавливает акцентный цвет интерфейса и сохраняет в настройках."""
+        from app.settings import set_accent_color
+        try:
+            accent = set_accent_color(color)
+            if self._app_data and "settings" in self._app_data:
+                self._app_data["settings"]["accent_color"] = accent
+            return {"success": True, "accent_color": accent}
+        except Exception as e:
+            logger.error(f"Failed to set accent color: {e}")
+            return {"success": False, "error": str(e)}
 
     # ==========================================
     # Управление автозагрузкой Windows и автозапуском приложения
