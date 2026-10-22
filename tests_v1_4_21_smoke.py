@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.abspath("."))
 class TestVersion(unittest.TestCase):
     def test_version_string(self):
         from app.version import __version__, APP_NAME
-        self.assertEqual(__version__, "1.4.27")
+        self.assertEqual(__version__, "1.4.28")
         self.assertEqual(APP_NAME, "ZiablWinSetup")
 
 
@@ -331,18 +331,19 @@ class TestRegistryCleaner(unittest.TestCase):
         }
 
         with patch("app.registry_cleaner._delete_issues_elevated", side_effect=PermissionError("UAC_CANCELLED")):
-            with patch("app.utils.is_admin", return_value=False):
-                res = clean_registry_issues([issue])
-                self.assertFalse(res["success"])
-                self.assertEqual(res["cleaned_count"], 0)
-                self.assertEqual(res["errors_count"], 1)
-                self.assertEqual(res["cleaned_ids"], [])
-                self.assertIn("UAC", res["message"])
-                if os.path.isfile(res["backup_path"]):
-                    try:
-                        os.remove(res["backup_path"])
-                    except Exception:
-                        pass
+            with patch("app.registry_cleaner._item_exists", return_value=True):
+                with patch("app.utils.is_admin", return_value=False):
+                    res = clean_registry_issues([issue])
+                    self.assertFalse(res["success"])
+                    self.assertEqual(res["cleaned_count"], 0)
+                    self.assertEqual(res["errors_count"], 1)
+                    self.assertEqual(res["cleaned_ids"], [])
+                    self.assertIn("UAC", res["message"])
+                    if os.path.isfile(res["backup_path"]):
+                        try:
+                            os.remove(res["backup_path"])
+                        except Exception:
+                            pass
 
     def test_clean_registry_issues_elevated_success(self):
         import winreg
@@ -700,6 +701,49 @@ class TestTweakProcessHandling(unittest.TestCase):
         self.assertIn('filterTweaksList', content)
         self.assertIn("else if (currentMainTab === 'tweaks')", content)
         self.assertIn("else if (currentMainTab === 'metro')", content)
+
+    def test_v1_4_28_features(self):
+        from unittest.mock import patch
+        """Проверка исправлений UAC перезапуска и плавающей панели для v1.4.28."""
+        from app.version import __version__
+        self.assertEqual(__version__, "1.4.28")
+
+        # 1. request_admin_restart handles UAC cancellation and passes --restarted-from-pid
+        from app.utils import request_admin_restart
+        with patch("app.utils.is_admin", return_value=False):
+            # When user clicks Cancel/No in UAC (ShellExecuteW returns <= 32)
+            with patch("ctypes.windll.shell32.ShellExecuteW", return_value=5):
+                ok, err = request_admin_restart()
+                self.assertFalse(ok)
+                self.assertIn("отклонен", err)
+
+            # When user approves UAC (ShellExecuteW returns > 32)
+            with patch("ctypes.windll.shell32.ShellExecuteW", return_value=42):
+                with patch("app.single_instance.single_instance_guard.cleanup") as mock_cleanup:
+                    ok, err = request_admin_restart()
+                    self.assertTrue(ok)
+                    self.assertEqual(err, "")
+                    mock_cleanup.assert_called_once()
+
+        # 2. single_instance_guard is_pid_alive helper
+        from app.single_instance import is_pid_alive, get_other_app_processes
+        self.assertTrue(is_pid_alive(os.getpid()))
+        self.assertFalse(is_pid_alive(-9999))
+        self.assertFalse(is_pid_alive(0))
+
+        # Check get_other_app_processes with exclude_pids
+        other = get_other_app_processes(exclude_pids={123456})
+        self.assertIsInstance(other, list)
+
+        # 3. Sticky Action Bar in app/ui/index.html
+        html_path = Path("app/ui/index.html")
+        content = html_path.read_text(encoding="utf-8")
+        self.assertIn('id="stickyActionBar"', content)
+        self.assertIn('sticky-action-bar', content)
+        self.assertIn('btnStickyDownload', content)
+        self.assertIn('btnStickyInstall', content)
+        self.assertIn('updateStickyBar', content)
+        self.assertIn('_hasStickyScrollListener', content)
 
 
 if __name__ == "__main__":

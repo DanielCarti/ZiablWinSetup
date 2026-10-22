@@ -215,12 +215,14 @@ def check_for_app_update(current_version: str = __version__) -> dict[str, Any]:
     """
     cleanup_old_files()
 
-    url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest?_={int(time.time())}"
     logger.info(f"Проверка обновлений приложения: {url} (текущая версия: v{current_version})...")
 
     headers = {
         "User-Agent": f"ZiablWinSetup/{current_version}",
         "Accept": "application/vnd.github.v3+json",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
     }
 
     try:

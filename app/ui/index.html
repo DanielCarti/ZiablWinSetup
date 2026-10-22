@@ -481,6 +481,69 @@
       position: relative;
     }
 
+        /* Sticky Action Bar (appears on scroll in Apps tab) */
+    .sticky-action-bar {
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(25px);
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      background: rgba(22, 23, 27, 0.94);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--accent);
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.7), 0 0 16px rgba(56, 189, 248, 0.2);
+      border-radius: 40px;
+      padding: 6px 14px 6px 18px;
+    }
+    .sticky-action-bar.visible {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(-50%) translateY(0);
+    }
+    .sticky-action-bar-content {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .sticky-selected-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+    }
+    .sticky-action-btn {
+      border: none;
+      border-radius: 30px;
+      padding: 7px 18px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+    .sticky-btn-download {
+      background: var(--accent);
+      color: #fff;
+    }
+    .sticky-btn-download:hover {
+      filter: brightness(1.15);
+      transform: translateY(-1px);
+    }
+    .sticky-btn-install {
+      background: #22c55e;
+      color: #fff;
+    }
+    .sticky-btn-install:hover {
+      filter: brightness(1.15);
+      transform: translateY(-1px);
+    }
+
     /* App Card */
     .app-card {
       display: flex;
@@ -2563,7 +2626,7 @@
     <div class="splitter" id="splitter"></div>
 
     <!-- App Content Column -->
-    <div style="flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden;">
+    <div style="flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; position: relative;">
       <!-- Winget Missing Warning Banner -->
       <div id="wingetBanner" class="winget-banner" style="display: none;">
         <div class="winget-banner-content">
@@ -2629,6 +2692,24 @@
 
       <!-- App Cards -->
       <main id="appCardsContainer" style="flex: 1; overflow-y: auto; padding-bottom: 90px; box-sizing: border-box; background: var(--bg-app);"></main>
+
+      <!-- Sticky Action Bar (appears on scroll when apps are selected) -->
+      <div id="stickyActionBar" class="sticky-action-bar">
+        <div class="sticky-action-bar-content">
+          <div class="sticky-selected-info">
+            <span style="font-size: 15px;">📦</span>
+            <span id="lblStickySelectedCount">Выбрано: 0</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <button class="sticky-action-btn sticky-btn-download" id="btnStickyDownload" onclick="handleDownloadSelected()">
+              <span id="lblStickyDownloadIcon">📥</span> <span id="lblStickyDownloadText">Скачать выбранные</span>
+            </button>
+            <button class="sticky-action-btn sticky-btn-install" id="btnStickyInstall" onclick="handleInstallAll()" style="display: none;">
+              <span>⚙️</span> <span id="lblStickyInstallText">Установить</span>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
     </div><!-- /viewApps -->
 
@@ -3739,6 +3820,13 @@
       try { renderCards(); } catch (e) { console.error('renderCards error:', e); }
       try { updateScanningState(isInitialScanning); } catch (e) { console.error('updateScanningState error:', e); }
       try { updateFooter(); } catch (e) { console.error('updateFooter error:', e); }
+      try {
+        const appCardsEl = document.getElementById('appCardsContainer');
+        if (appCardsEl && !appCardsEl._hasStickyScrollListener) {
+          appCardsEl.addEventListener('scroll', updateStickyBar);
+          appCardsEl._hasStickyScrollListener = true;
+        }
+      } catch (e) { console.error('sticky scroll listener error:', e); }
       try { updateWingetBanner(); } catch (e) { console.error('updateWingetBanner error:', e); }
       try {
         const accent = (appData.settings && appData.settings.accent_color) || 'blue';
@@ -3925,6 +4013,15 @@
         if (lblPreGam) lblPreGam.textContent = isEn ? 'Gaming' : 'Гейминг';
         const lblPreOff = document.getElementById('lblPresetOffice');
         if (lblPreOff) lblPreOff.textContent = isEn ? 'Office' : 'Офис';
+        const lblStickyCount = document.getElementById('lblStickySelectedCount');
+        if (lblStickyCount) {
+          const cnt = (typeof selectedApps !== 'undefined' && selectedApps) ? selectedApps.size : 0;
+          lblStickyCount.textContent = isEn ? ('Selected: ' + cnt) : ('Выбрано: ' + cnt);
+        }
+        const lblStickyDl = document.getElementById('lblStickyDownloadText');
+        if (lblStickyDl) lblStickyDl.textContent = isDownloading ? (isEn ? 'Cancel' : 'Отмена') : (isEn ? 'Download selected' : 'Скачать выбранные');
+        const lblStickyInst = document.getElementById('lblStickyInstallText');
+        if (lblStickyInst) lblStickyInst.textContent = isEn ? 'Install' : 'Установить';
         const lblAccTitle = document.getElementById('lblAccentColorTitle');
         if (lblAccTitle) lblAccTitle.textContent = isEn ? 'Accent Color' : 'Акцентный цвет';
         const lblAccDesc = document.getElementById('lblAccentColorDesc');
@@ -4666,9 +4763,32 @@
         ? 'Restart ZiablWinSetup with Administrator privileges for full access to all system tweaks, registry, and services?'
         : 'Перезапустить ZiablWinSetup с правами Администратора для полного доступа ко всем системным твикам, службам и реестру?';
       if (confirm(question)) {
+        const badge = document.getElementById('adminStatusBadge');
+        const origText = isEn ? 'Not Admin' : 'Не админ';
+        if (badge) {
+          badge.style.opacity = '0.6';
+          const lbl = document.getElementById('lblAdminStatusText');
+          if (lbl) lbl.textContent = isEn ? 'Elevating...' : 'Перезапуск...';
+        }
         if (window.pywebview && window.pywebview.api && window.pywebview.api.restart_as_admin) {
           addLog(isEn ? '🛡️ Requesting Administrator elevation...' : '🛡️ Запрос прав администратора...');
-          await window.pywebview.api.restart_as_admin();
+          try {
+            const res = await window.pywebview.api.restart_as_admin();
+            if (res && !res.success) {
+              if (badge) {
+                badge.style.opacity = '1';
+                const lbl = document.getElementById('lblAdminStatusText');
+                if (lbl) lbl.textContent = origText;
+              }
+              showToast(res.error || (isEn ? 'Elevation cancelled' : 'Запрос прав отменен'), 'warning', 3500);
+            }
+          } catch (err) {
+            if (badge) {
+              badge.style.opacity = '1';
+              const lbl = document.getElementById('lblAdminStatusText');
+              if (lbl) lbl.textContent = origText;
+            }
+          }
         }
       }
     }
@@ -5524,7 +5644,45 @@
       renderCards();
     }
 
+    function updateStickyBar() {
+      const bar = document.getElementById('stickyActionBar');
+      if (!bar) return;
+      const container = document.getElementById('appCardsContainer');
+      const scrollTop = container ? container.scrollTop : 0;
+      const count = (typeof selectedApps !== 'undefined' && selectedApps) ? selectedApps.size : 0;
+      const isEn = appData && appData.lang === 'en';
+
+      if (count > 0 && scrollTop > 80 && currentMainTab === 'apps' && activeCategory !== 'updates_available') {
+        bar.classList.add('visible');
+        const countEl = document.getElementById('lblStickySelectedCount');
+        if (countEl) {
+          countEl.textContent = isEn ? `Selected: ${count}` : `Выбрано: ${count}`;
+        }
+        const hasDownloaded = Object.values(appStatuses).some(st => st.status === 'downloaded');
+        const instBtn = document.getElementById('btnStickyInstall');
+        if (instBtn) {
+          instBtn.style.display = hasDownloaded ? 'inline-flex' : 'none';
+          const instLbl = document.getElementById('lblStickyInstallText');
+          if (instLbl) instLbl.textContent = isEn ? 'Install' : 'Установить';
+        }
+        const dlLbl = document.getElementById('lblStickyDownloadText');
+        const dlIcon = document.getElementById('lblStickyDownloadIcon');
+        if (dlLbl) {
+          dlLbl.textContent = isDownloading 
+            ? (isEn ? 'Cancel' : 'Отмена') 
+            : (isEn ? 'Download selected' : 'Скачать выбранные');
+        }
+        if (dlIcon) {
+          dlIcon.textContent = isDownloading ? '⏹️' : '📥';
+        }
+      } else {
+        bar.classList.remove('visible');
+      }
+    }
+    window.updateStickyBar = updateStickyBar;
+
     function updateFooter() {
+      updateStickyBar();
       const s = appData.strings;
       const count = selectedApps.size;
       const template = s.selected_count || 'Выбрано: {count}';
@@ -7984,6 +8142,26 @@
       }
       if (statusText) statusText.style.display = 'none';
       openSelfUpdateModal(info);
+    };
+
+    window.onAppUpdateError = function(errMsg) {
+      const btn = document.getElementById('btnCheckSelfUpdate');
+      const icon = document.getElementById('btnCheckSelfUpdateIcon');
+      const label = document.getElementById('lblCheckSelfUpdateBtn');
+      const statusText = document.getElementById('checkSelfUpdateStatusText');
+      if (btn) {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        if (icon) icon.textContent = '🔄';
+        if (label) label.textContent = 'Проверить';
+      }
+      if (statusText) {
+        statusText.style.display = 'inline';
+        statusText.style.color = '#ef4444';
+        statusText.textContent = errMsg || 'Ошибка проверки';
+        setTimeout(() => { statusText.style.display = 'none'; }, 4000);
+      }
+      showToast(errMsg || 'Не удалось проверить обновления', 'error', 3500);
     };
 
     window.onAppUpdateNotFound = function(info) {

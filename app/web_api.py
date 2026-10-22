@@ -1641,17 +1641,27 @@ class AppBridge:
             return {"success": True, "already_admin": True}
         try:
             self.call_js("onLog", "🛡️ Запрос прав администратора (UAC) и перезапуск...")
-            request_admin_restart()
-            import threading
-            def _delayed_exit():
-                import time
-                time.sleep(1.0)
+            success, msg = request_admin_restart()
+            if not success:
+                self.call_js("onLog", f"⚠️ {msg}")
+                return {"success": False, "error": msg}
+
+            # При подтверждении UAC корректно освобождаем ресурсы и завершаем текущий экземпляр
+            def _exit_current():
+                time.sleep(0.3)
                 try:
-                    import sys
-                    sys.exit(0)
-                except SystemExit:
+                    if self._tray_manager:
+                        self._tray_manager.stop()
+                except Exception:
                     pass
-            threading.Thread(target=_delayed_exit, daemon=True).start()
+                try:
+                    if self._window:
+                        self._window.destroy()
+                except Exception:
+                    pass
+                os._exit(0)
+
+            threading.Thread(target=_exit_current, daemon=True).start()
             return {"success": True, "already_admin": False}
         except Exception as e:
             logger.error(f"Failed to restart as admin: {e}")
@@ -1842,9 +1852,14 @@ class AppBridge:
                     )
             else:
                 if manual:
-                    self.call_js("onAppUpdateNotFound", res)
-                    msg = i18n.t("self_update_no_updates", version=__version__)
-                    self.call_js("onLog", f"✨ {msg}")
+                    if not res.get("success", True):
+                        err_msg = res.get("error") or "Не удалось подключиться к серверу GitHub."
+                        self.call_js("onAppUpdateError", err_msg)
+                        self.call_js("onLog", f"⚠️ Проверка обновлений не удалась: {err_msg}")
+                    else:
+                        self.call_js("onAppUpdateNotFound", res)
+                        msg = i18n.t("self_update_no_updates", version=__version__)
+                        self.call_js("onLog", f"✨ {msg}")
 
         threading.Thread(target=worker, daemon=True).start()
 

@@ -80,7 +80,27 @@ def find_existing_app_window() -> int | None:
     return target_hwnds[0] if target_hwnds else None
 
 
-def get_other_app_processes() -> list[tuple[int, str]]:
+def is_pid_alive(pid: int) -> bool:
+    """Проверяет, активен ли процесс с указанным PID в системе."""
+    if not pid or pid <= 0:
+        return False
+    kernel32 = ctypes.windll.kernel32
+    PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+    SYNCHRONIZE = 0x00100000
+    h_proc = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE, False, pid)
+    if not h_proc or h_proc in (-1, 0xFFFFFFFFFFFFFFFF):
+        return False
+    try:
+        exit_code = wintypes.DWORD()
+        if kernel32.GetExitCodeProcess(h_proc, ctypes.byref(exit_code)):
+            STILL_ACTIVE = 259
+            return exit_code.value == STILL_ACTIVE
+        return False
+    finally:
+        kernel32.CloseHandle(h_proc)
+
+
+def get_other_app_processes(exclude_pids: set[int] | None = None) -> list[tuple[int, str]]:
     """Находит другие запущенные процессы ZiablWinSetup в текущей пользовательской сессии."""
     kernel32 = ctypes.windll.kernel32
     current_pid = os.getpid()
@@ -110,10 +130,14 @@ def get_other_app_processes() -> list[tuple[int, str]]:
 
     kernel32.CloseHandle(hSnap)
 
+    ignored_pids = {current_pid, my_parent_pid}
+    if exclude_pids:
+        ignored_pids.update(exclude_pids)
+
     other_pids = []
     for pid, ppid, exe_name in all_procs:
-        # Исключаем текущий процесс и его собственный PyInstaller bootloader
-        if pid in (current_pid, my_parent_pid):
+        # Исключаем текущий процесс, его загрузчик и специально исключенные PID
+        if pid in ignored_pids:
             continue
         if "ziabl" in exe_name.lower():
             sess = wintypes.DWORD()
@@ -212,9 +236,53 @@ class SingleInstanceGuard:
         """
         kernel32 = ctypes.windll.kernel32
 
-        # 1. Попытка создания мьютекса единого экземпляра
-        self._mutex_handle = kernel32.CreateMutexW(None, True, MUTEX_NAME)
-        last_error = kernel32.GetLastError()
+        # 0. Проверяем, запущен ли процесс в режиме UAC-перезапуска (--restarted-from-pid <pid>)
+        restarted_from_pid = None
+        for i, arg in enumerate(sys.argv):
+            if arg == "--restarted-from-pid" and i + 1 < len(sys.argv):
+                try:
+                    restarted_from_pid = int(sys.argv[i + 1])
+                except (ValueError, TypeError):
+                    pass
+                break
+
+        if restarted_from_pid:
+            logger.info(f"Перезапуск от имени администратора (исходный PID: {restarted_from_pid}). Ожидание завершения исходного процесса...")
+            # Ждем завершения старого процесса до 4 секунд (40 * 0.1с)
+            for _ in range(40):
+                if not is_pid_alive(restarted_from_pid):
+                    break
+                time.sleep(0.1)
+
+            # Если старый процесс не завершился сам, принудительно гасим его
+            if is_pid_alive(restarted_from_pid):
+                logger.warning(f"Исходный процесс PID {restarted_from_pid} не завершился вовремя, принудительно завершаем...")
+                try:
+                    subprocess.run(
+                        ["taskkill", "/F", "/PID", str(restarted_from_pid)],
+                        capture_output=True,
+                        creationflags=subprocess.CREATE_NO_WINDOW
+                    )
+                    time.sleep(0.3)
+                except Exception as ex:
+                    logger.warning(f"Ошибка taskkill исходного процесса: {ex}")
+
+        # 1. Попытка создания мьютекса единого экземпляра (с повторами при UAC-перезапуске)
+        max_attempts = 25 if restarted_from_pid else 1
+        last_error = 0
+        for attempt in range(max_attempts):
+            self._mutex_handle = kernel32.CreateMutexW(None, True, MUTEX_NAME)
+            last_error = kernel32.GetLastError()
+            if last_error != ERROR_ALREADY_EXISTS:
+                break
+            if attempt < max_attempts - 1:
+                if self._mutex_handle:
+                    try:
+                        kernel32.CloseHandle(self._mutex_handle)
+                    except Exception:
+                        pass
+                    self._mutex_handle = None
+                time.sleep(0.15)
 
         if last_error == ERROR_ALREADY_EXISTS:
             logger.warning("Обнаружен запущенный экземпляр приложения через Named Mutex.")
@@ -241,7 +309,8 @@ class SingleInstanceGuard:
             return False
 
         # 2. Проверка запущенных старых копий (без поддержки мьютекса)
-        other_procs = get_other_app_processes()
+        exclude = {restarted_from_pid} if restarted_from_pid else set()
+        other_procs = get_other_app_processes(exclude_pids=exclude)
         if other_procs:
             count = len(other_procs)
             logger.warning(f"Обнаружено {count} старых копий ZiablWinSetup в памяти.")

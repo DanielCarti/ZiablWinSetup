@@ -399,30 +399,55 @@ def get_clean_env() -> dict[str, str]:
     return env
 
 
-def request_admin_restart():
-    """Перезапускает скрипт с запросом прав администратора (UAC)."""
+def request_admin_restart() -> tuple[bool, str]:
+    """
+    Перезапускает приложение с запросом прав администратора (UAC).
+    Возвращает (True, "") при успешном запуске повышенного процесса,
+    или (False, "причина") при отмене пользователем или ошибке.
+    """
     if is_admin():
-        return
+        return True, "Уже запущен с правами администратора"
 
-    script = sys.argv[0]
-    params = " ".join(sys.argv[1:])
+    old_pid = os.getpid()
 
-    # Если запущен как .py файл
-    if script.endswith(".py"):
+    # Корректно формируем исполняемый файл и аргументы для запуска от имени администратора
+    if getattr(sys, "frozen", False):
         executable = sys.executable
-        params = f'"{script}" {params}'
+        params = f"--restarted-from-pid {old_pid}"
     else:
-        executable = script
-        params = params
+        executable = sys.executable
+        script = os.path.abspath(sys.argv[0])
+        params = f'"{script}" --restarted-from-pid {old_pid}'
+
+    # Сохраняем остальные аргументы запуска (например, --tray, --minimized)
+    for arg in sys.argv[1:]:
+        if not arg.startswith("--restarted-from-pid"):
+            params += f' "{arg}"'
 
     try:
-        ctypes.windll.shell32.ShellExecuteW(
+        ret = ctypes.windll.shell32.ShellExecuteW(
             None, "runas", executable, params, None, 1
         )
-    except Exception:
-        pass
+        # ShellExecuteW возвращает значение > 32 в случае успеха.
+        # Коды <= 32 указывают на ошибки (например, SE_ERR_ACCESSDENIED = 5 при клике "Нет" в окне UAC).
+        if int(ret) <= 32:
+            logger.warning(f"ShellExecuteW (runas) отклонен пользователем или завершился с кодом: {ret}")
+            return False, "Запрос прав администратора (UAC) отклонен пользователем"
 
-    sys.exit(0)
+        logger.info(f"Запрошен перезапуск от имени администратора (PID {old_pid} -> UAC, ret={ret}).")
+
+        # Освобождаем мьютекс единственного экземпляра в текущем процессе ПЕРЕД передачей управления новому
+        try:
+            from app.single_instance import single_instance_guard
+            single_instance_guard.cleanup()
+        except Exception as e:
+            logger.debug(f"Cleanup single_instance_guard error: {e}")
+
+        return True, ""
+
+    except Exception as e:
+        logger.error(f"Ошибка при вызове ShellExecuteW (runas): {e}")
+        return False, str(e)
 
 
 def get_download_dir() -> Path:
