@@ -569,25 +569,67 @@ class AppBridge:
         directory: str = "",
     ) -> str | None:
         """
-        Безопасное открытие диалога выбора файла.
-        Сначала пробует webview.create_file_dialog со строгим форматом pywebview,
-        при любой ошибке мгновенно и надежно использует PowerShell OpenFileDialog.
+        Мгновенный и надежный нативный диалог открытия файлов Windows (GetOpenFileNameW).
+        Никогда не блокирует интерфейс pywebview и работает поверх всех окон.
         """
-        if self._window:
-            try:
-                res = self._window.create_file_dialog(
-                    webview.OPEN_DIALOG,
-                    directory=directory or None,
-                    allow_multiple=False,
-                    file_types=file_types_webview,
-                )
-                if res and len(res) > 0:
-                    return str(res[0])
-                elif res is not None and len(res) == 0:
-                    # Пользователь нажал "Отмена"
-                    return None
-            except Exception as e:
-                logger.warning(f"pywebview create_file_dialog warning (falling back to PowerShell): {e}")
+        try:
+            import ctypes
+            from ctypes import wintypes
+
+            class OPENFILENAMEW(ctypes.Structure):
+                _fields_ = [
+                    ("lStructSize", wintypes.DWORD),
+                    ("hwndOwner", wintypes.HWND),
+                    ("hInstance", wintypes.HINSTANCE),
+                    ("lpstrFilter", wintypes.LPCWSTR),
+                    ("lpstrCustomFilter", wintypes.LPWSTR),
+                    ("nMaxCustFilter", wintypes.DWORD),
+                    ("nFilterIndex", wintypes.DWORD),
+                    ("lpstrFile", wintypes.LPWSTR),
+                    ("nMaxFile", wintypes.DWORD),
+                    ("lpstrFileTitle", wintypes.LPWSTR),
+                    ("nMaxFileTitle", wintypes.DWORD),
+                    ("lpstrInitialDir", wintypes.LPCWSTR),
+                    ("lpstrTitle", wintypes.LPCWSTR),
+                    ("Flags", wintypes.DWORD),
+                    ("nFileOffset", wintypes.WORD),
+                    ("nFileExtension", wintypes.WORD),
+                    ("lpstrDefExt", wintypes.LPCWSTR),
+                    ("lCustData", wintypes.LPARAM),
+                    ("lpfnHook", wintypes.LPVOID),
+                    ("lpTemplateName", wintypes.LPCWSTR),
+                    ("pvReserved", wintypes.LPVOID),
+                    ("dwReserved", wintypes.DWORD),
+                    ("FlagsEx", wintypes.DWORD),
+                ]
+
+            parts = filter_str_ps.split("|")
+            filter_pairs = []
+            for i in range(0, len(parts) - 1, 2):
+                filter_pairs.append(parts[i] + "\0" + parts[i + 1])
+            filter_wstr = "\0".join(filter_pairs) + "\0\0"
+
+            buffer = ctypes.create_unicode_buffer(1024)
+            ofn = OPENFILENAMEW()
+            ofn.lStructSize = ctypes.sizeof(OPENFILENAMEW)
+            ofn.hwndOwner = ctypes.windll.user32.GetForegroundWindow()
+            ofn.lpstrFilter = filter_wstr
+            ofn.lpstrFile = ctypes.cast(buffer, wintypes.LPWSTR)
+            ofn.nMaxFile = 1024
+            ofn.lpstrInitialDir = directory if directory and os.path.exists(directory) else None
+            ofn.lpstrTitle = title
+            # OFN_EXPLORER (0x80000) | OFN_FILEMUSTEXIST (0x1000) | OFN_PATHMUSTEXIST (0x800) | OFN_ENABLESIZING (0x800000)
+            ofn.Flags = 0x00080000 | 0x00001000 | 0x00000800 | 0x00800000
+
+            if ctypes.windll.comdlg32.GetOpenFileNameW(ctypes.byref(ofn)):
+                chosen = buffer.value
+                if chosen and os.path.exists(chosen):
+                    return chosen
+            else:
+                # User pressed cancel or closed dialog
+                return None
+        except Exception as e:
+            logger.warning(f"comdlg32 GetOpenFileNameW failed, falling back to powershell: {e}")
 
         # PowerShell WinForms OpenFileDialog fallback
         try:
@@ -611,8 +653,7 @@ class AppBridge:
             if out and os.path.exists(out):
                 return out
         except Exception as e:
-            logger.warning(f"PowerShell OpenFileDialog fallback error: {e}")
-
+            logger.error(f"PowerShell OpenFileDialog failed: {e}")
         return None
 
     def restore_registry_backup_dialog(self) -> dict[str, Any]:
@@ -675,14 +716,61 @@ class AppBridge:
     # ==========================================
 
     def get_virustotal_config(self) -> dict[str, Any]:
-        """Возвращает статус наличия API ключа VirusTotal."""
+        """Возвращает статус наличия API ключа VirusTotal и список сохраненных аккаунтов."""
         from app.virustotal import get_virustotal_api_key
-        key = get_virustotal_api_key()
-        masked = f"{key[:4]}...{key[-4:]}" if len(key) >= 8 else ("***" if key else "")
+        from app.settings import get_virustotal_keys
+        active_key = get_virustotal_api_key()
+        masked = f"{active_key[:4]}...{active_key[-4:]}" if len(active_key) >= 8 else ("***" if active_key else "")
+        raw_keys = get_virustotal_keys()
+        formatted_keys = []
+        for item in raw_keys:
+            k = item.get("key", "")
+            m = f"{k[:4]}...{k[-4:]}" if len(k) >= 8 else ("***" if k else "")
+            formatted_keys.append({
+                "name": item.get("name", "Account"),
+                "key": k,
+                "masked_key": m,
+                "active": bool(k and k == active_key),
+            })
         return {
-            "has_key": bool(key),
+            "has_key": bool(active_key),
             "masked_key": masked,
+            "active_key": active_key,
+            "keys": formatted_keys,
         }
+
+    def save_named_virustotal_key(self, name: str, api_key: str, set_active: bool = True) -> dict[str, Any]:
+        """Сохраняет именованный API ключ VirusTotal в список сохраненных аккаунтов."""
+        from app.virustotal import validate_virustotal_api_key
+        from app.settings import save_virustotal_key
+        key = (api_key or "").strip()
+        account_name = (name or "Account").strip()
+        if not key:
+            return {"success": False, "message": "API key cannot be empty." if i18n.lang == "en" else "API ключ не может быть пустым."}
+        valid, err_msg = validate_virustotal_api_key(key, lang=i18n.lang)
+        if not valid:
+            self.call_js("onLog", f"❌ {err_msg}")
+            return {"success": False, "message": err_msg}
+        save_virustotal_key(account_name, key, set_active=set_active)
+        msg = f"API ключ '{account_name}' сохранен." if i18n.lang == "ru" else f"API key '{account_name}' saved."
+        self.call_js("onLog", f"✅ {msg}")
+        return {"success": True, "message": msg, "config": self.get_virustotal_config()}
+
+    def delete_virustotal_key(self, api_key: str) -> dict[str, Any]:
+        """Удаляет API ключ из сохраненных."""
+        from app.settings import delete_virustotal_key
+        delete_virustotal_key(api_key)
+        msg = "Ключ удален из сохраненных." if i18n.lang == "ru" else "Key deleted from saved accounts."
+        self.call_js("onLog", f"ℹ️ {msg}")
+        return {"success": True, "message": msg, "config": self.get_virustotal_config()}
+
+    def select_active_virustotal_key(self, api_key: str) -> dict[str, Any]:
+        """Переключает активный API ключ на выбранный из сохраненных."""
+        from app.settings import set_active_virustotal_key
+        set_active_virustotal_key(api_key)
+        msg = "Активный API ключ VirusTotal переключен." if i18n.lang == "ru" else "Active VirusTotal API key switched."
+        self.call_js("onLog", f"✅ {msg}")
+        return {"success": True, "message": msg, "config": self.get_virustotal_config()}
 
     def save_virustotal_api_key(self, api_key: str) -> dict[str, Any]:
         """Сохраняет и строго валидирует пользовательский API ключ VirusTotal."""

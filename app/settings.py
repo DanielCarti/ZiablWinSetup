@@ -31,6 +31,7 @@ _DEFAULT_SETTINGS = {
     "auto_clean_leftovers": None,
     "skipped_app_version": "",
     "virustotal_api_key": "",
+    "virustotal_keys": [],
     "accent_color": "blue",
 }
 
@@ -112,7 +113,65 @@ def get_virustotal_api_key() -> str:
 
 def set_virustotal_api_key(api_key: str) -> bool:
     settings = load_settings()
-    settings["virustotal_api_key"] = api_key.strip()
+    clean_key = api_key.strip()
+    settings["virustotal_api_key"] = clean_key
+    # Also keep in keys list
+    if clean_key:
+        keys = list(settings.get("virustotal_keys", []))
+        if not any(k.get("key") == clean_key for k in keys):
+            keys.insert(0, {"name": "Default Account", "key": clean_key})
+            settings["virustotal_keys"] = keys
+    return save_settings(settings)
+
+
+def get_virustotal_keys() -> list[dict[str, str]]:
+    """Returns saved VirusTotal keys list: [{'name': '...', 'key': '...'}]"""
+    settings = load_settings()
+    keys = list(settings.get("virustotal_keys", []))
+    active = str(settings.get("virustotal_api_key", "")).strip()
+    if active and not any(k.get("key") == active for k in keys):
+        keys.insert(0, {"name": "Default Account", "key": active})
+        settings["virustotal_keys"] = keys
+        save_settings(settings)
+    return keys
+
+
+def save_virustotal_key(name: str, key: str, set_active: bool = True) -> list[dict[str, str]]:
+    """Adds or updates a named VirusTotal key."""
+    settings = load_settings()
+    keys = list(settings.get("virustotal_keys", []))
+    clean_name = str(name or "Account").strip()
+    clean_key = str(key or "").strip()
+    if not clean_key:
+        return keys
+    existing = next((k for k in keys if k.get("key") == clean_key), None)
+    if existing:
+        existing["name"] = clean_name
+    else:
+        keys.append({"name": clean_name, "key": clean_key})
+    settings["virustotal_keys"] = keys
+    if set_active:
+        settings["virustotal_api_key"] = clean_key
+    save_settings(settings)
+    return keys
+
+
+def delete_virustotal_key(key: str) -> list[dict[str, str]]:
+    """Deletes a saved VirusTotal key."""
+    settings = load_settings()
+    clean_key = str(key or "").strip()
+    keys = [k for k in settings.get("virustotal_keys", []) if k.get("key") != clean_key]
+    settings["virustotal_keys"] = keys
+    if settings.get("virustotal_api_key", "").strip() == clean_key:
+        settings["virustotal_api_key"] = keys[0]["key"] if keys else ""
+    save_settings(settings)
+    return keys
+
+
+def set_active_virustotal_key(key: str) -> bool:
+    """Sets the active VirusTotal key."""
+    settings = load_settings()
+    settings["virustotal_api_key"] = str(key or "").strip()
     return save_settings(settings)
 
 

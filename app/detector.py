@@ -339,11 +339,26 @@ def _get_registry_entries() -> list[dict[str, str]]:
                             except Exception:
                                 quiet_uninst = ""
 
+                            try:
+                                sc, _ = winreg.QueryValueEx(app_key, "SystemComponent")
+                                is_system_component = bool(sc == 1)
+                            except Exception:
+                                is_system_component = False
+
+                            try:
+                                pk, _ = winreg.QueryValueEx(app_key, "ParentKeyName")
+                                parent_key = str(pk).strip()
+                            except Exception:
+                                parent_key = ""
+
                             entries.append({
                                 "display_name": dn,
                                 "version": ver,
                                 "uninstall": uninst,
                                 "quiet_uninstall": quiet_uninst,
+                                "subkey_name": subkey_name,
+                                "is_system_component": is_system_component,
+                                "parent_key": parent_key,
                             })
                     except Exception:
                         pass

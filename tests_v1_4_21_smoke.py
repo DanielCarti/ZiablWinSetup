@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.abspath("."))
 class TestVersion(unittest.TestCase):
     def test_version_string(self):
         from app.version import __version__, APP_NAME
-        self.assertEqual(__version__, "1.4.28")
+        self.assertEqual(__version__, "1.4.29")
         self.assertEqual(APP_NAME, "ZiablWinSetup")
 
 
@@ -706,7 +706,7 @@ class TestTweakProcessHandling(unittest.TestCase):
         from unittest.mock import patch
         """Проверка исправлений UAC перезапуска и плавающей панели для v1.4.28."""
         from app.version import __version__
-        self.assertEqual(__version__, "1.4.28")
+        self.assertEqual(__version__, "1.4.29")
 
         # 1. request_admin_restart handles UAC cancellation and passes --restarted-from-pid
         from app.utils import request_admin_restart
@@ -744,6 +744,92 @@ class TestTweakProcessHandling(unittest.TestCase):
         self.assertIn('btnStickyInstall', content)
         self.assertIn('updateStickyBar', content)
         self.assertIn('_hasStickyScrollListener', content)
+
+
+    def test_v1_4_29_features(self):
+        """Проверка всех 12 улучшений и исправлений v1.4.29."""
+        from app.version import __version__
+        self.assertEqual(__version__, "1.4.29")
+
+        # 1. Official Rufus & Hydra Launcher icons
+        self.assertTrue((Path("app/ui/icons/rufus.svg")).exists())
+        self.assertTrue((Path("app/ui/icons/hydralauncher.svg")).exists())
+        self.assertTrue((Path("app/ui/icons/rufus.png")).exists())
+        self.assertTrue((Path("app/ui/icons/hydralauncher.png")).exists())
+
+        # 2. VirusTotal Multiple Saved Keys API in settings.py
+        from app.settings import (
+            get_virustotal_keys, save_virustotal_key,
+            delete_virustotal_key, set_active_virustotal_key
+        )
+        saved_keys = get_virustotal_keys()
+        self.assertIsInstance(saved_keys, list)
+
+        # 3. Startup Manager Impact calculation
+        from app.startup_manager import _calculate_startup_impact
+        item_heavy = {"name": "Discord", "command": "discord.exe", "file_path": "", "enabled": True}
+        res_heavy = _calculate_startup_impact(item_heavy)
+        self.assertEqual(res_heavy["impact"], "high")
+        self.assertEqual(res_heavy["impact_en"], "High")
+
+        item_light = {"name": "AudioTrayHelper", "command": "tray.exe", "file_path": "", "enabled": True}
+        res_light = _calculate_startup_impact(item_light)
+        self.assertEqual(res_light["impact"], "low")
+        self.assertEqual(res_light["impact_en"], "Low")
+
+        # 4. Tweaks shell notification without restarting explorer
+        import app.tweaks as tweaks
+        self.assertTrue(hasattr(tweaks, "_notify_shell_settings_changed"))
+        # Check source code to ensure searchbox and file ext use notify_shell_settings_changed
+        import inspect
+        searchbox_code = inspect.getsource(tweaks._apply_taskbar_search_hidden)
+        self.assertIn("_notify_shell_settings_changed", searchbox_code)
+        self.assertNotIn("_restart_explorer", searchbox_code)
+
+        file_ext_code = inspect.getsource(tweaks._apply_file_ext)
+        self.assertIn("_notify_shell_settings_changed", file_ext_code)
+        self.assertNotIn("_restart_explorer", file_ext_code)
+
+        # 5. Backup driver & GUID filtering
+        from app.backup_restore import _is_driver_or_component
+        self.assertTrue(_is_driver_or_component("1527c705-728b-4a5f-98c3-c287b4618e7c"))
+        self.assertTrue(_is_driver_or_component("AMD GPIO Controller"))
+        self.assertTrue(_is_driver_or_component("AMD I2C Driver"))
+        self.assertTrue(_is_driver_or_component("AMD Chipset Software"))
+        self.assertFalse(_is_driver_or_component("Google Chrome"))
+        self.assertFalse(_is_driver_or_component("Visual Studio Code"))
+
+        # 6. Frontend checks in app/ui/index.html
+        html = Path("app/ui/index.html").read_text(encoding="utf-8")
+        # Tweaks view modes & local search
+        self.assertIn("tweaksSearchInput", html)
+        self.assertIn("btnTweakViewGrid", html)
+        self.assertIn("btnTweakViewCompact", html)
+        self.assertIn("btnTweakViewList", html)
+        self.assertIn("setTweaksViewMode", html)
+        self.assertIn("filterTweaksLocal", html)
+
+        # Startup impact badges
+        self.assertIn("startup-impact-badge", html)
+        self.assertIn("impact-high", html)
+
+        # VirusTotal saved keys modal
+        self.assertIn("id=\"vtKeysModal\"", html)
+        self.assertIn("btnSavedVtKeys", html)
+        self.assertIn("openVtKeysModal", html)
+
+        # Backup modal driver filter & localization
+        self.assertIn("chkShowBackupDrivers", html)
+        self.assertIn("toggleShowBackupDrivers", html)
+        self.assertIn("lblBackupModalTitle", html)
+        self.assertIn("lblBackupTabCatalogText", html)
+
+        # GitHub URL fix (DanielCarti/ZiablWinSetup)
+        self.assertIn("DanielCarti/ZiablWinSetup/issues/new", html)
+        self.assertNotIn("DanielCarti/WinSetup/issues/new", html)
+
+        # No competitor mentions
+        self.assertNotIn("ccleaner", html.lower())
 
 
 if __name__ == "__main__":

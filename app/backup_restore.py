@@ -30,7 +30,39 @@ def get_default_backup_dir() -> Path:
     return b_dir
 
 
-def export_apps_backup(target_path: str | None = None) -> dict[str, Any]:
+
+_UUID_RE = re.compile(r"^\{?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\}?$|^[0-9a-fA-F]{32,}$")
+
+DRIVER_PATTERNS = [
+    "controller", "chipset", "driver", "microcode", "smbus", "gpio", "i2c",
+    "ahci", "sata", "nvme", "pci express", "graphics driver", "audio driver",
+    "lan driver", "wlan driver", "host controller", "card reader", "realtek audio",
+    "intel(r) management engine", "amd ryzen master driver"
+]
+
+
+def _is_driver_or_component(name: str, entry: dict = None) -> bool:
+    """Checks if entry represents a hardware driver, system update, or internal GUID package."""
+    if not name or len(name.strip()) <= 1:
+        return True
+    n_lower = name.lower()
+    if _UUID_RE.match(name.strip()):
+        return True
+    if name.startswith("KB") or "security update" in n_lower or "hotfix" in n_lower or "update for windows" in n_lower:
+        return True
+    if any(p in n_lower for p in DRIVER_PATTERNS):
+        return True
+    if entry:
+        if entry.get("is_system_component"):
+            return True
+        if entry.get("parent_key"):
+            return True
+        sk = entry.get("subkey_name", "")
+        if sk and _UUID_RE.match(sk.strip()) and not entry.get("uninstall"):
+            return True
+    return False
+
+def export_apps_backup(target_path: str | None = None, include_drivers: bool = False) -> dict[str, Any]:
     """
     Сканирует все установленные программы и экспортирует их в файл бэкапа.
     """
@@ -90,11 +122,17 @@ def export_apps_backup(target_path: str | None = None) -> dict[str, Any]:
                     winget_id = app.winget_id
                     break
 
+            is_driver = _is_driver_or_component(dn, entry)
+            # Filter out internal drivers/GUIDs by default
+            if not include_drivers and is_driver:
+                continue
+
             system_apps_data.append({
                 "name": dn,
                 "version": ver,
                 "winget_id": winget_id,
                 "uninstall_cmd": uninst,
+                "is_driver": is_driver,
             })
 
         # Сортировка по имени
@@ -287,12 +325,14 @@ def import_apps_backup(file_path: str) -> dict[str, Any]:
                 continue
             is_inst = s_name.lower() in curr_sys_names
             w_id = s.get("winget_id", "")
+            is_drv = bool(s.get("is_driver", False) or _is_driver_or_component(s_name))
             matched_system.append({
                 "name": s_name,
                 "backup_version": s.get("version", ""),
                 "already_installed": is_inst,
                 "winget_id": w_id,
                 "search_query": s_name,
+                "is_driver": is_drv,
             })
 
         return {

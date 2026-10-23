@@ -56,6 +56,26 @@ class TweakEntry:
         }
 
 
+def _notify_shell_settings_changed() -> None:
+    """Оповещает оболочку Windows и Проводник об изменениях без перезапуска explorer.exe."""
+    try:
+        import ctypes
+        from ctypes import wintypes
+        user32 = ctypes.windll.user32
+        shell32 = ctypes.windll.shell32
+        HWND_BROADCAST = 0xFFFF
+        WM_SETTINGCHANGE = 0x001A
+        SMTO_ABORTIFHUNG = 0x0002
+        res = wintypes.DWORD()
+        user32.SendMessageTimeoutW(HWND_BROADCAST, WM_SETTINGCHANGE, 0, "TraySettings", SMTO_ABORTIFHUNG, 500, ctypes.byref(res))
+        user32.SendMessageTimeoutW(HWND_BROADCAST, WM_SETTINGCHANGE, 0, "ShellState", SMTO_ABORTIFHUNG, 500, ctypes.byref(res))
+        SHCNE_ASSOCCHANGED = 0x08000000
+        SHCNF_FLUSH = 0x1000
+        shell32.SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_FLUSH, None, None)
+    except Exception:
+        pass
+
+
 def _restart_explorer():
     """Перезапуск explorer.exe с чистым окружением (без переменных PyInstaller _MEI)."""
     try:
@@ -338,7 +358,7 @@ def _apply_file_ext() -> tuple[bool, str]:
     try:
         with winreg.OpenKey(winreg.HKEY_CURRENT_USER, _EXPLORER_ADVANCED_KEY, 0, winreg.KEY_SET_VALUE) as key:
             winreg.SetValueEx(key, "HideFileExt", 0, winreg.REG_DWORD, 0)
-        _restart_explorer()
+        _notify_shell_settings_changed()
         return True, "Отображение расширений файлов включено!"
     except Exception as e:
         return False, f"Ошибка: {e}"
@@ -348,7 +368,7 @@ def _revert_file_ext() -> tuple[bool, str]:
     try:
         with winreg.OpenKey(winreg.HKEY_CURRENT_USER, _EXPLORER_ADVANCED_KEY, 0, winreg.KEY_SET_VALUE) as key:
             winreg.SetValueEx(key, "HideFileExt", 0, winreg.REG_DWORD, 1)
-        _restart_explorer()
+        _notify_shell_settings_changed()
         return True, "Расширения файлов скрыты."
     except Exception as e:
         return False, f"Ошибка: {e}"
@@ -837,7 +857,7 @@ def _apply_taskbar_search_hidden() -> tuple[bool, str]:
     try:
         with winreg.CreateKey(winreg.HKEY_CURRENT_USER, _SEARCHBOX_KEY) as key:
             winreg.SetValueEx(key, "SearchboxTaskbarMode", 0, winreg.REG_DWORD, 0)
-        _restart_explorer()
+        _notify_shell_settings_changed()
         return True, "Строка поиска на панели задач скрыта."
     except Exception as e:
         return False, f"Ошибка изменения реестра: {e}"
@@ -848,7 +868,7 @@ def _revert_taskbar_search_hidden() -> tuple[bool, str]:
         with winreg.CreateKey(winreg.HKEY_CURRENT_USER, _SEARCHBOX_KEY) as key:
             # Режим 2 — полноценное «Поле поиска» (Search box)
             winreg.SetValueEx(key, "SearchboxTaskbarMode", 0, winreg.REG_DWORD, 2)
-        _restart_explorer()
+        _notify_shell_settings_changed()
         return True, "Отображение поиска (поле поиска) на панели задач восстановлено."
     except Exception as e:
         return False, f"Ошибка изменения реестра: {e}"

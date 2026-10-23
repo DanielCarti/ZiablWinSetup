@@ -804,6 +804,57 @@ def _scan_services_startup_items() -> list[dict[str, Any]]:
     return items
 
 
+
+_HIGH_IMPACT_PATTERNS = {
+    "discord", "steam", "epic", "riot", "battle.net", "chrome", "firefox", "opera",
+    "browser", "msedge", "yandex", "brave", "torrent", "wallpaper", "adobe",
+    "creative cloud", "virtualbox", "vmware", "docker", "wsl", "onedrive",
+    "dropbox", "slack", "teams", "spotify", "antivirus", "kaspersky", "drweb"
+}
+
+_LOW_IMPACT_PATTERNS = {
+    "tray", "helper", "hotkey", "volume", "audio", "synaptics", "realtek",
+    "notification", "print", "mouse", "keyboard", "bluetooth", "brightness"
+}
+
+
+def _calculate_startup_impact(item: dict[str, Any]) -> dict[str, str]:
+    """
+    Calculates estimated startup impact similar to Windows Task Manager.
+    Returns:
+    - 'impact': 'high' | 'medium' | 'low' | 'none'
+    - 'impact_ru': 'Высокое' | 'Среднее' | 'Низкое' | 'Не замерено'
+    - 'impact_en': 'High' | 'Medium' | 'Low' | 'Not measured'
+    """
+    search_text = f"{item.get('name', '')} {item.get('display_name', '')} {item.get('command', '')} {item.get('file_path', '')}".lower()
+    fp = item.get("file_path", "")
+    file_size = 0
+    try:
+        if fp and os.path.exists(fp):
+            file_size = os.path.getsize(fp)
+    except Exception:
+        pass
+
+    if any(p in search_text for p in _HIGH_IMPACT_PATTERNS) or file_size > 25 * 1024 * 1024:
+        return {
+            "impact": "high",
+            "impact_ru": "Высокое",
+            "impact_en": "High",
+        }
+
+    if any(p in search_text for p in _LOW_IMPACT_PATTERNS) or (0 < file_size < 3 * 1024 * 1024) or item.get("source_type") == "service_delayed":
+        return {
+            "impact": "low",
+            "impact_ru": "Низкое",
+            "impact_en": "Low",
+        }
+
+    return {
+        "impact": "medium",
+        "impact_ru": "Среднее",
+        "impact_en": "Medium",
+    }
+
 class StartupManager:
     """Менеджер автозагрузки Windows (реестр, папки, планировщик)."""
 
@@ -1008,6 +1059,13 @@ class StartupManager:
             items.extend(service_items)
         except Exception as e:
             logger.warning(f"Ошибка получения служб автозапуска: {e}")
+
+        # Расчет нагрузки при автозапуске (Startup Impact) как в Диспетчере задач Windows
+        for it in items:
+            imp_info = _calculate_startup_impact(it)
+            it["impact"] = imp_info["impact"]
+            it["impact_ru"] = imp_info["impact_ru"]
+            it["impact_en"] = imp_info["impact_en"]
 
         return items
 
