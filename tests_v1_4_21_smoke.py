@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.abspath("."))
 class TestVersion(unittest.TestCase):
     def test_version_string(self):
         from app.version import __version__, APP_NAME
-        self.assertEqual(__version__, "1.4.30")
+        self.assertEqual(__version__, "1.4.31")
         self.assertEqual(APP_NAME, "ZiablWinSetup")
 
 
@@ -706,7 +706,7 @@ class TestTweakProcessHandling(unittest.TestCase):
         from unittest.mock import patch
         """Проверка исправлений UAC перезапуска и плавающей панели для v1.4.28."""
         from app.version import __version__
-        self.assertEqual(__version__, "1.4.30")
+        self.assertEqual(__version__, "1.4.31")
 
         # 1. request_admin_restart handles UAC cancellation and passes --restarted-from-pid
         from app.utils import request_admin_restart
@@ -749,7 +749,7 @@ class TestTweakProcessHandling(unittest.TestCase):
     def test_v1_4_29_features(self):
         """Проверка всех 12 улучшений и исправлений v1.4.29."""
         from app.version import __version__
-        self.assertEqual(__version__, "1.4.30")
+        self.assertEqual(__version__, "1.4.31")
 
         # 1. Official Rufus & Hydra Launcher icons
         self.assertTrue((Path("app/ui/icons/rufus.svg")).exists())

@@ -18,28 +18,42 @@ logger = logging.getLogger("updater")
 
 
 def _get_github_latest_version(repo: str) -> str | None:
-    """Получает последний тег/версию релиза с GitHub."""
+    """Получает последний тег/версию релиза с GitHub (с обходом rate limit)."""
     try:
         url = f"https://api.github.com/repos/{repo}/releases/latest"
         req = urllib.request.Request(url, headers={"User-Agent": "ZiablWinSetup/2.0"})
         with urllib.request.urlopen(req, timeout=5) as resp:
             data = json.loads(resp.read().decode("utf-8"))
             tag = data.get("tag_name", "")
-            return tag.lstrip("v").strip()
+            if tag:
+                return tag.lstrip("vV").strip()
     except Exception as e:
-        logger.debug(f"GitHub release check failed for {repo}: {e}")
-        # Fallback: scrape releases page
-        try:
-            url = f"https://github.com/{repo}/releases"
-            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-            with urllib.request.urlopen(req, timeout=5) as resp:
-                html = resp.read().decode("utf-8", errors="ignore")
-                pattern = rf"/{repo}/releases/tag/([^\"'>]+)"
-                m = re.search(pattern, html)
-                if m:
-                    return m.group(1).lstrip("v").strip()
-        except Exception:
-            pass
+        logger.debug(f"GitHub API release check failed for {repo}: {e}")
+
+    # Fallback 1: Переход по редиректу releases/latest (без ограничений по API)
+    try:
+        url = f"https://github.com/{repo}/releases/latest"
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            tag_url = resp.geturl()
+            tag = tag_url.split("/")[-1]
+            if tag and tag != "latest":
+                return tag.lstrip("vV").strip()
+    except Exception:
+        pass
+
+    # Fallback 2: парсинг страницы releases
+    try:
+        url = f"https://github.com/{repo}/releases"
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            html = resp.read().decode("utf-8", errors="ignore")
+            pattern = rf"/{repo}/releases/tag/([^\"'>]+)"
+            m = re.search(pattern, html)
+            if m:
+                return m.group(1).lstrip("vV").strip()
+    except Exception:
+        pass
     return None
 
 

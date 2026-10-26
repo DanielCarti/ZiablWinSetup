@@ -351,28 +351,84 @@ class Downloader:
         except Exception as e:
             return DownloadResult(app=app, success=False, error=str(e))
 
-    def _download_github(self, app: AppEntry, dest_dir: Path, cb: ProgressCallback) -> DownloadResult:
-        """Скачивает последний релиз с GitHub."""
+    def _resolve_github_assets_web(self, repo: str) -> list[dict]:
+        """
+        Резервное получение ассетов релиза через веб-страницы GitHub (без REST API).
+        Позволяет полностью обойти ошибку 403 Rate Limit Exceeded (лимит 60 запросов/час unauthenticated API).
+        """
         try:
-            api_url = f"https://api.github.com/repos/{app.github_repo}/releases/latest"
-
+            latest_url = f"https://github.com/{repo}/releases/latest"
             req = urllib.request.Request(
-                api_url,
-                headers={"User-Agent": "WinSetup/1.0", "Accept": "application/vnd.github.v3+json"},
+                latest_url,
+                headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
             )
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                tag_url = resp.geturl()
+            tag = tag_url.split("/")[-1]
+            if not tag or tag == "latest":
+                return []
 
+            assets_url = f"https://github.com/{repo}/releases/expanded_assets/{tag}"
+            req_assets = urllib.request.Request(
+                assets_url,
+                headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+            )
+            with urllib.request.urlopen(req_assets, timeout=15) as resp:
+                html = resp.read().decode("utf-8", errors="replace")
+
+            links = re.findall(r'href="([^"]*/releases/download/[^"]+)"', html)
+            unique_links = list(dict.fromkeys(links))
+            assets = []
+            for link in unique_links:
+                fname = link.split("/")[-1]
+                full_url = f"https://github.com{link}"
+                assets.append({
+                    "name": fname,
+                    "browser_download_url": full_url,
+                    "size": 0
+                })
+            return assets
+        except Exception as e:
+            logger.warning(f"Fallback scraping for {repo} failed: {e}")
+            return []
+
+    def _download_github(self, app: AppEntry, dest_dir: Path, cb: ProgressCallback) -> DownloadResult:
+        """Скачивает последний релиз с GitHub (с авто-обходом лимитов API)."""
+        try:
             cb(app.id, 0, "Получение информации о релизе...")
+            assets = []
+            last_error = ""
 
-            with urllib.request.urlopen(req, timeout=30) as response:
-                release_data = json.loads(response.read().decode("utf-8"))
+            # 1. Сначала пробуем официальный GitHub REST API
+            try:
+                api_url = f"https://api.github.com/repos/{app.github_repo}/releases/latest"
+                req = urllib.request.Request(
+                    api_url,
+                    headers={"User-Agent": "WinSetup/1.0", "Accept": "application/vnd.github.v3+json"},
+                )
+                with urllib.request.urlopen(req, timeout=15) as response:
+                    release_data = json.loads(response.read().decode("utf-8"))
+                assets = release_data.get("assets", [])
+            except urllib.error.HTTPError as e:
+                last_error = f"GitHub API {e.code}: {e.reason}"
+                logger.warning(f"GitHub API error for {app.name} ({app.github_repo}): {e}. Trying web scraping fallback...")
+            except Exception as e:
+                last_error = str(e)
+                logger.warning(f"GitHub API request failed for {app.name}: {e}. Trying web scraping fallback...")
 
-            assets = release_data.get("assets", [])
+            # 2. Если API вернул 403 Rate Limit или пустой ответ — используем веб-парсинг без ограничений по квоте!
             if not assets:
-                return DownloadResult(app=app, success=False, error="Нет файлов в релизе")
+                logger.info(f"Используем веб-резолвер для {app.github_repo} (обход rate-limit)...")
+                assets = self._resolve_github_assets_web(app.github_repo)
+
+            if not assets:
+                err_msg = last_error or "Нет файлов в релизе GitHub"
+                return DownloadResult(app=app, success=False, error=err_msg)
 
             # Ищем подходящий asset
             download_url = None
             asset_name = None
+            matched_asset = None
 
             if app.github_asset_pattern:
                 for asset in assets:
@@ -381,6 +437,7 @@ class Downloader:
                     if fnmatch.fnmatch(name, pattern):
                         download_url = asset["browser_download_url"]
                         asset_name = asset["name"]
+                        matched_asset = asset
                         break
 
             # Если паттерн не помог, берём первый exe/msi/zip
@@ -390,6 +447,7 @@ class Downloader:
                         if asset["name"].lower().endswith(ext):
                             download_url = asset["browser_download_url"]
                             asset_name = asset["name"]
+                            matched_asset = asset
                             break
                     if download_url:
                         break
@@ -398,10 +456,11 @@ class Downloader:
                 # Берём просто первый asset
                 download_url = assets[0]["browser_download_url"]
                 asset_name = assets[0]["name"]
+                matched_asset = assets[0]
 
             # Скачиваем файл с проверкой кэша
             dest_path = dest_dir / asset_name
-            remote_size = int(asset.get("size", 0)) if asset else 0
+            remote_size = int(matched_asset.get("size", 0)) if matched_asset else 0
             if dest_path.exists() and dest_path.stat().st_size >= 256 * 1024:
                 if remote_size == 0 or dest_path.stat().st_size == remote_size:
                     size_str = format_size(dest_path.stat().st_size)
