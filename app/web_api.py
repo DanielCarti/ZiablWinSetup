@@ -460,7 +460,7 @@ class AppBridge:
                 )
                 if res and len(res) > 0:
                     chosen_path = res[0]
-                elif res is not None and len(res) == 0:
+                else:
                     return {"cancelled": True}
             except Exception as e:
                 logger.debug(f"Save backup file dialog error: {e}")
@@ -1079,11 +1079,45 @@ class AppBridge:
         name = app.name if app else app_id
         self.call_js("onLog", f"🗑️ Скачанный установщик {name} удален.")
 
+    def open_downloads_folder(self) -> dict[str, Any]:
+        """Открывает общую папку загрузок приложения в Проводнике."""
+        try:
+            from app.utils import get_download_dir
+            d = get_download_dir()
+            d.mkdir(parents=True, exist_ok=True)
+            import os
+            os.startfile(str(d))
+            return {"success": True}
+        except Exception as e:
+            logger.error(f"Failed to open downloads folder: {e}")
+            return {"success": False, "error": str(e)}
+
+    def open_app_download_folder(self, app_id: str) -> dict[str, Any]:
+        """Открывает папку со скачанным файлом конкретного приложения в Проводнике."""
+        try:
+            from app.utils import get_download_dir
+            d = get_download_dir() / app_id
+            if not d.exists():
+                d = get_download_dir()
+            import os
+            os.startfile(str(d))
+            return {"success": True}
+        except Exception as e:
+            logger.error(f"Failed to open app download folder {app_id}: {e}")
+            return {"success": False, "error": str(e)}
+
     def clean_downloaded_installers(self) -> dict[str, Any]:
         """Удаляет все .exe, .msi и дистрибутивы, скачанные программой в кэш."""
         try:
             from app.tweaks import _clean_winsetup_installers
-            ok, msg = _clean_winsetup_installers()
+            res = _clean_winsetup_installers()
+            if isinstance(res, tuple):
+                ok = res[0]
+                msg = res[1]
+                if i18n.lang == "en" and len(res) >= 3:
+                    msg = res[2]
+            else:
+                ok, msg = True, str(res)
             self._downloaded_results.clear()
             self.call_js("onLog", f"🗑️ {msg}")
             return {"success": ok, "message": msg}

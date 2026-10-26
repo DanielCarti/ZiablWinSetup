@@ -793,7 +793,7 @@ def _clean_telegram_cache() -> tuple[bool, str, str]:
     )
 
 
-def _clean_winsetup_installers() -> tuple[bool, str]:
+def _clean_winsetup_installers() -> tuple[bool, str, str]:
     """
     Удаляет все .exe, .msi, .zip и дистрибутивы, скачанные нашей программой (ZiablWinSetup).
     Очищает временный кэш WinSetup_Downloads и WinSetup_Winget,

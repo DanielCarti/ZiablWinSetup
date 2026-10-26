@@ -53,6 +53,7 @@ class Downloader:
         self._cancelled = False
         self._cancelled_apps: set[str] = set()
         self._active_processes: dict[str, subprocess.Popen] = {}
+        self._active_responses: dict[str, object] = {}
 
     def cancel(self):
         """Отменяет все текущие и будущие скачивания."""
@@ -62,10 +63,23 @@ class Downloader:
                 proc.kill()
             except Exception:
                 pass
+        for resp in list(self._active_responses.values()):
+            try:
+                if hasattr(resp, 'close'):
+                    resp.close()
+            except Exception:
+                pass
 
     def cancel_app(self, app_id: str):
-        """Отменяет скачивание конкретного приложения."""
+        """Отменяет скачивание конкретного приложения мгновенно."""
         self._cancelled_apps.add(app_id)
+        resp = self._active_responses.pop(app_id, None)
+        if resp:
+            try:
+                if hasattr(resp, 'close'):
+                    resp.close()
+            except Exception:
+                pass
         proc = self._active_processes.get(app_id)
         if proc and proc.poll() is None:
             try:
@@ -93,6 +107,7 @@ class Downloader:
         self._cancelled = False
         self._cancelled_apps.clear()
         self._active_processes.clear()
+        self._active_responses.clear()
 
     def get_cached_installer(self, app: AppEntry, target_version: str = "") -> Path | None:
         """
@@ -270,6 +285,8 @@ class Downloader:
 
             start_time = time.time()
             last_status_time = start_time
+            last_bytes = 0
+            smooth_speed = 0.0
 
             try:
                 while True:
@@ -305,9 +322,9 @@ class Downloader:
                         break
 
                     now = time.time()
-                    if now - last_status_time >= 0.5:
+                    if now - last_status_time >= 0.4:
+                        dt = now - last_status_time
                         last_status_time = now
-                        elapsed = int(now - start_time)
                         curr_size = 0
                         if dest_dir.exists():
                             for f in dest_dir.iterdir():
@@ -316,11 +333,15 @@ class Downloader:
                                         curr_size += f.stat().st_size
                                     except Exception:
                                         pass
+                        delta_bytes = max(0, curr_size - last_bytes)
+                        cur_spd = delta_bytes / dt if dt > 0 else 0
+                        smooth_speed = cur_spd if smooth_speed == 0 else (0.6 * smooth_speed + 0.4 * cur_spd)
+                        last_bytes = curr_size
+                        speed_str = f" • {format_size(smooth_speed)}/с" if smooth_speed > 1024 else ""
                         if curr_size > 0:
-                            mb = curr_size / (1024 * 1024)
-                            cb(app.id, -1, f"Скачивание через winget ({mb:.1f} МБ, {elapsed} сек)...")
+                            cb(app.id, -1, f"Скачивание... {format_size(curr_size)}{speed_str}")
                         else:
-                            cb(app.id, -1, f"Скачивание через winget ({elapsed} сек)...")
+                            cb(app.id, -1, "Скачивание через winget...")
 
                     time.sleep(0.1)
 
@@ -535,36 +556,72 @@ class Downloader:
             )
 
             with urllib.request.urlopen(req, timeout=120) as response:
-                total_size = response.headers.get("Content-Length")
-                total_size = int(total_size) if total_size else None
+                self._active_responses[app.id] = response
+                try:
+                    total_size = response.headers.get("Content-Length")
+                    total_size = int(total_size) if total_size else None
 
-                downloaded = 0
-                block_size = 8192 * 4  # 32KB blocks
+                    downloaded = 0
+                    block_size = 8192 * 8  # 64KB blocks for higher throughput
+                    start_time = time.time()
+                    last_status_time = start_time
+                    last_downloaded = 0
+                    smooth_speed = 0.0
 
-                with open(part_path, "wb") as f:
-                    while True:
-                        if self.is_app_cancelled(app.id):
-                            f.close()
-                            if part_path.exists():
-                                try:
-                                    part_path.unlink()
-                                except Exception:
-                                    pass
-                            return DownloadResult(app=app, success=False, error="Отменено пользователем")
+                    with open(part_path, "wb") as f:
+                        while True:
+                            if self.is_app_cancelled(app.id):
+                                f.close()
+                                if part_path.exists():
+                                    try:
+                                        part_path.unlink()
+                                    except Exception:
+                                        pass
+                                return DownloadResult(app=app, success=False, error="Отменено пользователем")
 
-                        block = response.read(block_size)
-                        if not block:
-                            break
+                            try:
+                                block = response.read(block_size)
+                            except Exception:
+                                if self.is_app_cancelled(app.id):
+                                    f.close()
+                                    if part_path.exists():
+                                        try:
+                                            part_path.unlink()
+                                        except Exception:
+                                            pass
+                                    return DownloadResult(app=app, success=False, error="Отменено пользователем")
+                                raise
 
-                        f.write(block)
-                        downloaded += len(block)
+                            if not block:
+                                break
 
-                        if total_size:
-                            percent = (downloaded / total_size) * 100
-                            size_str = f"{format_size(downloaded)} / {format_size(total_size)}"
-                            cb(app.id, percent, f"Скачивание... {size_str}")
-                        else:
-                            cb(app.id, -1, f"Скачивание... {format_size(downloaded)}")
+                            f.write(block)
+                            downloaded += len(block)
+
+                            now = time.time()
+                            dt = now - last_status_time
+                            if dt >= 0.35:
+                                cur_speed = (downloaded - last_downloaded) / dt if dt > 0 else 0
+                                smooth_speed = cur_speed if smooth_speed == 0 else (0.65 * smooth_speed + 0.35 * cur_speed)
+                                last_status_time = now
+                                last_downloaded = downloaded
+                                speed_str = f"{format_size(smooth_speed)}/с"
+
+                                if total_size and smooth_speed > 1024:
+                                    remaining_bytes = max(0, total_size - downloaded)
+                                    eta_sec = int(remaining_bytes / smooth_speed)
+                                    eta_str = f", ост. {eta_sec}с" if eta_sec < 60 else f", ост. {eta_sec // 60}м {eta_sec % 60}с"
+                                else:
+                                    eta_str = ""
+
+                                if total_size:
+                                    percent = (downloaded / total_size) * 100
+                                    size_str = f"{format_size(downloaded)} / {format_size(total_size)}"
+                                    cb(app.id, percent, f"{size_str} ({speed_str}{eta_str})")
+                                else:
+                                    cb(app.id, -1, f"{format_size(downloaded)} ({speed_str})")
+                finally:
+                    self._active_responses.pop(app.id, None)
 
             # Загрузка завершена успешно — заменяем .part на финальный файл
             if part_path.exists():

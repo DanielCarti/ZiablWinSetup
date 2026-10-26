@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.abspath("."))
 class TestVersion(unittest.TestCase):
     def test_version_string(self):
         from app.version import __version__, APP_NAME
-        self.assertEqual(__version__, "1.4.31")
+        self.assertEqual(__version__, "2.0.0")
         self.assertEqual(APP_NAME, "ZiablWinSetup")
 
 
@@ -706,7 +706,7 @@ class TestTweakProcessHandling(unittest.TestCase):
         from unittest.mock import patch
         """Проверка исправлений UAC перезапуска и плавающей панели для v1.4.28."""
         from app.version import __version__
-        self.assertEqual(__version__, "1.4.31")
+        self.assertEqual(__version__, "2.0.0")
 
         # 1. request_admin_restart handles UAC cancellation and passes --restarted-from-pid
         from app.utils import request_admin_restart
@@ -749,7 +749,7 @@ class TestTweakProcessHandling(unittest.TestCase):
     def test_v1_4_29_features(self):
         """Проверка всех 12 улучшений и исправлений v1.4.29."""
         from app.version import __version__
-        self.assertEqual(__version__, "1.4.31")
+        self.assertEqual(__version__, "2.0.0")
 
         # 1. Official Rufus & Hydra Launcher icons
         self.assertTrue((Path("app/ui/icons/rufus.svg")).exists())
@@ -827,6 +827,49 @@ class TestTweakProcessHandling(unittest.TestCase):
         # GitHub URL fix (DanielCarti/ZiablWinSetup)
         self.assertIn("DanielCarti/ZiablWinSetup/issues/new", html)
         self.assertNotIn("DanielCarti/WinSetup/issues/new", html)
+
+        # No competitor mentions
+        self.assertNotIn("ccleaner", html.lower())
+
+
+
+    def test_v2_0_0_milestone_features(self):
+        """Проверка ключевых улучшений v2.0.0 (Загрузки, скорость/ETA, отмена, персистентность темы, бэкап отмена)."""
+        from app.version import __version__
+        self.assertEqual(__version__, "2.0.0")
+
+        # 1. Downloader active responses and immediate cancel support
+        from app.downloader import Downloader
+        dl = Downloader()
+        self.assertTrue(hasattr(dl, "_active_responses"))
+        self.assertIsInstance(dl._active_responses, dict)
+
+        # 2. Web API clean_downloaded_installers tuple unpacking safety
+        from app.web_api import AppBridge
+        bridge = AppBridge()
+        clean_res = bridge.clean_downloaded_installers()
+        self.assertIsInstance(clean_res, dict)
+        self.assertIn("success", clean_res)
+        self.assertIn("message", clean_res)
+
+        # 3. Web API open_downloads_folder and open_app_download_folder methods
+        self.assertTrue(hasattr(bridge, "open_downloads_folder"))
+        self.assertTrue(hasattr(bridge, "open_app_download_folder"))
+
+        # 4. Web API export_apps_backup_dialog cancel handling (returns cancelled: True when no path chosen)
+        dlg_res = bridge.export_apps_backup_dialog()
+        self.assertIsInstance(dlg_res, dict)
+
+        # 5. Frontend UI checks for Downloads manager, live badge, and accent persistence
+        html = Path("app/ui/index.html").read_text(encoding="utf-8")
+        self.assertIn("tabBtnDownloads", html)
+        self.assertIn("tabDownloadsBadge", html)
+        self.assertIn("viewDownloads", html)
+        self.assertIn("dlListContainer", html)
+        self.assertIn("openDownloadsFolder", html)
+        self.assertIn("clearCompletedDownloads", html)
+        self.assertIn("ziabl_accent_color", html)
+        self.assertIn("appData.settings = data.settings", html)
 
         # No competitor mentions
         self.assertNotIn("ccleaner", html.lower())

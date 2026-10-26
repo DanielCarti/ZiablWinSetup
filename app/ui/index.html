@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+  <script>
+    (function() {
+      try {
+        var a = localStorage.getItem('ziabl_accent_color');
+        if (a) document.documentElement.setAttribute('data-accent', a);
+      } catch (e) {}
+    })();
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ZiablWinSetup</title>
@@ -31,22 +39,22 @@
       --radius-lg: 12px;
     }
 
-    body[data-accent="purple"] {
+    body[data-accent="purple"], html[data-accent="purple"] {
       --accent: #8b5cf6;
       --accent-hover: #a78bfa;
       --accent-glow: rgba(139, 92, 246, 0.35);
     }
-    body[data-accent="green"] {
+    body[data-accent="green"], html[data-accent="green"] {
       --accent: #10b981;
       --accent-hover: #34d399;
       --accent-glow: rgba(16, 185, 129, 0.35);
     }
-    body[data-accent="orange"] {
+    body[data-accent="orange"], html[data-accent="orange"] {
       --accent: #f97316;
       --accent-hover: #fb923c;
       --accent-glow: rgba(249, 115, 22, 0.35);
     }
-    body[data-accent="red"] {
+    body[data-accent="red"], html[data-accent="red"] {
       --accent: #ef4444;
       --accent-hover: #f87171;
       --accent-glow: rgba(239, 68, 68, 0.35);
@@ -2643,6 +2651,11 @@
         <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
         <span class="tab-label" id="tabLabelApps">Приложения</span>
       </button>
+      <button class="tab-btn" id="tabBtnDownloads" onclick="switchMainTab('downloads')" title="Менеджер загрузок и очередь приложений">
+        <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span class="tab-label" id="tabLabelDownloads">Загрузки</span>
+        <span class="tab-badge" id="tabDownloadsBadge" style="display:none; margin-left: 6px; padding: 1px 7px; border-radius: 10px; font-size: 11px; background: var(--accent); color: #fff; font-weight: 700;">0</span>
+      </button>
       <button class="tab-btn" id="tabBtnTweaks" onclick="switchMainTab('tweaks')">
         <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
         <span class="tab-label" id="tabLabelTweaks">Твики</span>
@@ -3113,6 +3126,56 @@
             Выбрать другой файл
           </button>
         </div>
+      </div>
+    </div>
+
+    <!-- View 6: Downloads & Queue view -->
+    <div id="viewDownloads" style="display: none; flex: 1; min-height: 0; width: 100%; flex-direction: column; overflow-y: auto; padding: 24px 32px 100px 32px; box-sizing: border-box; background: var(--bg-app);">
+      <!-- Header -->
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <h2 style="font-size: 20px; font-weight: 600; margin-bottom: 4px;" id="dlMainTitle">📥 Менеджер загрузок</h2>
+          <p style="font-size: 13px; color: var(--text-muted);" id="dlMainSubtitle">Активные и завершённые загрузки установщиков с отображением скорости, размера и прогресса.</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button class="btn-action btn-outline" onclick="openDownloadsFolder()" style="height: 32px; font-size: 12px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px;" id="btnOpenDlFolder">
+            📂 <span id="lblBtnOpenDlFolder">Папка загрузок</span>
+          </button>
+          <button class="btn-action btn-outline" onclick="clearCompletedDownloads()" style="height: 32px; font-size: 12px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px;" id="btnClearDlList">
+            🧹 <span id="lblBtnClearDlList">Очистить список</span>
+          </button>
+          <button class="btn-action btn-danger-outline" onclick="cancelAllDownloadsAction()" style="height: 32px; font-size: 12px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px;" id="btnCancelAllDl">
+            ⏹️ <span id="lblBtnCancelAllDl">Отменить все</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Downloads Stats Banner -->
+      <div id="dlStatsBanner" style="display: flex; align-items: center; gap: 24px; padding: 14px 20px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); margin-bottom: 20px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 36px; height: 36px; border-radius: 8px; background: var(--accent-glow); display: flex; align-items: center; justify-content: center; font-size: 18px;">⚡</div>
+          <div>
+            <div style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 600;" id="lblDlActiveTitle">Активные скачивания</div>
+            <div style="font-size: 16px; font-weight: 700; color: var(--text-main);" id="dlActiveCountDisplay">0</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(16, 185, 129, 0.15); display: flex; align-items: center; justify-content: center; font-size: 18px;">✅</div>
+          <div>
+            <div style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 600;" id="lblDlFinishedTitle">Завершено</div>
+            <div style="font-size: 16px; font-weight: 700; color: var(--text-main);" id="dlFinishedCountDisplay">0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Container for active and past downloads -->
+      <div id="dlListContainer" style="display: flex; flex-direction: column; gap: 12px;"></div>
+
+      <!-- Empty state container -->
+      <div id="dlEmptyState" style="display: none; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; text-align: center;">
+        <div style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;">📥</div>
+        <div style="font-size: 16px; font-weight: 600; margin-bottom: 6px;" id="lblDlEmptyTitle">Сейчас ничего не скачивается</div>
+        <div style="font-size: 13px; color: var(--text-muted); max-width: 420px; line-height: 1.5;" id="lblDlEmptyDesc">Выберите нужные программы во вкладке «Приложения» и нажмите «Скачать выбранные». Все процессы скачивания появятся здесь.</div>
       </div>
     </div>
   </div>
@@ -4069,7 +4132,9 @@
       } catch (e) { console.error('sticky scroll listener error:', e); }
       try { updateWingetBanner(); } catch (e) { console.error('updateWingetBanner error:', e); }
       try {
-        const accent = (appData.settings && appData.settings.accent_color) || 'blue';
+        let savedLocal = null;
+        try { savedLocal = localStorage.getItem('ziabl_accent_color'); } catch (e) {}
+        const accent = (appData.settings && appData.settings.accent_color) || savedLocal || 'blue';
         setAccentColor(accent, false);
       } catch (e) {
         console.error('setAccentColor error:', e);
@@ -4116,6 +4181,7 @@
           if (data.apps && data.apps.length > 0) appData.apps = data.apps;
           if (data.categories && data.categories.length > 0) appData.categories = data.categories;
           if (data.lang) appData.lang = data.lang;
+          if (data.settings) appData.settings = data.settings;
           if (data.strings) appData.strings = data.strings;
           if (data.strings_all) appData.strings_all = data.strings_all;
           if (data.system_info) appData.system_info = data.system_info;
@@ -4207,6 +4273,27 @@
 
         const searchInput = document.getElementById('searchInput');
         if (searchInput) searchInput.placeholder = isEn ? 'Search applications...' : (s.search_placeholder || 'Поиск приложения...');
+        const tabLblDl = document.getElementById('tabLabelDownloads');
+        if (tabLblDl) tabLblDl.textContent = isEn ? 'Downloads' : (s.tab_downloads || 'Загрузки');
+        const dlTitle = document.getElementById('dlMainTitle');
+        if (dlTitle) dlTitle.textContent = isEn ? '📥 Download Manager' : (s.downloads_title || '📥 Менеджер загрузок');
+        const dlSubtitle = document.getElementById('dlMainSubtitle');
+        if (dlSubtitle) dlSubtitle.textContent = isEn ? 'Active and completed installer downloads with real-time speed and progress.' : (s.downloads_subtitle || 'Активные и завершённые загрузки установщиков с отображением скорости, размера и прогресса.');
+        const btnOpenFolder = document.getElementById('lblBtnOpenDlFolder');
+        if (btnOpenFolder) btnOpenFolder.textContent = isEn ? 'Downloads Folder' : (s.downloads_btn_open_folder || 'Папка загрузок');
+        const btnClearList = document.getElementById('lblBtnClearDlList');
+        if (btnClearList) btnClearList.textContent = isEn ? 'Clear List' : (s.downloads_btn_clear_completed || 'Очистить список');
+        const btnCancelAll = document.getElementById('lblBtnCancelAllDl');
+        if (btnCancelAll) btnCancelAll.textContent = isEn ? 'Cancel All' : (s.downloads_btn_cancel_all || 'Отменить все');
+        const lblActiveTitle = document.getElementById('lblDlActiveTitle');
+        if (lblActiveTitle) lblActiveTitle.textContent = isEn ? 'Active Downloads' : 'Активные скачивания';
+        const lblFinTitle = document.getElementById('lblDlFinishedTitle');
+        if (lblFinTitle) lblFinTitle.textContent = isEn ? 'Finished' : 'Завершено';
+        const lblEmptyTitle = document.getElementById('lblDlEmptyTitle');
+        if (lblEmptyTitle) lblEmptyTitle.textContent = isEn ? 'No active downloads' : 'Сейчас ничего не скачивается';
+        const lblEmptyDesc = document.getElementById('lblDlEmptyDesc');
+        if (lblEmptyDesc) lblEmptyDesc.textContent = isEn ? 'Select applications in the Apps tab and click Download Selected. All download processes will appear here.' : 'Выберите нужные программы во вкладке «Приложения» и нажмите «Скачать выбранные». Все процессы скачивания появятся здесь.';
+
         const secCat = document.getElementById('secCategories');
         if (secCat) secCat.textContent = isEn ? 'Categories' : (s.categories || 'Категории');
         const secQA = document.getElementById('secQuickActions');
@@ -5052,10 +5139,13 @@
       const valid = ['blue', 'purple', 'green', 'orange', 'red'];
       const c = (color && valid.includes(color.toLowerCase())) ? color.toLowerCase() : 'blue';
       document.body.setAttribute('data-accent', c);
+      document.documentElement.setAttribute('data-accent', c);
       document.querySelectorAll('.accent-swatch').forEach(sw => {
         sw.classList.toggle('active', sw.getAttribute('data-color') === c);
       });
-      if (appData.settings) appData.settings.accent_color = c;
+      try { localStorage.setItem('ziabl_accent_color', c); } catch (e) {}
+      if (!appData.settings) appData.settings = {};
+      appData.settings.accent_color = c;
       if (save && window.pywebview && window.pywebview.api && window.pywebview.api.set_accent_color) {
         window.pywebview.api.set_accent_color(c);
       }
@@ -5629,7 +5719,7 @@
               <div class="progress-bar">
                 <div class="progress-fill ${isIndet ? 'indeterminate' : ''}" style="width: ${isIndet ? 100 : percent}%"></div>
               </div>
-              <div class="progress-text">${!isIndet && percent > 0 ? percent + '%' : (st.detail || 'Скачивание...')}</div>
+              <div class="progress-text" title="${st.detail || (!isIndet && percent > 0 ? percent + '%' : 'Скачивание...')}">${st.detail ? (!isIndet && percent > 0 ? percent + '% • ' + st.detail : st.detail) : (!isIndet && percent > 0 ? percent + '%' : 'Скачивание...')}</div>
             </div>
             <button class="btn-action btn-danger-outline" onclick="cancelSingleDownload('${app.id}')" title="Отменить скачивание" style="padding: 0 10px; height: 32px; font-size: 12px; white-space: nowrap;">⛔ ${s.btn_cancel || 'Отмена'}</button>
           </div>
@@ -6094,6 +6184,7 @@
     // ==========================================
 
     window.onAppStatus = function(appId, status, detail = '') {
+      try { updateDownloadsState(appId, status, (appStatuses[appId] ? appStatuses[appId].progress : 0), detail); } catch (e) {}
       if (status === 'idle') {
         appStatuses[appId] = { status: 'idle', progress: 0, detail: '', has_file: false };
       } else {
@@ -6121,6 +6212,7 @@
     };
 
     window.onAppProgress = function(appId, percent, text) {
+      try { updateDownloadsState(appId, 'downloading', percent, text); } catch (e) {}
       const current = appStatuses[appId] || {};
       if (current.status === 'idle' || current.status === 'done' || current.status === 'extracted') {
         if (percent === 0) return;
@@ -6140,6 +6232,7 @@
 
     window.onAppDownloaded = function(appId, installerPath) {
       downloadedCount++;
+      try { updateDownloadsState(appId, 'downloaded', 100, (appData.lang === 'en' ? 'Downloaded' : 'Скачано')); } catch (e) {}
       appStatuses[appId] = {
         status: 'downloaded',
         progress: 100,
@@ -6313,6 +6406,203 @@
     };
 
     // ==========================================
+    // Менеджер загрузок (Downloads Manager)
+    // ==========================================
+    const downloadHistory = {};
+
+    function updateDownloadsState(appId, status, progress, detail) {
+      if (!appData || !appData.apps) return;
+      const app = appData.apps.find(a => a.id === appId);
+      if (!app) return;
+
+      if (!downloadHistory[appId]) {
+        downloadHistory[appId] = {
+          id: appId,
+          name: app.name,
+          category: app.category,
+          icon: app.icon || '',
+          installer_type: app.installer_type || 'exe',
+          status: status,
+          progress: progress || 0,
+          detail: detail || '',
+          updatedAt: Date.now()
+        };
+      } else {
+        const item = downloadHistory[appId];
+        item.status = status;
+        if (typeof progress === 'number' && progress >= 0) item.progress = progress;
+        if (detail) item.detail = detail;
+        item.updatedAt = Date.now();
+      }
+
+      updateDownloadsBadge();
+      if (currentMainTab === 'downloads') {
+        renderDownloadsList();
+      }
+    }
+    window.updateDownloadsState = updateDownloadsState;
+
+    function updateDownloadsBadge() {
+      const activeKeys = Object.keys(downloadHistory).filter(k => {
+        const s = downloadHistory[k].status;
+        return s === 'downloading' || s === 'queued' || (appStatuses[k] && appStatuses[k].status === 'downloading');
+      });
+      const badge = document.getElementById('tabDownloadsBadge');
+      if (badge) {
+        if (activeKeys.length > 0) {
+          badge.textContent = activeKeys.length;
+          badge.style.display = 'inline-block';
+        } else {
+          badge.style.display = 'none';
+        }
+      }
+      const actDisp = document.getElementById('dlActiveCountDisplay');
+      if (actDisp) actDisp.textContent = activeKeys.length;
+
+      const finKeys = Object.keys(downloadHistory).filter(k => {
+        const s = downloadHistory[k].status;
+        return s === 'downloaded' || s === 'done' || s === 'extracted';
+      });
+      const finDisp = document.getElementById('dlFinishedCountDisplay');
+      if (finDisp) finDisp.textContent = finKeys.length;
+    }
+    window.updateDownloadsBadge = updateDownloadsBadge;
+
+    function renderDownloadsList() {
+      const container = document.getElementById('dlListContainer');
+      const emptyState = document.getElementById('dlEmptyState');
+      if (!container) return;
+
+      const items = Object.values(downloadHistory);
+      if (items.length === 0) {
+        container.innerHTML = '';
+        if (emptyState) emptyState.style.display = 'flex';
+        return;
+      }
+      if (emptyState) emptyState.style.display = 'none';
+
+      // Sort items: active first, then by updatedAt desc
+      items.sort((a, b) => {
+        const aActive = (a.status === 'downloading' || a.status === 'queued') ? 1 : 0;
+        const bActive = (b.status === 'downloading' || b.status === 'queued') ? 1 : 0;
+        if (aActive !== bActive) return bActive - aActive;
+        return (b.updatedAt || 0) - (a.updatedAt || 0);
+      });
+
+      const isEn = appData && appData.lang === 'en';
+      container.innerHTML = items.map(item => {
+        const isDownloading = item.status === 'downloading' || item.status === 'queued';
+        const isDone = item.status === 'downloaded' || item.status === 'done' || item.status === 'extracted';
+        const isError = item.status === 'error';
+        const pct = Math.max(0, Math.min(100, item.progress || 0));
+        const isIndet = (item.progress <= 0 || item.progress === -1) && isDownloading;
+
+        let statusBadge = '';
+        if (isDownloading) {
+          statusBadge = `<span style="display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; padding: 3px 8px; border-radius: 6px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-weight: 600;"><span class="spinner-small" style="width: 10px; height: 10px; border: 2px solid #38bdf8; border-top-color: transparent; border-radius: 50%; display: inline-block; animation: spin 0.8s linear infinite;"></span> ${isEn ? 'Downloading...' : 'Скачивается...'}</span>`;
+        } else if (isDone) {
+          statusBadge = `<span style="font-size: 11.5px; padding: 3px 8px; border-radius: 6px; background: rgba(16, 185, 129, 0.15); color: #34d399; font-weight: 600;">✅ ${isEn ? 'Downloaded' : 'Скачано'}</span>`;
+        } else if (isError) {
+          statusBadge = `<span style="font-size: 11.5px; padding: 3px 8px; border-radius: 6px; background: rgba(239, 68, 68, 0.15); color: #f87171; font-weight: 600;">❌ ${isEn ? 'Error' : 'Ошибка'}</span>`;
+        } else {
+          statusBadge = `<span style="font-size: 11.5px; padding: 3px 8px; border-radius: 6px; background: rgba(255, 255, 255, 0.08); color: var(--text-muted); font-weight: 600;">⏹️ ${isEn ? 'Cancelled' : 'Отменено'}</span>`;
+        }
+
+        const iconHtml = item.icon ? `<img src="${item.icon}" style="width: 32px; height: 32px; border-radius: 6px; object-fit: contain;" onerror="this.style.display='none';">` : `<div style="width: 32px; height: 32px; border-radius: 6px; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; font-size: 16px;">📦</div>`;
+
+        let actionBtnHtml = '';
+        if (isDownloading) {
+          actionBtnHtml = `<button class="btn-action btn-danger-outline" onclick="cancelSingleDownload('${item.id}')" style="height: 30px; font-size: 11.5px; padding: 0 10px;" title="${isEn ? 'Cancel download' : 'Отменить скачивание'}">⛔ ${isEn ? 'Cancel' : 'Отменить'}</button>`;
+        } else if (isDone) {
+          actionBtnHtml = `
+            <div style="display: flex; gap: 6px;">
+              <button class="btn-action btn-outline" onclick="openAppDownloadFolder('${item.id}')" style="height: 30px; font-size: 11.5px; padding: 0 10px;" title="${isEn ? 'Open folder with installer' : 'Открыть папку с установщиком'}">📂 ${isEn ? 'Folder' : 'Папка'}</button>
+              <button class="btn-action btn-success" onclick="installSingleApp('${item.id}')" style="height: 30px; font-size: 11.5px; padding: 0 10px;" title="${isEn ? 'Install application' : 'Установить приложение'}">🚀 ${isEn ? 'Install' : 'Установить'}</button>
+            </div>
+          `;
+        } else {
+          actionBtnHtml = `<button class="btn-action btn-outline" onclick="downloadSingle('${item.id}')" style="height: 30px; font-size: 11.5px; padding: 0 10px;" title="${isEn ? 'Retry download' : 'Повторить скачивание'}">🔄 ${isEn ? 'Retry' : 'Повторить'}</button>`;
+        }
+
+        const detailText = item.detail || (isDownloading ? (isEn ? 'Downloading...' : 'Скачивание...') : (isDone ? (isEn ? 'Ready to install' : 'Готов к установке') : ''));
+
+        return `
+          <div class="dl-row-card" style="display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 18px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); box-sizing: border-box; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 12px; min-width: 220px; flex: 1;">
+              ${iconHtml}
+              <div style="min-width: 0;">
+                <div style="font-weight: 600; font-size: 13.5px; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.name}</div>
+                <div style="font-size: 11.5px; color: var(--text-muted); display: flex; align-items: center; gap: 8px; margin-top: 2px;">
+                  ${statusBadge}
+                  <span style="font-family: monospace; font-size: 11.5px; color: var(--text-main);">${detailText}</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 14px; min-width: 200px; flex: 1; justify-content: flex-end;">
+              <div style="flex: 1; max-width: 260px;">
+                <div class="progress-bar" style="height: 6px; border-radius: 3px; background: rgba(255,255,255,0.08); overflow: hidden;">
+                  <div class="progress-fill ${isIndet ? 'indeterminate' : ''}" style="height: 100%; width: ${isIndet ? 100 : pct}%; background: var(--accent); transition: width 0.25s;"></div>
+                </div>
+              </div>
+              <div style="min-width: 38px; text-align: right; font-size: 12px; font-weight: 600; color: var(--text-muted);">${!isIndet && pct > 0 ? pct + '%' : ''}</div>
+              <div>${actionBtnHtml}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+    window.renderDownloadsList = renderDownloadsList;
+
+    function openDownloadsFolder() {
+      if (window.pywebview && window.pywebview.api && window.pywebview.api.open_downloads_folder) {
+        window.pywebview.api.open_downloads_folder();
+      }
+    }
+    window.openDownloadsFolder = openDownloadsFolder;
+
+    function openAppDownloadFolder(appId) {
+      if (window.pywebview && window.pywebview.api && window.pywebview.api.open_app_download_folder) {
+        window.pywebview.api.open_app_download_folder(appId);
+      } else {
+        openDownloadsFolder();
+      }
+    }
+    window.openAppDownloadFolder = openAppDownloadFolder;
+
+    function clearCompletedDownloads() {
+      Object.keys(downloadHistory).forEach(k => {
+        const s = downloadHistory[k].status;
+        if (s !== 'downloading' && s !== 'queued') {
+          delete downloadHistory[k];
+        }
+      });
+      updateDownloadsBadge();
+      renderDownloadsList();
+      showToast(appData && appData.lang === 'en' ? 'Download list cleared' : 'Список завершённых загрузок очищен', 'info', 2000);
+    }
+    window.clearCompletedDownloads = clearCompletedDownloads;
+
+    function cancelAllDownloadsAction() {
+      if (confirm(appData && appData.lang === 'en' ? 'Cancel all active downloads?' : 'Отменить все активные скачивания?')) {
+        if (typeof cancelDownloads === 'function') {
+          cancelDownloads();
+        } else if (window.pywebview && window.pywebview.api && window.pywebview.api.cancel_downloads) {
+          window.pywebview.api.cancel_downloads();
+        }
+        Object.keys(downloadHistory).forEach(k => {
+          if (downloadHistory[k].status === 'downloading') {
+            downloadHistory[k].status = 'cancelled';
+            downloadHistory[k].detail = appData && appData.lang === 'en' ? 'Cancelled' : 'Отменено пользователем';
+          }
+        });
+        updateDownloadsBadge();
+        renderDownloadsList();
+      }
+    }
+    window.cancelAllDownloadsAction = cancelAllDownloadsAction;
+
+    // ==========================================
     // Управление вкладками (Приложения / Твики)
     // ==========================================
 
@@ -6339,6 +6629,8 @@
         }
       }
       document.getElementById('tabBtnApps').classList.toggle('active', tab === 'apps');
+      const tabDl = document.getElementById('tabBtnDownloads');
+      if (tabDl) tabDl.classList.toggle('active', tab === 'downloads');
       document.getElementById('tabBtnTweaks').classList.toggle('active', tab === 'tweaks');
       const tabMetro = document.getElementById('tabBtnMetro');
       if (tabMetro) tabMetro.classList.toggle('active', tab === 'metro');
@@ -6348,6 +6640,7 @@
       if (tabVT) tabVT.classList.toggle('active', tab === 'virustotal');
 
       const viewApps = document.getElementById('viewApps');
+      const viewDl = document.getElementById('viewDownloads');
       const viewTweaks = document.getElementById('viewTweaks');
       const viewMetro = document.getElementById('viewMetro');
       const viewStartup = document.getElementById('viewStartup');
@@ -6356,13 +6649,24 @@
 
       if (tab === 'apps') {
         viewApps.style.display = 'flex';
+        if (viewDl) viewDl.style.display = 'none';
         viewTweaks.style.display = 'none';
         if (viewMetro) viewMetro.style.display = 'none';
         if (viewStartup) viewStartup.style.display = 'none';
         if (viewVT) viewVT.style.display = 'none';
         footer.style.display = 'flex';
+      } else if (tab === 'downloads') {
+        viewApps.style.display = 'none';
+        if (viewDl) viewDl.style.display = 'flex';
+        viewTweaks.style.display = 'none';
+        if (viewMetro) viewMetro.style.display = 'none';
+        if (viewStartup) viewStartup.style.display = 'none';
+        if (viewVT) viewVT.style.display = 'none';
+        footer.style.display = 'none';
+        renderDownloadsList();
       } else if (tab === 'tweaks') {
         viewApps.style.display = 'none';
+        if (viewDl) viewDl.style.display = 'none';
         viewTweaks.style.display = 'flex';
         if (viewMetro) viewMetro.style.display = 'none';
         if (viewStartup) viewStartup.style.display = 'none';
@@ -6371,6 +6675,7 @@
         renderTweaks();
       } else if (tab === 'metro') {
         viewApps.style.display = 'none';
+        if (viewDl) viewDl.style.display = 'none';
         viewTweaks.style.display = 'none';
         if (viewMetro) viewMetro.style.display = 'flex';
         if (viewStartup) viewStartup.style.display = 'none';
@@ -6379,6 +6684,7 @@
         renderMetro();
       } else if (tab === 'startup') {
         viewApps.style.display = 'none';
+        if (viewDl) viewDl.style.display = 'none';
         viewTweaks.style.display = 'none';
         if (viewMetro) viewMetro.style.display = 'none';
         if (viewStartup) viewStartup.style.display = 'flex';
@@ -6387,6 +6693,7 @@
         renderStartup();
       } else if (tab === 'virustotal') {
         viewApps.style.display = 'none';
+        if (viewDl) viewDl.style.display = 'none';
         viewTweaks.style.display = 'none';
         if (viewMetro) viewMetro.style.display = 'none';
         if (viewStartup) viewStartup.style.display = 'none';
