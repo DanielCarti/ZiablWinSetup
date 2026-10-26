@@ -631,7 +631,7 @@ def _build_catalog() -> list[AppEntry]:
             category="gpu_drivers",
             winget_id="IObit.DriverBooster",
             silent_args=["/VERYSILENT"],
-            web_url="https://1progs.ru/driver-booster-pro/",
+            web_url="https://1progs.ru/iobit-driver-booster-pro/",
             notes="Зачем нужен: Программа для автоматического сканирования и обновления устаревших или отсутствующих системных драйверов (звук, сеть, USB, чипсет) в один клик для стабильной работы Windows.",
             notes_en="Why you need it: One-click driver updater. Scans and updates outdated or missing hardware drivers for system stability.",
         ),

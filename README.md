@@ -54,16 +54,16 @@
 
 Все приложения распределены по 10 категориям с моментальным поиском и фильтрацией:
 
-* 🌐 **Браузеры**: Google Chrome, Opera GX, Mozilla Firefox, Brave, Dolphin{anty}
-* 🎬 **Медиа**: VLC Media Player, K-Lite Codec Pack Full, Picasa 3, OBS Studio, Adobe Photoshop, Adobe Premiere Pro, NVIDIA Broadcast
-* 🔧 **Системные утилиты**: 7-Zip, WinRAR, Everything, Total Commander, EarTrumpet, CPU-Z, HWiNFO, GPU-Z, FurMark, Rufus, ShareX, PowerToys, CrystalDiskInfo, CrystalDiskMark, OCCT, Uninstall Tool, Unlocker, Unchecky, HitmanPro, Driver Booster
+* 🌐 **Браузеры**: Google Chrome, Opera GX, Mozilla Firefox, Brave Browser, Dolphin Anty
+* 🎬 **Медиа**: VLC Media Player, K-Lite Codec Pack Full, Picasa 3, OBS Studio, Adobe Photoshop, Adobe Premiere Pro
+* 🔧 **Системные утилиты**: 7-Zip, WinRAR, Everything, Total Commander, EarTrumpet, CPU-Z, HWiNFO, Rufus, ShareX, Microsoft PowerToys, CrystalDiskInfo, CrystalDiskMark, OCCT, Uninstall Tool, IObit Unlocker, Unchecky, HitmanPro
 * 📚 **Библиотеки и Runtimes**: DirectX End-User Runtimes (June 2010), Visual C++ Runtimes All-in-One, Visual C++ 2015–2022 (x64/x86), .NET Desktop Runtime 8.0/9.0/6.0, .NET Framework 4.8.1, .NET Framework 3.5
-* 💬 **Мессенджеры и AI**: Telegram Desktop, Discord, Claude Desktop, ChatGPT, Todoist
-* 💻 **Разработка**: Visual Studio Code, PyCharm Community, Sublime Text, Notepad++, Git, Python 3, Eclipse Temurin JDK 21, Open Code Interpreter, Claude Code
-* 🖥️ **GPU и драйверы**: NVIDIA App, AMD Software: Adrenalin Edition
-* 🔒 **VPN и безопасность**: AmneziaVPN, Zapret (обход замедлений YouTube и Discord), YogaDNS, TeleProxy, Opera Proxy, AnyDesk
-* 🎮 **Игры и загрузки**: Steam, HydraLauncher, Roblox, TLauncher (Minecraft), qBittorrent, BitTorrent, Dropbox
-* 📑 **Офис и документы**: Obsidian, LibreOffice, OpenOffice
+* 💬 **Мессенджеры и ИИ**: Telegram Desktop, Discord, Claude Desktop, ChatGPT Desktop
+* 💻 **Разработка**: Visual Studio Code, PyCharm Community, Sublime Text, Notepad++, Git, Python 3, Eclipse Temurin JDK 21, OpenAI Codex CLI, OpenCode AI
+* 🖥️ **GPU и драйверы**: NVIDIA App, AMD Software: Adrenalin Edition, GPU-Z, FurMark 2, IObit Driver Booster, NVIDIA Broadcast
+* 🔒 **VPN и безопасность**: AmneziaVPN, Zapret (обход замедлений YouTube и Discord), YogaDNS, Tg-WS Proxy, Opera Proxy, AnyDesk
+* 🎮 **Игры и загрузки**: Steam, Hydra Launcher, Roblox, TLauncher (Minecraft), qBittorrent, BitTorrent, Dropbox
+* 📑 **Офис и документы**: Obsidian, LibreOffice, Apache OpenOffice, Todoist
 
 **Фирменные возможности менеджера загрузок:**
 - ⚡ **Быстрые пресеты в 1 клик**: «Обязательный», «Гейминг», «Офис» для мгновенного набора софта под задачу.
