@@ -1117,6 +1117,8 @@ class StartupManager:
                 ["schtasks", "/change", "/tn", task_name, action_flag],
                 capture_output=True,
                 text=True,
+                encoding="cp866",
+                errors="replace",
                 creationflags=subprocess.CREATE_NO_WINDOW,
             )
             if res.returncode == 0:
@@ -1161,19 +1163,37 @@ class StartupManager:
                 ["sc.exe", "config", svc_name, f"start={start_arg}"],
                 capture_output=True,
                 text=True,
+                encoding="cp866",
+                errors="replace",
                 creationflags=subprocess.CREATE_NO_WINDOW
             )
             if res.returncode == 0:
+                if not enable:
+                    subprocess.run(["net.exe", "stop", svc_name, "/y"], capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
                 state_str = "включена" if enable else "отключена"
                 return True, f"Служба «{target['name']}» успешно {state_str}."
 
-            # Попытка через PowerShell с UAC-повышением прав
+            # Попытка 1: через PowerShell с UAC-повышением прав
             ps_cmd = f"Set-Service -Name '{svc_name}' -StartupType {('Automatic' if enable else 'Disabled')}"
             if _run_elevated_ps(ps_cmd):
+                if not enable:
+                    _run_elevated_ps(f"Stop-Service -Name '{svc_name}' -Force -ErrorAction SilentlyContinue")
                 state_str = "включена" if enable else "отключена"
                 return True, f"Служба «{target['name']}» успешно {state_str}."
 
-            return False, f"Ошибка переключения службы {svc_name}: {res.stderr.strip() or res.stdout.strip()}"
+            # Попытка 2: Для защищённых служб (GamingServices и др.), у которых закрыт доступ к ChangeServiceConfig
+            # Меняем параметр Start напрямую в системном реестре HKLM\SYSTEM\CurrentControlSet\Services\<svc_name>
+            # Start: 2 = Automatic, 4 = Disabled
+            reg_val = 2 if enable else 4
+            reg_ps = f"Set-ItemProperty -Path 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\{svc_name}' -Name 'Start' -Value {reg_val} -Force"
+            if _run_elevated_ps(reg_ps):
+                if not enable:
+                    _run_elevated_ps(f"Stop-Service -Name '{svc_name}' -Force -ErrorAction SilentlyContinue")
+                state_str = "включена" if enable else "отключена"
+                return True, f"Служба «{target['name']}» успешно {state_str} (через системный реестр)."
+
+            err_msg = res.stderr.strip() or res.stdout.strip()
+            return False, f"Ошибка переключения службы {svc_name}: {err_msg}"
 
         return False, "Неподдерживаемый тип элемента для переключения."
 
@@ -1254,6 +1274,8 @@ class StartupManager:
                 ["schtasks", "/delete", "/tn", task_name, "/f"],
                 capture_output=True,
                 text=True,
+                encoding="cp866",
+                errors="replace",
                 creationflags=subprocess.CREATE_NO_WINDOW,
             )
             if res.returncode == 0:
