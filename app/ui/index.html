@@ -9083,19 +9083,7 @@
     }
     window.uploadCurrentVtFile = uploadCurrentVtFile;
 
-  </script>
-
-  <!-- Toast Notification -->
-
-  <!-- Toast Notification -->
-  <div id="appToast" class="toast-container">
-    <span id="toastIcon" class="toast-icon">⚠️</span>
-    <span id="toastMessage" class="toast-message"></span>
-  </div>
-
-</body>
-</html>
-
+  
     // ==========================================
     // VirusTotal Multiple Saved Keys Management
     // ==========================================
@@ -9185,7 +9173,7 @@
             showToast(res.message || (isEn ? 'API key saved' : 'Ключ сохранен'), 'success');
             if (nameInp) nameInp.value = '';
             if (valInp) valInp.value = '';
-            checkVtConfig();
+            if (typeof checkVirusTotalApiKey === 'function') checkVirusTotalApiKey();
             refreshVtKeysList();
           } else {
             showToast(res ? res.message : (isEn ? 'Failed to save key' : 'Ошибка сохранения ключа'), 'error');
@@ -9204,7 +9192,7 @@
         window.pywebview.api.select_active_virustotal_key(key).then(res => {
           if (res && res.success) {
             showToast(res.message || (isEn ? 'Active key switched' : 'Активный ключ переключен'), 'success');
-            checkVtConfig();
+            if (typeof checkVirusTotalApiKey === 'function') checkVirusTotalApiKey();
             refreshVtKeysList();
           }
         }).catch(err => {
@@ -9221,7 +9209,7 @@
         window.pywebview.api.delete_virustotal_key(key).then(res => {
           if (res && res.success) {
             showToast(res.message || (isEn ? 'Key deleted' : 'Ключ удален'), 'info');
-            checkVtConfig();
+            if (typeof checkVirusTotalApiKey === 'function') checkVirusTotalApiKey();
             refreshVtKeysList();
           }
         }).catch(err => {
@@ -9230,3 +9218,18 @@
       }
     }
     window.deleteSavedVtKey = deleteSavedVtKey;
+
+    window.checkVtConfig = checkVirusTotalApiKey;
+
+  </script>
+
+  <!-- Toast Notification -->
+
+  <!-- Toast Notification -->
+  <div id="appToast" class="toast-container">
+    <span id="toastIcon" class="toast-icon">⚠️</span>
+    <span id="toastMessage" class="toast-message"></span>
+  </div>
+
+</body>
+</html>
