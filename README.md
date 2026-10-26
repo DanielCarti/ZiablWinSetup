@@ -6,11 +6,11 @@
   <p><b>Массовая пакетная установка софта, умные системные твики, деблоатер, замер автозагрузки, очистка реестра и сканер VirusTotal</b></p>
 
   <p>
-    <a href="https://github.com/DanielCarti/ZiablWinSetup/releases/latest"><img src="https://img.shields.io/github/v/release/DanielCarti/ZiablWinSetup?style=for-the-badge&color=2563eb&label=Версия" alt="Latest Release" /></a>
-    <a href="https://github.com/DanielCarti/ZiablWinSetup/releases/latest"><img src="https://img.shields.io/github/downloads/DanielCarti/ZiablWinSetup/total?style=for-the-badge&color=10b981&label=Скачиваний" alt="Downloads" /></a>
-    <img src="https://img.shields.io/badge/Платформа-Windows%2010%20%7C%2011%20(x64)-0078d4?style=for-the-badge&logo=windows" alt="Platform" />
-    <img src="https://img.shields.io/badge/Лицензия-MIT-green?style=for-the-badge" alt="License" />
-    <img src="https://img.shields.io/badge/Языки-Русский%20%7C%20English-purple?style=for-the-badge" alt="Languages" />
+    <a href="https://github.com/DanielCarti/ZiablWinSetup/releases/latest"><img src="https://img.shields.io/github/v/release/DanielCarti/ZiablWinSetup?style=for-the-badge&color=2563eb&label=Release" alt="Latest Release" /></a>
+    <a href="https://github.com/DanielCarti/ZiablWinSetup/releases/latest"><img src="https://img.shields.io/github/downloads/DanielCarti/ZiablWinSetup/total?style=for-the-badge&color=10b981&label=Downloads" alt="Downloads" /></a>
+    <img src="https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011%20(x64)-0078d4?style=for-the-badge&logo=windows" alt="Platform" />
+    <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License" />
+    <img src="https://img.shields.io/badge/Languages-RU%20%7C%20EN-purple?style=for-the-badge" alt="Languages" />
   </p>
 
   <p align="center">

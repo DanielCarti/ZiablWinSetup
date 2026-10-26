@@ -5,6 +5,7 @@ ZiablWinSetup — Модуль системных твиков и полезны
 """
 
 import ctypes
+import glob
 from ctypes import wintypes
 import os
 import re
@@ -599,46 +600,188 @@ def _clean_steam_cache() -> tuple[bool, str]:
 # 7. ОЧИСТКА: Кэш медиа Telegram (все аккаунты + WebView)
 # ==========================================
 
-def _clean_telegram_cache() -> tuple[bool, str, str]:
+def _find_telegram_tdata_dirs() -> list[Path]:
+    r"""
+    Находит все существующие папки tdata Telegram Desktop:
+    1. Стандартная (%APPDATA%\Telegram Desktop\tdata)
+    2. Microsoft Store / UWP (%LOCALAPPDATA%\Packages\*Telegram*\LocalCache\Roaming\Telegram Desktop\tdata)
+    3. Портативная (в каталоге рядом с запущенным Telegram.exe)
+    4. Все профили пользователей C:\Users\* (при запуске от имени администратора / UAC)
+    5. Путь из реестра tg:// протокола
+    """
+    tdata_dirs: list[Path] = []
+    seen = set()
+
+    def add_dir(p: Path | str | None):
+        if not p:
+            return
+        try:
+            path_obj = Path(p).resolve()
+            if path_obj.exists() and path_obj not in seen:
+                seen.add(path_obj)
+                tdata_dirs.append(path_obj)
+        except Exception:
+            pass
+
+    # 1. Текущий профиль APPDATA
     appdata = os.environ.get("APPDATA", "")
-    tdata = Path(appdata) / "Telegram Desktop" / "tdata"
-    if not tdata.exists():
-        return False, "Папка Telegram Desktop не найдена.", "Telegram Desktop folder not found."
+    if appdata:
+        add_dir(Path(appdata) / "Telegram Desktop" / "tdata")
+
+    # 2. Текущий профиль LOCALAPPDATA Packages (UWP / MS Store)
+    localappdata = os.environ.get("LOCALAPPDATA", "")
+    if localappdata:
+        store_pat = os.path.join(localappdata, "Packages", "*Telegram*", "LocalCache", "Roaming", "Telegram Desktop", "tdata")
+        for sp in glob.glob(store_pat):
+            add_dir(sp)
+
+    # 3. Реестр tg:// протокол и Uninstall
+    for root in (winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE, winreg.HKEY_CLASSES_ROOT):
+        try:
+            with winreg.OpenKey(root, r"tg\shell\open\command") as k:
+                val, _ = winreg.QueryValueEx(k, "")
+                if val:
+                    raw = val.split('"')[1] if '"' in val else val.split()[0]
+                    exe_dir = Path(raw).parent
+                    add_dir(exe_dir / "tdata")
+        except OSError:
+            pass
+
+    # 4. Проверяем процесс Telegram.exe, если он активен прямо сейчас
+    try:
+        res = subprocess.run(
+            ["tasklist", "/FI", "IMAGENAME eq Telegram.exe", "/FO", "CSV", "/NH"],
+            capture_output=True, text=True, creationflags=NO_WINDOW
+        )
+        if "telegram.exe" in (res.stdout or "").lower():
+            ps_res = subprocess.run(
+                ["powershell", "-NoProfile", "-NonInteractive", "-Command", "Get-Process Telegram -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path"],
+                capture_output=True, text=True, creationflags=NO_WINDOW
+            )
+            for line in ps_res.stdout.strip().splitlines():
+                exe_p = line.strip()
+                if exe_p and os.path.exists(exe_p):
+                    add_dir(Path(exe_p).parent / "tdata")
+    except Exception:
+        pass
+
+    # 5. Проверяем все профили C:\Users\* (на случай запуска от администратора под другим аккаунтом)
+    try:
+        users_dir = Path(os.environ.get("SystemDrive", "C:") + "\\Users")
+        if users_dir.exists():
+            for u in users_dir.iterdir():
+                if u.is_dir() and not u.name.lower().startswith(("all users", "default", "public")):
+                    add_dir(u / "AppData" / "Roaming" / "Telegram Desktop" / "tdata")
+                    store_pat = str(u / "AppData" / "Local" / "Packages" / "*Telegram*" / "LocalCache" / "Roaming" / "Telegram Desktop" / "tdata")
+                    for sp in glob.glob(store_pat):
+                        add_dir(sp)
+    except Exception:
+        pass
+
+    return tdata_dirs
+
+
+def _is_telegram_installed() -> bool:
+    """Определяет, установлен ли Telegram Desktop (или запущен ли прямо сейчас)."""
+    # 1. Если уже найдена рабочая папка tdata
+    if _find_telegram_tdata_dirs():
+        return True
+
+    # 2. Если процесс Telegram.exe запущен прямо сейчас
+    try:
+        res = subprocess.run(
+            ["tasklist", "/FI", "IMAGENAME eq Telegram.exe", "/FO", "CSV", "/NH"],
+            capture_output=True, text=True, creationflags=NO_WINDOW
+        )
+        if "telegram.exe" in (res.stdout or "").lower():
+            return True
+    except Exception:
+        pass
+
+    # 3. Проверка стандартных исполняемых файлов
+    appdata = os.environ.get("APPDATA", "")
+    localappdata = os.environ.get("LOCALAPPDATA", "")
+    program_files = [os.environ.get("ProgramFiles", ""), os.environ.get("ProgramFiles(x86)", "")]
+    candidate_exes = [
+        Path(appdata) / "Telegram Desktop" / "Telegram.exe" if appdata else None,
+        Path(localappdata) / "Telegram Desktop" / "Telegram.exe" if localappdata else None,
+    ]
+    for pf in program_files:
+        if pf:
+            candidate_exes.append(Path(pf) / "Telegram Desktop" / "Telegram.exe")
+
+    for exe in candidate_exes:
+        if exe and exe.exists():
+            return True
+
+    # 4. Проверка профилей пользователей в C:\Users\*
+    try:
+        users_dir = Path(os.environ.get("SystemDrive", "C:") + "\\Users")
+        if users_dir.exists():
+            for u in users_dir.iterdir():
+                if u.is_dir() and not u.name.lower().startswith(("all users", "default", "public")):
+                    if (u / "AppData" / "Roaming" / "Telegram Desktop" / "Telegram.exe").exists():
+                        return True
+                    if (u / "AppData" / "Roaming" / "Telegram Desktop").exists():
+                        return True
+                    if glob.glob(str(u / "AppData" / "Local" / "Packages" / "*Telegram*")):
+                        return True
+    except Exception:
+        pass
+
+    # 5. Протокол tg:// в реестре
+    for root in (winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE, winreg.HKEY_CLASSES_ROOT):
+        try:
+            with winreg.OpenKey(root, r"tg\shell\open\command") as k:
+                return True
+        except OSError:
+            pass
+
+    return False
+
+
+def _clean_telegram_cache() -> tuple[bool, str, str]:
+    tdata_dirs = _find_telegram_tdata_dirs()
+    if not tdata_dirs:
+        if not _is_telegram_installed():
+            return False, "Папка Telegram Desktop не найдена.", "Telegram Desktop folder not found."
+        return True, "Медиа-кэш Telegram уже пуст.", "Telegram media cache is already empty."
 
     subprocess.run(["taskkill", "/F", "/IM", "Telegram.exe"], capture_output=True, creationflags=NO_WINDOW)
 
     freed = 0
     files_deleted = 0
 
-    # Scan user_data, user_data#2, user_data#3, etc.
-    user_data_dirs = list(tdata.glob("user_data*"))
-    if not user_data_dirs:
-        user_data_dirs = [tdata / "user_data"]
+    for tdata in tdata_dirs:
+        # Scan user_data, user_data#2, user_data#3, etc.
+        user_data_dirs = list(tdata.glob("user_data*"))
+        if not user_data_dirs:
+            user_data_dirs = [tdata / "user_data"]
 
-    targets = []
-    for ud in user_data_dirs:
+        targets = []
+        for ud in user_data_dirs:
+            targets.extend([
+                ud / "cache",
+                ud / "media_cache",
+                ud / "wvbots",
+                ud / "wvother",
+            ])
         targets.extend([
-            ud / "cache",
-            ud / "media_cache",
-            ud / "wvbots",
-            ud / "wvother",
+            tdata / "temp",
+            tdata / "dumps",
         ])
-    targets.extend([
-        tdata / "temp",
-        tdata / "dumps",
-    ])
 
-    for target in targets:
-        if target.exists():
-            for f in list(target.glob("**/*")):
-                if f.is_file():
-                    try:
-                        sz = f.stat().st_size
-                        f.unlink()
-                        freed += sz
-                        files_deleted += 1
-                    except Exception:
-                        pass
+        for target in targets:
+            if target.exists():
+                for f in list(target.glob("**/*")):
+                    if f.is_file():
+                        try:
+                            sz = f.stat().st_size
+                            f.unlink()
+                            freed += sz
+                            files_deleted += 1
+                        except Exception:
+                            pass
 
     if freed == 0 and files_deleted == 0:
         return True, "Медиа-кэш Telegram уже пуст.", "Telegram media cache is already empty."
@@ -1226,7 +1369,7 @@ TWEAKS: list[TweakEntry] = [
         apply=_clean_telegram_cache,
         revert=lambda: (True, "Действие очистки не требует отката."),
         type="action",
-        is_available=lambda: (Path(os.environ.get("APPDATA", "")) / "Telegram Desktop" / "tdata").exists(),
+        is_available=_is_telegram_installed,
         unavailable_reason="Telegram Desktop не установлен",
         unavailable_reason_en="Telegram Desktop is not installed",
     ),
