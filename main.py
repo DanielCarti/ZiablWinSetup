@@ -53,6 +53,17 @@ def main():
             "Запущено без прав администратора. "
             "Некоторые установщики могут потребовать UAC-подтверждение."
         )
+        if "--no-elevate" not in sys.argv:
+            try:
+                from app.settings import is_always_run_as_admin
+                from app.utils import request_admin_restart
+                if is_always_run_as_admin():
+                    logger.info("Включен постоянный запуск от имени администратора. Запрос UAC...")
+                    ok, _ = request_admin_restart()
+                    if ok:
+                        sys.exit(0)
+            except Exception as e:
+                logger.debug(f"Auto-elevation check error: {e}")
 
     # Запуск в скрытом режиме трея при автозапуске Windows
     start_in_tray = "--tray" in sys.argv or "--minimized" in sys.argv

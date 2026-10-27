@@ -33,6 +33,7 @@ _DEFAULT_SETTINGS = {
     "virustotal_api_key": "",
     "virustotal_keys": [],
     "accent_color": "blue",
+    "always_run_as_admin": False,
 }
 
 
@@ -190,3 +191,64 @@ def set_accent_color(accent: str) -> str:
     save_settings(settings)
     return clean_accent
 
+
+
+def is_always_run_as_admin() -> bool:
+    """Проверяет, включен ли запуск от имени администратора в настройках или в реестре."""
+    settings = load_settings()
+    if bool(settings.get("always_run_as_admin", False)):
+        return True
+    try:
+        import sys, winreg
+        layers_key = r"Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers"
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, layers_key, 0, winreg.KEY_READ) as key:
+            exe_path = str(Path(sys.executable).resolve())
+            candidates = [exe_path]
+            if "python" in Path(exe_path).name.lower():
+                dist_exe = Path(os.getcwd()) / "dist" / "ZiablWinSetup.exe"
+                if dist_exe.exists():
+                    candidates.append(str(dist_exe.resolve()))
+            for p in candidates:
+                try:
+                    val, _ = winreg.QueryValueEx(key, p)
+                    if "RUNASADMIN" in str(val).upper():
+                        return True
+                except FileNotFoundError:
+                    pass
+    except Exception:
+        pass
+    return False
+
+
+def set_always_run_as_admin(enabled: bool) -> bool:
+    """Включает или выключает постоянный запуск от имени администратора."""
+    settings = load_settings()
+    settings["always_run_as_admin"] = bool(enabled)
+    save_settings(settings)
+    _sync_runasadmin_registry(bool(enabled))
+    return True
+
+
+def _sync_runasadmin_registry(enabled: bool) -> bool:
+    r"""Синхронизирует системный флаг ~ RUNASADMIN в AppCompatFlags\Layers для текущего exe."""
+    try:
+        import sys, winreg
+        layers_key = r"Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers"
+        exe_path = str(Path(sys.executable).resolve())
+        candidates = [exe_path]
+        if "python" in Path(exe_path).name.lower():
+            dist_exe = Path(os.getcwd()) / "dist" / "ZiablWinSetup.exe"
+            if dist_exe.exists():
+                candidates.append(str(dist_exe.resolve()))
+        with winreg.CreateKey(winreg.HKEY_CURRENT_USER, layers_key) as key:
+            for p in candidates:
+                if enabled:
+                    winreg.SetValueEx(key, p, 0, winreg.REG_SZ, "~ RUNASADMIN")
+                else:
+                    try:
+                        winreg.DeleteValue(key, p)
+                    except FileNotFoundError:
+                        pass
+        return True
+    except Exception:
+        return False

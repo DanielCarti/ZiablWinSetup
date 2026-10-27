@@ -874,6 +874,57 @@ class TestTweakProcessHandling(unittest.TestCase):
         # No competitor mentions
         self.assertNotIn("ccleaner", html.lower())
 
+    def test_v2_0_0_admin_and_ui_fixes(self):
+        """Проверка настроек 'Всегда от админа', параллельного скачивания, Metro подсказок и UI."""
+        from app.settings import is_always_run_as_admin, set_always_run_as_admin
+        from app.i18n import STRINGS
+        from app.web_api import AppBridge
+
+        # 1. Settings & i18n
+        orig_state = is_always_run_as_admin()
+        try:
+            self.assertTrue(set_always_run_as_admin(True))
+            self.assertTrue(is_always_run_as_admin())
+            self.assertTrue(set_always_run_as_admin(False))
+            self.assertFalse(is_always_run_as_admin())
+        finally:
+            set_always_run_as_admin(orig_state)
+
+        self.assertIn("settings_always_admin", STRINGS["ru"])
+        self.assertIn("settings_always_admin", STRINGS["en"])
+        self.assertIn("settings_always_admin_desc", STRINGS["ru"])
+        self.assertIn("settings_always_admin_desc", STRINGS["en"])
+
+        # 2. Web API bridge has method
+        bridge = AppBridge()
+        self.assertTrue(hasattr(bridge, "set_always_run_as_admin"))
+
+        # 3. Web API parallel downloads using as_completed and max_workers=4
+        import inspect
+        src = inspect.getsource(bridge.download_selected)
+        self.assertIn("as_completed", src)
+        self.assertIn("max_workers=4", src)
+
+        # 4. Copilot SVG exists and is valid
+        copilot_svg = Path("app/ui/icons/metro/copilot.svg").read_text(encoding="utf-8")
+        self.assertTrue(copilot_svg.startswith("<svg"))
+        self.assertIn("</svg>", copilot_svg)
+
+        # 5. HTML checks
+        html = Path("app/ui/index.html").read_text(encoding="utf-8")
+        self.assertIn("chkAlwaysRunAsAdmin", html)
+        self.assertIn("toggleAlwaysAdmin", html)
+        self.assertIn("getCurrentlyVisibleApps", html)
+        self.assertIn("icons/${item.id}.svg", html)
+        self.assertIn("presetsBar.style.display", html)
+
+        # Metro tooltips overflow: visible and title attr
+        self.assertIn(".metro-tile-title {\n      font-size: 13.5px;\n      font-weight: 600;\n      color: var(--text-main);\n      display: flex;\n      align-items: center;\n      gap: 6px;\n      overflow: visible;", html)
+        self.assertIn('class="app-help-icon" title="', html)
+
+        # Integer download pct rounding
+        self.assertIn("Math.round(Math.max(0, Math.min(100, item.progress || 0)))", html)
+
 
 if __name__ == "__main__":
     unittest.main()

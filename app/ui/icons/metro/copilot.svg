@@ -1,16 +1,35 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
   <defs>
-    <linearGradient id="copilot1" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0078D4"/>
-      <stop offset="100%" stop-color="#8661C5"/>
+    <linearGradient id="copilotRibbon1" x1="6" y1="36" x2="30" y2="10" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0E78D4"/>
+      <stop offset="45%" stop-color="#2454E5"/>
+      <stop offset="100%" stop-color="#8332E8"/>
     </linearGradient>
-    <linearGradient id="copilot2" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#E3008C"/>
-      <stop offset="100%" stop-color="#FFB900"/>
+    <linearGradient id="copilotRibbon2" x1="42" y1="12" x2="18" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FF8A00"/>
+      <stop offset="45%" stop-color="#FA2C70"/>
+      <stop offset="100%" stop-color="#9A28DF"/>
     </linearGradient>
+    <linearGradient id="copilotRibbonBack" x1="10" y1="14" x2="38" y2="34" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00A2ED"/>
+      <stop offset="100%" stop-color="#EB3C7B"/>
+    </linearGradient>
+    <filter id="copilotShadow" x="-10%" y="-10%" width="120%" height="120%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="#000" flood-opacity="0.35"/>
+    </filter>
   </defs>
-  <rect width="48" height="48" rx="10" fill="#18181B"/>
-  <path d="M14 26 C14 18 20 14 26 14 C32 14 36 18 36 22 C36 28 30 31 24 31 L18 31 C15.8 31 14 29.2 14 27 Z" fill="url(#copilot1)" opacity="0.9"/>
-  <path d="M34 22 C34 30 28 34 22 34 C16 34 12 30 12 26 C12 20 18 17 24 17 L30 17 C32.2 17 34 18.8 34 21 Z" fill="url(#copilot2)" opacity="0.9"/>
-  <circle cx="24" cy="24" r="5" fill="#FFFFFF" opacity="0.95"/>
+
+  <g filter="url(#copilotShadow)">
+    <!-- Back connecting loop -->
+    <path d="M19.5 13.5 C24 9.5 32 9.5 37 14.5 C42 19.5 42 27.5 37.5 32.5 C35 35 31.5 36.5 28 36.5" 
+          stroke="url(#copilotRibbonBack)" stroke-width="7" stroke-linecap="round" fill="none" opacity="0.35"/>
+
+    <!-- Left Cyan-Blue-Purple Ribbon -->
+    <path d="M11 28.5 C9 22 13 14 20 11.5 C26 9.5 32.5 12 35 17.5 C36.5 21 35.5 25 32.5 28 C28.5 32 21 34.5 16 32 C12.5 30 11.5 27 11 28.5 Z" 
+          fill="url(#copilotRibbon1)"/>
+
+    <!-- Right Orange-Pink-Purple Ribbon (Interlocking) -->
+    <path d="M37 19.5 C39 26 35 34 28 36.5 C22 38.5 15.5 36 13 30.5 C11.5 27 12.5 23 15.5 20 C19.5 16 27 13.5 32 16 C35.5 18 36.5 21 37 19.5 Z" 
+          fill="url(#copilotRibbon2)"/>
+  </g>
 </svg>

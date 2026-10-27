@@ -1825,7 +1825,7 @@
       display: flex;
       align-items: flex-start;
       gap: 12px;
-      overflow: hidden;
+      overflow: visible;
     }
 
     .metro-tile-icon {
@@ -1851,7 +1851,7 @@
     .metro-tile-info {
       flex: 1;
       min-width: 0;
-      overflow: hidden;
+      overflow: visible;
     }
 
     .metro-tile-title {
@@ -1861,7 +1861,7 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      overflow: hidden;
+      overflow: visible;
       white-space: nowrap;
     }
 
@@ -3574,17 +3574,33 @@
           <div class="settings-row">
             <div class="settings-row-left">
               <div class="settings-row-icon" style="background: rgba(244, 63, 94, 0.1); color: #fb7185;">🗑️</div>
-              <div>
+              <div style="flex: 1; min-width: 0;">
                 <div class="settings-row-title" id="lblCleanInstallersRowTitle">Очистить кэш (.exe)</div>
                 <div class="settings-row-desc" id="cleanInstallersDesc">Удалить загруженные установщики программ из временной папки</div>
+                <div id="cleanInstallersStatusText" style="font-size: 11.5px; color: #10b981; margin-top: 4px; display: none; line-height: 1.4;"></div>
               </div>
             </div>
-            <div class="settings-row-right" style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+            <div class="settings-row-right">
               <button class="btn-action btn-outline" id="btnCleanInstallers" onclick="cleanDownloadedInstallersManual()" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; font-size: 12px;" title="Очистить загруженные инсталляторы">
                 <span id="btnCleanInstallersIcon">🗑️</span>
                 <span id="lblCleanInstallersBtn">Очистить кэш</span>
               </button>
-              <span id="cleanInstallersStatusText" style="font-size: 11px; color: #10b981; display: none;"></span>
+            </div>
+          </div>
+
+          <div class="settings-row">
+            <div class="settings-row-left">
+              <div class="settings-row-icon" style="background: rgba(139, 92, 246, 0.1); color: #a78bfa;">🛡️</div>
+              <div>
+                <div class="settings-row-title" id="lblAlwaysAdminTitle">Всегда запускать от имени администратора</div>
+                <div class="settings-row-desc" id="lblAlwaysAdminDesc">Автоматически запрашивать права администратора (UAC) при каждом старте приложения</div>
+              </div>
+            </div>
+            <div class="settings-row-right">
+              <label class="toggle-switch">
+                <input type="checkbox" id="chkAlwaysRunAsAdmin" onchange="toggleAlwaysAdmin(this.checked)">
+                <span class="toggle-slider"></span>
+              </label>
             </div>
           </div>
 
@@ -4199,8 +4215,17 @@
             const chkAuto = document.getElementById('chkAutostartApp');
             if (chkAuto) chkAuto.checked = data.app_autostart_enabled;
           }
+          if (data.settings && typeof data.settings.always_run_as_admin === 'boolean') {
+            const chkAdm = document.getElementById('chkAlwaysRunAsAdmin');
+            if (chkAdm) chkAdm.checked = data.settings.always_run_as_admin;
+          }
           if (data.settings && typeof data.settings.minimize_to_tray_on_close === 'boolean') {
-            const chkTray = document.getElementById('chkMinimizeToTray');
+            const lblAdmTitle = document.getElementById('lblAlwaysAdminTitle');
+        if (lblAdmTitle) lblAdmTitle.textContent = isEn ? 'Always Run as Administrator' : (s.settings_always_admin || 'Всегда запускать от имени администратора');
+        const lblAdmDesc = document.getElementById('lblAlwaysAdminDesc');
+        if (lblAdmDesc) lblAdmDesc.textContent = isEn ? 'Automatically request administrator privileges (UAC) on application startup' : (s.settings_always_admin_desc || 'Автоматически запрашивать права администратора (UAC) при каждом старте приложения');
+
+        const chkTray = document.getElementById('chkMinimizeToTray');
             if (chkTray) chkTray.checked = data.settings.minimize_to_tray_on_close;
           }
           if (data.app_version) {
@@ -5556,6 +5581,12 @@
       container.innerHTML = '';
       const s = appData.strings;
 
+      // Presets bar is displayed only when active category is "Все" (all) and there is no search query
+      const presetsBar = document.getElementById('presetsBar');
+      if (presetsBar) {
+        presetsBar.style.display = (activeCategory === 'all' && !searchQuery) ? 'flex' : 'none';
+      }
+
       const filtered = appData.apps.filter(app => {
         if (activeCategory === 'recommended') {
           if (!app.recommended) return false;
@@ -6022,20 +6053,49 @@
       if (container) container.scrollTop = 0;
     }
 
+    function getCurrentlyVisibleApps() {
+      if (!appData || !appData.apps) return [];
+      return appData.apps.filter(app => {
+        if (activeCategory === 'recommended') {
+          if (!app.recommended) return false;
+          return matchesAppSearch(app, searchQuery);
+        }
+        if (activeCategory === 'installed') {
+          if (!appData.installed_apps || !appData.installed_apps[app.id]) return false;
+          return matchesAppSearch(app, searchQuery);
+        }
+        if (activeCategory === 'updates_available') {
+          const ignoredSet = new Set(appData.ignored_updates || []);
+          if (ignoredSet.has(app.id)) return false;
+          const isDoneInSession = appStatuses[app.id] && (appStatuses[app.id].status === 'done' || appStatuses[app.id].status === 'extracted');
+          if (!availableUpdates || (!availableUpdates[app.id] && !isDoneInSession)) return false;
+          return matchesAppSearch(app, searchQuery);
+        }
+        if (searchQuery) {
+          return matchesAppSearch(app, searchQuery);
+        }
+        if (activeCategory === 'all') return true;
+        return app.category === activeCategory;
+      });
+    }
+
     function selectAll() {
-      appData.apps.forEach(a => selectedApps.add(a.id));
+      const visible = getCurrentlyVisibleApps();
+      visible.forEach(a => selectedApps.add(a.id));
       renderCards();
       updateFooter();
     }
 
     function deselectAll() {
-      selectedApps.clear();
+      const visible = getCurrentlyVisibleApps();
+      visible.forEach(a => selectedApps.delete(a.id));
       renderCards();
       updateFooter();
     }
 
     function setAllMode(mode) {
-      appData.apps.forEach(a => { appModes[a.id] = mode; });
+      const visible = getCurrentlyVisibleApps();
+      visible.forEach(a => { appModes[a.id] = mode; });
       renderCards();
     }
 
@@ -6494,7 +6554,7 @@
         const isDownloading = item.status === 'downloading' || item.status === 'queued';
         const isDone = item.status === 'downloaded' || item.status === 'done' || item.status === 'extracted';
         const isError = item.status === 'error';
-        const pct = Math.max(0, Math.min(100, item.progress || 0));
+        const pct = Math.round(Math.max(0, Math.min(100, item.progress || 0)));
         const isIndet = (item.progress <= 0 || item.progress === -1) && isDownloading;
 
         let statusBadge = '';
@@ -6508,7 +6568,9 @@
           statusBadge = `<span style="font-size: 11.5px; padding: 3px 8px; border-radius: 6px; background: rgba(255, 255, 255, 0.08); color: var(--text-muted); font-weight: 600;">⏹️ ${isEn ? 'Cancelled' : 'Отменено'}</span>`;
         }
 
-        const iconHtml = item.icon ? `<img src="${item.icon}" style="width: 32px; height: 32px; border-radius: 6px; object-fit: contain;" onerror="this.style.display='none';">` : `<div style="width: 32px; height: 32px; border-radius: 6px; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; font-size: 16px;">📦</div>`;
+        const iconHtml = `<div class="card-icon-wrap" style="width: 38px; height: 38px; min-width: 38px; padding: 4px; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; box-sizing: border-box;">
+          <img class="app-icon" src="icons/${item.id}.svg" onerror="this.onerror=null; this.src='icons/default.svg';" style="width: 100%; height: 100%; object-fit: contain;">
+        </div>`;
 
         let actionBtnHtml = '';
         if (isDownloading) {
@@ -7076,8 +7138,8 @@
             </div>
             <div class="metro-tile-info">
               <div class="metro-tile-title">
-                <span>${app.name}</span>
-                <span class="app-help-icon" data-desc="${escapeHtml((app.notes && app.notes.trim()) ? app.notes.trim() : (app.description || ''))}" onclick="event.stopPropagation();">
+                <span style="overflow: hidden; text-overflow: ellipsis; max-width: 175px;">${app.name}</span>
+                <span class="app-help-icon" title="${escapeHtml((app.notes && app.notes.trim()) ? app.notes.trim() : (app.description || ''))}" data-desc="${escapeHtml((app.notes && app.notes.trim()) ? app.notes.trim() : (app.description || ''))}" onclick="event.stopPropagation();">
                   <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="10"></circle>
                     <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
@@ -7695,6 +7757,20 @@
       }
     }
     window.onToggleAutoCleanLeftovers = onToggleAutoCleanLeftovers;
+
+    async function toggleAlwaysAdmin(checked) {
+      if (window.pywebview && window.pywebview.api && window.pywebview.api.set_always_run_as_admin) {
+        try {
+          const res = await window.pywebview.api.set_always_run_as_admin(checked);
+          if (res && res.success) {
+            showToast(appData && appData.lang === 'en' ? 'Always run as administrator setting saved' : 'Настройка запуска от имени администратора сохранена', 'success', 2500);
+          }
+        } catch (e) {
+          console.error('toggleAlwaysAdmin error:', e);
+        }
+      }
+    }
+    window.toggleAlwaysAdmin = toggleAlwaysAdmin;
 
     // ==========================================
     // Резервное копирование и восстановление программ

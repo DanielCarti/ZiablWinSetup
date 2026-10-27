@@ -964,14 +964,15 @@ class AppBridge:
             def progress_cb(app_id: str, percent: float, status_text: str):
                 self.call_js("onAppProgress", app_id, percent, status_text)
 
-            with ThreadPoolExecutor(max_workers=3) as executor:
+            from concurrent.futures import as_completed
+            with ThreadPoolExecutor(max_workers=4) as executor:
                 futures = {}
                 for app in apps_to_download:
                     self.call_js("onAppStatus", app.id, "downloading", i18n.t("status_downloading"))
                     f = executor.submit(self._downloader.download, app, progress_cb)
                     futures[f] = app
 
-                for f in futures:
+                for f in as_completed(futures):
                     app = futures[f]
                     try:
                         result = f.result()
@@ -1799,6 +1800,18 @@ class AppBridge:
             return {"success": True, "accent_color": accent}
         except Exception as e:
             logger.error(f"Failed to set accent color: {e}")
+            return {"success": False, "error": str(e)}
+
+    def set_always_run_as_admin(self, enabled: bool) -> dict[str, Any]:
+        """Включает или выключает постоянный запуск от имени администратора."""
+        from app.settings import set_always_run_as_admin
+        try:
+            success = set_always_run_as_admin(enabled)
+            if self._app_data and "settings" in self._app_data:
+                self._app_data["settings"]["always_run_as_admin"] = bool(enabled)
+            return {"success": success, "always_run_as_admin": bool(enabled)}
+        except Exception as e:
+            logger.error(f"Failed to set always run as admin: {e}")
             return {"success": False, "error": str(e)}
 
     # ==========================================
