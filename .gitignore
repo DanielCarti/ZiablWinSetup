@@ -1,4 +1,4 @@
-﻿# Python
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -19,3 +19,4 @@ scratch/
 *.log
 qa_check.txt
 render_check.txt
+*.old

@@ -345,8 +345,8 @@
 
     /* Sidebar */
     aside {
-      width: 260px;
-      min-width: 210px;
+      width: 275px;
+      min-width: 230px;
       max-width: 480px;
       background: var(--bg-sidebar);
       border-right: 1px solid var(--border-subtle);
@@ -694,6 +694,7 @@
     .card-info {
       flex: 1;
       min-width: 0;
+      overflow: hidden;
     }
 
     .card-title {
@@ -702,7 +703,16 @@
       color: var(--text-main);
       display: flex;
       align-items: center;
-      gap: 8px;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .app-title-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: normal;
+      line-height: 1.3;
     }
 
     .card-desc {
@@ -742,22 +752,22 @@
     .app-help-icon::after {
       content: attr(data-desc);
       position: absolute;
-      top: calc(100% + 8px);
-      left: -6px;
-      transform: translateY(-4px);
-      background: #1b212d;
-      border: 1px solid rgba(56, 189, 248, 0.4);
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
-      color: #f1f5f9;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%) translateY(4px);
+      background: #1a2233;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.65);
+      color: #f8fafc;
       font-size: 11.5px;
       font-weight: 400;
-      line-height: 1.5;
-      padding: 9px 13px;
+      line-height: 1.45;
+      padding: 8px 12px;
       border-radius: 8px;
       white-space: normal;
       width: max-content;
-      max-width: 320px;
-      min-width: 220px;
+      max-width: 280px;
+      min-width: 170px;
       text-align: left;
       pointer-events: none;
       opacity: 0;
@@ -768,12 +778,12 @@
     .app-help-icon::before {
       content: '';
       position: absolute;
-      top: calc(100% + 3px);
-      left: 4px;
-      transform: translateY(-4px);
-      border-width: 0 5px 5px 5px;
+      bottom: calc(100% + 3px);
+      left: 50%;
+      transform: translateX(-50%) translateY(4px);
+      border-width: 5px 5px 0 5px;
       border-style: solid;
-      border-color: transparent transparent #1b212d transparent;
+      border-color: #1a2233 transparent transparent transparent;
       opacity: 0;
       visibility: hidden;
       transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
@@ -784,7 +794,7 @@
     .app-help-icon:hover::before {
       opacity: 1;
       visibility: visible;
-      transform: translateY(0);
+      transform: translateX(-50%) translateY(0);
     }
 
     /* Category section dividers in All view */
@@ -826,6 +836,7 @@
       align-items: center;
       gap: 12px;
       flex-shrink: 0;
+      margin-left: auto;
     }
 
     .mode-select {
@@ -2859,7 +2870,7 @@
       </div>
 
       <!-- App Cards -->
-      <main id="appCardsContainer" style="flex: 1; overflow-y: auto; padding-bottom: 90px; box-sizing: border-box; background: var(--bg-app);"></main>
+      <main id="appCardsContainer" style="flex: 1; overflow-y: auto; padding-bottom: 125px; box-sizing: border-box; background: var(--bg-app);"></main>
 
       <!-- Sticky Action Bar (appears on scroll when apps are selected) -->
       <div id="stickyActionBar" class="sticky-action-bar">
@@ -2888,10 +2899,16 @@
           <h2 style="font-size: 20px; font-weight: 600; margin-bottom: 4px;" id="tweaksTitle">⚡ Твики и фичи</h2>
           <p style="font-size: 13px; color: var(--text-muted);" id="tweaksSubtitle">Полезные системные настройки Windows и оптимизации программ в один клик.</p>
         </div>
-        <!-- Tweaks Toolbar: Dedicated Search + View Switcher -->
+        <!-- Tweaks Toolbar: Category Chips + Search + View Switcher -->
         <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <div class="metro-filter-chips" style="display: flex; gap: 6px; align-items: center;">
+            <button class="filter-chip active" id="chipTweakAll" onclick="setTweaksCategory('all')">Все</button>
+            <button class="filter-chip" id="chipTweakSystem" onclick="setTweaksCategory('system')">⚙️ Система</button>
+            <button class="filter-chip" id="chipTweakClean" onclick="setTweaksCategory('clean')">🧹 Очистка</button>
+            <button class="filter-chip" id="chipTweakMaintain" onclick="setTweaksCategory('maintain')">🛠️ Обслуживание</button>
+          </div>
           <div style="position: relative; display: flex; align-items: center;">
-            <input type="text" id="tweaksSearchInput" oninput="filterTweaksLocal()" placeholder="Поиск твиков..." style="padding: 6px 12px 6px 30px; border-radius: var(--radius-sm); background: var(--bg-card); border: 1px solid var(--border-subtle); color: var(--text-main); font-size: 12px; width: 200px; outline: none;">
+            <input type="text" id="tweaksSearchInput" oninput="filterTweaksLocal()" placeholder="Поиск твиков..." style="padding: 6px 12px 6px 30px; border-radius: var(--radius-sm); background: var(--bg-card); border: 1px solid var(--border-subtle); color: var(--text-main); font-size: 12px; width: 180px; outline: none;">
             <span style="position: absolute; left: 9px; font-size: 13px; color: var(--text-muted); pointer-events: none;">🔍</span>
           </div>
           <div class="view-mode-switcher" style="display: inline-flex; background: rgba(255,255,255,0.06); padding: 3px; border-radius: var(--radius-sm); gap: 2px;">
@@ -2961,13 +2978,18 @@
           <button class="filter-chip active" id="chipStartupAll" onclick="setStartupFilter('all')">Все (<span id="countStartupAll">0</span>)</button>
           <button class="filter-chip" id="chipStartupEnabled" onclick="setStartupFilter('enabled')" style="border-left: 2px solid #22c55e;">🟢 Включено (<span id="countStartupEnabled">0</span>)</button>
           <button class="filter-chip" id="chipStartupDisabled" onclick="setStartupFilter('disabled')" style="border-left: 2px solid #ef4444;">⚪ Отключено (<span id="countStartupDisabled">0</span>)</button>
-          <button class="filter-chip" id="chipStartupRegistry" onclick="setStartupFilter('registry')">Реестр (<span id="countStartupRegistry">0</span>)</button>
-          <button class="filter-chip" id="chipStartupFolder" onclick="setStartupFilter('folder')">Папка (<span id="countStartupFolder">0</span>)</button>
-          <button class="filter-chip" id="chipStartupTask" onclick="setStartupFilter('task')">Планировщик (<span id="countStartupTask">0</span>)</button>
-          <button class="filter-chip" id="chipStartupUwp" onclick="setStartupFilter('uwp')">Store / UWP (<span id="countStartupUwp">0</span>)</button>
-          <button class="filter-chip" id="chipStartupService" onclick="setStartupFilter('service')">Службы (<span id="countStartupService">0</span>)</button>
-          <button class="filter-chip" id="btnStartupSort" onclick="cycleStartupSort()" style="margin-left: 6px; border: 1px solid var(--border-subtle); display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.04);" title="Переключить сортировку списка автозагрузки">
-            <span>↕️ Сортировка:</span> <strong id="lblStartupSort" style="color: var(--accent);">Сначала вкл.</strong>
+
+          <select id="selectStartupSource" onchange="setStartupSourceFilter(this.value)" class="mode-select" style="height: 32px; font-size: 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--text-main); padding: 0 10px; outline: none; cursor: pointer;">
+            <option value="all">📁 Все источники</option>
+            <option value="registry">🔑 Реестр (HKCU/HKLM)</option>
+            <option value="windows_service">⚙️ Службы Windows</option>
+            <option value="scheduled_task">⏱️ Планировщик задач</option>
+            <option value="startup_folder">📂 Папка автозапуска</option>
+            <option value="uwp_startup">🪟 Store / UWP</option>
+          </select>
+
+          <button class="filter-chip" id="btnStartupSort" onclick="cycleStartupSort()" style="margin-left: 6px; border: 1px solid var(--border-subtle); display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.04);" title="Переключить сортировку списка автозагрузки (по влиянию / по имени)">
+            <span>↕️ Сортировка:</span> <strong id="lblStartupSort" style="color: var(--accent);">По влиянию</strong>
           </button>
         </div>
         <div class="search-box" style="width: 260px;">
@@ -3141,10 +3163,10 @@
           <button class="btn-action btn-outline" onclick="openDownloadsFolder()" style="height: 32px; font-size: 12px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px;" id="btnOpenDlFolder">
             📂 <span id="lblBtnOpenDlFolder">Папка загрузок</span>
           </button>
-          <button class="btn-action btn-outline" onclick="clearCompletedDownloads()" style="height: 32px; font-size: 12px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px;" id="btnClearDlList">
+          <button class="btn-action btn-outline" onclick="clearCompletedDownloads()" style="height: 32px; font-size: 12px; padding: 0 12px; display: none; align-items: center; gap: 6px;" id="btnClearDlList">
             🧹 <span id="lblBtnClearDlList">Очистить список</span>
           </button>
-          <button class="btn-action btn-danger-outline" onclick="cancelAllDownloadsAction()" style="height: 32px; font-size: 12px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px;" id="btnCancelAllDl">
+          <button class="btn-action btn-danger-outline" onclick="cancelAllDownloadsAction()" style="height: 32px; font-size: 12px; padding: 0 12px; display: none; align-items: center; gap: 6px;" id="btnCancelAllDl">
             ⏹️ <span id="lblBtnCancelAllDl">Отменить все</span>
           </button>
         </div>
@@ -3481,6 +3503,22 @@
 
           <div class="settings-row">
             <div class="settings-row-left">
+              <div class="settings-row-icon" style="background: rgba(139, 92, 246, 0.1); color: #a78bfa;">🛡️</div>
+              <div>
+                <div class="settings-row-title" id="lblAlwaysAdminTitle">Всегда запускать от имени администратора</div>
+                <div class="settings-row-desc" id="lblAlwaysAdminDesc">Автоматически запрашивать права администратора (UAC) при каждом старте приложения</div>
+              </div>
+            </div>
+            <div class="settings-row-right">
+              <label class="toggle-switch">
+                <input type="checkbox" id="chkAlwaysRunAsAdmin" onchange="toggleAlwaysAdmin(this.checked)">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="settings-row">
+            <div class="settings-row-left">
               <div class="settings-row-icon" style="background: rgba(56, 189, 248, 0.1); color: #38bdf8;">🔄</div>
               <div>
                 <div class="settings-row-title" id="lblAutoCheckAppUpdates">Автопоиск обновлений ZiablWinSetup</div>
@@ -3588,21 +3626,7 @@
             </div>
           </div>
 
-          <div class="settings-row">
-            <div class="settings-row-left">
-              <div class="settings-row-icon" style="background: rgba(139, 92, 246, 0.1); color: #a78bfa;">🛡️</div>
-              <div>
-                <div class="settings-row-title" id="lblAlwaysAdminTitle">Всегда запускать от имени администратора</div>
-                <div class="settings-row-desc" id="lblAlwaysAdminDesc">Автоматически запрашивать права администратора (UAC) при каждом старте приложения</div>
-              </div>
-            </div>
-            <div class="settings-row-right">
-              <label class="toggle-switch">
-                <input type="checkbox" id="chkAlwaysRunAsAdmin" onchange="toggleAlwaysAdmin(this.checked)">
-                <span class="toggle-slider"></span>
-              </label>
-            </div>
-          </div>
+
 
           <div class="settings-row">
             <div class="settings-row-left">
@@ -3888,8 +3912,9 @@
     let isRescanning = false;
     let toastTimer = null;
     let startupItems = [];
-    let startupFilter = 'all'; // 'all' | 'enabled' | 'disabled' | 'registry' | 'folder' | 'task'
-    let startupSortMode = 'enabled_first'; // 'enabled_first' | 'disabled_first' | 'name_asc'
+    let startupFilter = 'all'; // 'all' | 'enabled' | 'disabled'
+    let startupSourceFilter = 'all'; // 'all' | 'registry' | 'windows_service' | 'scheduled_task' | 'startup_folder' | 'uwp_startup'
+    let startupSortMode = 'impact_desc'; // 'impact_desc' | 'name_asc'
     let startupSearchQuery = '';
     let currentAppUpdateInfo = null;
     let isSelfUpdating = false;
@@ -4156,14 +4181,7 @@
         console.error('setAccentColor error:', e);
       }
       try {
-        const adminBadge = document.getElementById('adminStatusBadge');
-        const isAdmin = appData.system_info && appData.system_info.is_admin;
-        if (adminBadge) {
-          adminBadge.style.display = (!isAdmin) ? 'inline-flex' : 'none';
-          const isEn = appData.lang === 'en';
-          const lbl = document.getElementById('lblAdminStatusText');
-          if (lbl) lbl.textContent = isEn ? 'Not Admin' : 'Без админа';
-        }
+        updateAdminBadge();
       } catch (e) {
         console.error('adminBadge error:', e);
       }
@@ -4200,7 +4218,10 @@
           if (data.settings) appData.settings = data.settings;
           if (data.strings) appData.strings = data.strings;
           if (data.strings_all) appData.strings_all = data.strings_all;
-          if (data.system_info) appData.system_info = data.system_info;
+          if (data.system_info) {
+            appData.system_info = data.system_info;
+            try { updateAdminBadge(); } catch (e) {}
+          }
           if (data.installed_apps) {
             appData.installed_apps = data.installed_apps;
             updateScanningState(false);
@@ -4220,12 +4241,7 @@
             if (chkAdm) chkAdm.checked = data.settings.always_run_as_admin;
           }
           if (data.settings && typeof data.settings.minimize_to_tray_on_close === 'boolean') {
-            const lblAdmTitle = document.getElementById('lblAlwaysAdminTitle');
-        if (lblAdmTitle) lblAdmTitle.textContent = isEn ? 'Always Run as Administrator' : (s.settings_always_admin || 'Всегда запускать от имени администратора');
-        const lblAdmDesc = document.getElementById('lblAlwaysAdminDesc');
-        if (lblAdmDesc) lblAdmDesc.textContent = isEn ? 'Automatically request administrator privileges (UAC) on application startup' : (s.settings_always_admin_desc || 'Автоматически запрашивать права администратора (UAC) при каждом старте приложения');
-
-        const chkTray = document.getElementById('chkMinimizeToTray');
+            const chkTray = document.getElementById('chkMinimizeToTray');
             if (chkTray) chkTray.checked = data.settings.minimize_to_tray_on_close;
           }
           if (data.app_version) {
@@ -4653,6 +4669,11 @@
         if (exclSelAll) exclSelAll.textContent = isEn ? 'Select all' : (s.select_all || 'Выбрать все');
         const exclDeselAll = document.getElementById('lblExclDeselectAll');
         if (exclDeselAll) exclDeselAll.textContent = isEn ? 'Deselect all' : (s.deselect_all || 'Снять все');
+
+        const lblAdmTitle = document.getElementById('lblAlwaysAdminTitle');
+        if (lblAdmTitle) lblAdmTitle.textContent = isEn ? 'Always Run as Administrator' : (s.settings_always_admin || 'Всегда запускать от имени администратора');
+        const lblAdmDesc = document.getElementById('lblAlwaysAdminDesc');
+        if (lblAdmDesc) lblAdmDesc.textContent = isEn ? 'Automatically request administrator privileges (UAC) on application startup' : (s.settings_always_admin_desc || 'Автоматически запрашивать права администратора (UAC) при каждом старте приложения');
 
         const cleanInstTitle = document.getElementById('lblCleanInstallersRowTitle');
         if (cleanInstTitle) cleanInstTitle.textContent = isEn ? 'Clean cache (.exe)' : 'Очистить кэш (.exe)';
@@ -5176,6 +5197,18 @@
       }
     }
     window.setAccentColor = setAccentColor;
+
+    function updateAdminBadge() {
+      const adminBadge = document.getElementById('adminStatusBadge');
+      const isAdmin = Boolean(appData.system_info && appData.system_info.is_admin);
+      if (adminBadge) {
+        adminBadge.style.display = (!isAdmin) ? 'inline-flex' : 'none';
+        const isEn = appData && appData.lang === 'en';
+        const lbl = document.getElementById('lblAdminStatusText');
+        if (lbl) lbl.textContent = isEn ? 'Not Admin' : 'Без админа';
+      }
+    }
+    window.updateAdminBadge = updateAdminBadge;
 
     async function promptRestartAsAdmin() {
       const isEn = appData && appData.lang === 'en';
@@ -6525,6 +6558,19 @@
       });
       const finDisp = document.getElementById('dlFinishedCountDisplay');
       if (finDisp) finDisp.textContent = finKeys.length;
+
+      const btnCancelAll = document.getElementById('btnCancelAllDl');
+      if (btnCancelAll) {
+        btnCancelAll.style.display = (activeKeys.length > 0) ? 'inline-flex' : 'none';
+      }
+      const btnClear = document.getElementById('btnClearDlList');
+      if (btnClear) {
+        const hasFinishedOrError = Object.keys(downloadHistory).some(k => {
+          const st = downloadHistory[k].status;
+          return st !== 'downloading' && st !== 'queued';
+        });
+        btnClear.style.display = hasFinishedOrError ? 'inline-flex' : 'none';
+      }
     }
     window.updateDownloadsBadge = updateDownloadsBadge;
 
@@ -6823,6 +6869,20 @@
 
     let currentTweaksViewMode = localStorage.getItem('tweaksViewMode') || 'grid';
     let tweaksSearchQuery = '';
+    let currentTweaksCategory = 'all'; // 'all' | 'system' | 'clean' | 'maintain'
+
+    function setTweaksCategory(cat) {
+      currentTweaksCategory = cat;
+      ['chipTweakAll', 'chipTweakSystem', 'chipTweakClean', 'chipTweakMaintain'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('active');
+      });
+      const activeId = cat === 'system' ? 'chipTweakSystem' : (cat === 'clean' ? 'chipTweakClean' : (cat === 'maintain' ? 'chipTweakMaintain' : 'chipTweakAll'));
+      const activeEl = document.getElementById(activeId);
+      if (activeEl) activeEl.classList.add('active');
+      renderTweaks();
+    }
+    window.setTweaksCategory = setTweaksCategory;
 
     function setTweaksViewMode(mode) {
       currentTweaksViewMode = mode;
@@ -6866,6 +6926,19 @@
 
       const s = appData.strings || {};
       let tweaks = appData.tweaks || [];
+
+      if (currentTweaksCategory !== 'all') {
+        const systemIds = new Set(['ultimate_perf', 'show_file_ext', 'classic_context_menu', 'hide_taskbar_search', 'taskbar_align_left', 'disable_ssd_indexing', 'disable_start_ads']);
+        const cleanIds = new Set(['clean_steam_cache', 'clean_tg_cache', 'clean_installers', 'clean_registry']);
+        const maintainIds = new Set(['sfc_scannow', 'dism_restore', 'torrent_ad_block']);
+        if (currentTweaksCategory === 'system') {
+          tweaks = tweaks.filter(tw => systemIds.has(tw.id));
+        } else if (currentTweaksCategory === 'clean') {
+          tweaks = tweaks.filter(tw => cleanIds.has(tw.id));
+        } else if (currentTweaksCategory === 'maintain') {
+          tweaks = tweaks.filter(tw => maintainIds.has(tw.id));
+        }
+      }
 
       if (tweaksSearchQuery) {
         tweaks = tweaks.filter(tw => {
@@ -7139,7 +7212,7 @@
             <div class="metro-tile-info">
               <div class="metro-tile-title">
                 <span style="overflow: hidden; text-overflow: ellipsis; max-width: 175px;">${app.name}</span>
-                <span class="app-help-icon" title="${escapeHtml((app.notes && app.notes.trim()) ? app.notes.trim() : (app.description || ''))}" data-desc="${escapeHtml((app.notes && app.notes.trim()) ? app.notes.trim() : (app.description || ''))}" onclick="event.stopPropagation();">
+                <span class="app-help-icon" data-desc="${escapeHtml((app.notes && app.notes.trim()) ? app.notes.trim() : (app.description || ''))}" onclick="event.stopPropagation();">
                   <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="10"></circle>
                     <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
@@ -7167,12 +7240,31 @@
       }
     }
 
-    function toggleAllMetroSelection(select) {
+    function getCurrentlyVisibleMetroApps() {
       const metroApps = appData.metro_apps || [];
+      let filtered = metroApps;
+      if (currentMetroFilter === 'installed') {
+        filtered = filtered.filter(a => a.installed);
+      } else if (currentMetroFilter === 'removed') {
+        filtered = filtered.filter(a => !a.installed);
+      }
+      if (metroSearchQuery) {
+        const q = metroSearchQuery.toLowerCase();
+        filtered = filtered.filter(a =>
+          (a.name && a.name.toLowerCase().includes(q)) ||
+          (a.description && a.description.toLowerCase().includes(q)) ||
+          (a.id && a.id.toLowerCase().includes(q))
+        );
+      }
+      return filtered;
+    }
+
+    function toggleAllMetroSelection(select) {
+      const visible = getCurrentlyVisibleMetroApps();
       if (select) {
-        metroApps.forEach(a => selectedMetroApps.add(a.id));
+        visible.forEach(a => selectedMetroApps.add(a.id));
       } else {
-        selectedMetroApps.clear();
+        visible.forEach(a => selectedMetroApps.delete(a.id));
       }
       renderMetro();
     }
@@ -7337,12 +7429,10 @@
     }
 
     function cycleStartupSort() {
-      if (startupSortMode === 'enabled_first') {
-        startupSortMode = 'disabled_first';
-      } else if (startupSortMode === 'disabled_first') {
+      if (startupSortMode === 'impact_desc') {
         startupSortMode = 'name_asc';
       } else {
-        startupSortMode = 'enabled_first';
+        startupSortMode = 'impact_desc';
       }
       updateStartupSortLabel();
       renderStartup();
@@ -7351,14 +7441,19 @@
     function updateStartupSortLabel() {
       const lbl = document.getElementById('lblStartupSort');
       if (!lbl) return;
-      if (startupSortMode === 'enabled_first') {
-        lbl.textContent = 'Сначала вкл.';
-      } else if (startupSortMode === 'disabled_first') {
-        lbl.textContent = 'Сначала откл.';
+      const isEn = appData && appData.lang === 'en';
+      if (startupSortMode === 'impact_desc') {
+        lbl.textContent = isEn ? 'Impact (High → Low)' : 'По влиянию';
       } else {
-        lbl.textContent = 'По имени А-Я';
+        lbl.textContent = isEn ? 'Name (A-Z)' : 'По имени (А-Я)';
       }
     }
+
+    function setStartupSourceFilter(val) {
+      startupSourceFilter = val || 'all';
+      renderStartup();
+    }
+    window.setStartupSourceFilter = setStartupSourceFilter;
 
     function onStartupSearch() {
       const input = document.getElementById('startupSearchInput');
@@ -7425,19 +7520,23 @@
       }
 
       let filtered = startupItems;
+      // Status filter
       if (startupFilter === 'enabled') {
         filtered = filtered.filter(i => i.enabled);
       } else if (startupFilter === 'disabled') {
         filtered = filtered.filter(i => !i.enabled);
-      } else if (startupFilter === 'registry') {
+      }
+
+      // Source filter
+      if (startupSourceFilter === 'registry') {
         filtered = filtered.filter(i => i.source_type && i.source_type.startsWith('registry'));
-      } else if (startupFilter === 'folder') {
+      } else if (startupSourceFilter === 'startup_folder') {
         filtered = filtered.filter(i => i.source_type === 'startup_folder');
-      } else if (startupFilter === 'task') {
+      } else if (startupSourceFilter === 'scheduled_task') {
         filtered = filtered.filter(i => i.source_type === 'scheduled_task');
-      } else if (startupFilter === 'uwp') {
+      } else if (startupSourceFilter === 'uwp_startup') {
         filtered = filtered.filter(i => i.source_type === 'uwp_startup');
-      } else if (startupFilter === 'service') {
+      } else if (startupSourceFilter === 'windows_service') {
         filtered = filtered.filter(i => i.source_type === 'windows_service');
       }
 
@@ -7451,14 +7550,18 @@
         });
       }
 
-      // Сортировка: сначала включенные / сначала отключенные / по алфавиту
+      // Сортировка: по влиянию на запуск (Высокое -> Среднее -> Низкое -> Не замерено) / по имени (А-Я)
+      const impactWeights = { 'high': 4, 'medium': 3, 'low': 2, 'none': 1 };
       filtered = [...filtered].sort((a, b) => {
-        if (startupSortMode === 'enabled_first') {
-          if (a.enabled !== b.enabled) return a.enabled ? -1 : 1;
-        } else if (startupSortMode === 'disabled_first') {
-          if (a.enabled !== b.enabled) return a.enabled ? 1 : -1;
+        if (startupSortMode === 'impact_desc') {
+          const wA = impactWeights[(a.impact || '').toLowerCase()] || 1;
+          const wB = impactWeights[(b.impact || '').toLowerCase()] || 1;
+          if (wA !== wB) return wB - wA;
+          return (a.name || '').localeCompare(b.name || '', 'ru', { sensitivity: 'base' });
+        } else if (startupSortMode === 'name_asc') {
+          return (a.name || '').localeCompare(b.name || '', 'ru', { sensitivity: 'base' });
         }
-        return (a.name || '').localeCompare(b.name || '', 'ru', { sensitivity: 'base' });
+        return 0;
       });
 
       container.innerHTML = '';

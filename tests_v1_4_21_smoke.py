@@ -918,12 +918,26 @@ class TestTweakProcessHandling(unittest.TestCase):
         self.assertIn("icons/${item.id}.svg", html)
         self.assertIn("presetsBar.style.display", html)
 
-        # Metro tooltips overflow: visible and title attr
+        # Metro tooltips overflow: visible and NO duplicate title attribute
         self.assertIn(".metro-tile-title {\n      font-size: 13.5px;\n      font-weight: 600;\n      color: var(--text-main);\n      display: flex;\n      align-items: center;\n      gap: 6px;\n      overflow: visible;", html)
-        self.assertIn('class="app-help-icon" title="', html)
+        self.assertNotIn('class="app-help-icon" title="', html)
 
         # Integer download pct rounding
         self.assertIn("Math.round(Math.max(0, Math.min(100, item.progress || 0)))", html)
+
+        # Refined features: scoped metro selection, startup impact sorting & source filter, tweaks categories, admin badge
+        self.assertIn("getCurrentlyVisibleMetroApps", html)
+        self.assertIn("selectStartupSource", html)
+        self.assertIn("setTweaksCategory", html)
+        self.assertIn("updateAdminBadge", html)
+        self.assertIn("impact_desc", html)
+
+        # Admin setting moved to 'Параметры работы' (before 'Инструменты и обслуживание')
+        pos_admin = html.find('id="chkAlwaysRunAsAdmin"')
+        pos_tools = html.find('id="lblToolsGroupTitle"')
+        self.assertNotEqual(pos_admin, -1)
+        self.assertNotEqual(pos_tools, -1)
+        self.assertLess(pos_admin, pos_tools)
 
 
 if __name__ == "__main__":

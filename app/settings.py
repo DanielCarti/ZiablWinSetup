@@ -235,11 +235,13 @@ def _sync_runasadmin_registry(enabled: bool) -> bool:
         import sys, winreg
         layers_key = r"Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers"
         exe_path = str(Path(sys.executable).resolve())
-        candidates = [exe_path]
         if "python" in Path(exe_path).name.lower():
+            candidates = []
             dist_exe = Path(os.getcwd()) / "dist" / "ZiablWinSetup.exe"
             if dist_exe.exists():
                 candidates.append(str(dist_exe.resolve()))
+        else:
+            candidates = [exe_path]
         with winreg.CreateKey(winreg.HKEY_CURRENT_USER, layers_key) as key:
             for p in candidates:
                 if enabled:
