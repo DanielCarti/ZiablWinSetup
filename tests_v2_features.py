@@ -70,6 +70,23 @@ class TestV2NewFeatures(unittest.TestCase):
         self.assertIn("answer", res)
         self.assertTrue(len(res["answer"]) > 20)
 
+    def test_07_ai_assistant_ollama_config(self):
+        # Test configuring Ollama zero-auth provider
+        saved = self.bridge.save_ai_config("ollama", "", "llama3.2")
+        self.assertTrue(saved.get("success"))
+        cfg = self.bridge.get_ai_config()
+        self.assertEqual(cfg.get("provider"), "ollama")
+        self.assertTrue(cfg.get("has_key"))
+        self.assertEqual(cfg.get("model"), "llama3.2")
+
+        # When asking, if local ollama is not running, falls back gracefully to offline DB with note
+        res = self.bridge.ask_ai_assistant("как отключить телеметрию?")
+        self.assertTrue(res.get("success"))
+        self.assertIn("answer", res)
+
+        # Restore default
+        self.bridge.save_ai_config("gemini", "", "gemini-1.5-flash")
+
 
 if __name__ == "__main__":
     unittest.main()

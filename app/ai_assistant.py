@@ -203,6 +203,8 @@ class AIAssistant:
         self.config["api_key"] = api_key.strip()
         if model:
             self.config["model"] = model.strip()
+        elif provider.strip().lower() == "ollama":
+            self.config["model"] = "llama3.2"
         try:
             with open(self.config_path, "w", encoding="utf-8") as f:
                 json.dump(self.config, f, indent=2, ensure_ascii=False)
@@ -212,15 +214,20 @@ class AIAssistant:
             return False
 
     def get_config(self) -> dict[str, Any]:
-        masked_key = ""
+        provider = self.config.get("provider", "gemini")
         key = self.config.get("api_key", "")
+        masked_key = ""
         if key:
             masked_key = key[:4] + "..." + key[-4:] if len(key) > 8 else "***"
+        elif provider == "ollama":
+            masked_key = "Не требуется (Локальный сервер Ollama)"
+
+        default_model = "llama3.2" if provider == "ollama" else "gemini-1.5-flash"
         return {
-            "provider": self.config.get("provider", "gemini"),
-            "has_key": bool(key),
+            "provider": provider,
+            "has_key": bool(key) or provider == "ollama",
             "masked_key": masked_key,
-            "model": self.config.get("model", "gemini-1.5-flash"),
+            "model": self.config.get("model", default_model),
         }
 
     def ask(self, prompt: str, system_context: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -231,6 +238,19 @@ class AIAssistant:
 
         api_key = self.config.get("api_key", "").strip()
         provider = self.config.get("provider", "gemini").lower()
+
+        # Для Ollama ключ не требуется! Работает напрямую через локальный порт 11434
+        if provider == "ollama":
+            try:
+                return self._call_ollama(prompt_clean, system_context)
+            except Exception as e:
+                logger.warning(f"Ollama call failed: {e}. Falling back to offline knowledge base.")
+                offline_res = self._answer_from_offline_db(prompt_clean)
+                offline_res["note"] = (
+                    f"⚠️ Локальный сервис Ollama не отвечает ({e}).\n"
+                    "Для использования локальной нейросети без ключей запустите Ollama (`ollama run llama3.2`)."
+                )
+                return offline_res
 
         # Если ключа нет — используем локальную базу знаний
         if not api_key:
@@ -418,6 +438,43 @@ class AIAssistant:
             }
 
         return {"success": False, "error": "Не удалось получить ответ от OpenAI API"}
+
+
+    def _call_ollama(self, prompt: str, context: dict[str, Any] | None) -> dict[str, Any]:
+        model = self.config.get("model") or "llama3.2"
+        url = "http://127.0.0.1:11434/api/chat"
+        sys_inst = self._build_system_instruction(context)
+
+        payload = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": sys_inst},
+                {"role": "user", "content": prompt},
+            ],
+            "stream": False,
+        }
+
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+
+        with urllib.request.urlopen(req, timeout=30) as res:
+            res_data = json.loads(res.read().decode("utf-8"))
+
+        msg = res_data.get("message", {})
+        answer = msg.get("content", "").strip()
+        if answer:
+            return {
+                "success": True,
+                "provider": "ollama",
+                "model": model,
+                "answer": answer,
+            }
+
+        return {"success": False, "error": "Не удалось получить ответ от Ollama"}
 
 
 ai_assistant = AIAssistant()
