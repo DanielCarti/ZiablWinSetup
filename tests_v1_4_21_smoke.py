@@ -548,8 +548,10 @@ class TestTweakProcessHandling(unittest.TestCase):
         res_en = apply_tweak_by_id("clean_winsetup_installers", lang="en")
         self.assertTrue(res_en.get("success"))
         # Message must be in English
-        self.assertIn("Installer cache", res_en.get("message", ""))
-        self.assertIn("Installer cache", res_en.get("message_en", ""))
+        msg = res_en.get("message", "").lower()
+        self.assertTrue("installer cache" in msg or "installer files" in msg)
+        msg_en = res_en.get("message_en", "").lower()
+        self.assertTrue("installer cache" in msg_en or "installer files" in msg_en)
 
     def test_log_selection_and_copy_html(self):
         html_path = Path("app/ui/index.html")

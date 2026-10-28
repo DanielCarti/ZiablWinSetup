@@ -1384,11 +1384,73 @@
       color: var(--text-main);
     }
 
+    .header-icon-btn {
+      width: 34px;
+      height: 34px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 0.15s ease;
+      box-sizing: border-box;
+      outline: none;
+    }
+    .header-icon-btn:hover {
+      color: var(--text-main);
+      border-color: var(--border-light);
+      background: var(--bg-card-hover);
+    }
+    .header-icon-btn:hover svg {
+      transform: rotate(45deg);
+      transition: transform 0.3s ease;
+    }
+
+    .log-resizer {
+      height: 9px;
+      margin: 2px 0 2px 0;
+      cursor: ns-resize;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      user-select: none;
+      -webkit-user-select: none;
+      transition: background 0.15s;
+    }
+    .log-resizer:hover, .log-resizer.active {
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .log-resizer-line {
+      flex: 1;
+      height: 1px;
+      background: var(--border-subtle);
+    }
+    .log-resizer-handle {
+      width: 38px;
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(255, 255, 255, 0.2);
+      margin: 0 8px;
+      transition: all 0.15s ease;
+    }
+    .log-resizer:hover .log-resizer-handle, .log-resizer.active .log-resizer-handle {
+      background: var(--accent);
+      transform: scaleX(1.3);
+    }
+    .log-resizer:hover .log-resizer-line, .log-resizer.active .log-resizer-line {
+      background: var(--accent);
+    }
+
     #logBox {
       height: 100px;
       min-height: 50px;
       max-height: 420px;
-      resize: vertical;
+      resize: none;
       background: #111111;
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-sm);
@@ -2669,7 +2731,7 @@
   <!-- Header -->
   <header>
     <div class="tabs-nav">
-      <button class="tab-btn active" id="tabBtnApps" onclick="switchMainTab('apps')">
+      <button class="tab-btn active" id="tabBtnApps" onclick="switchMainTab('apps')" title="Каталог программ для установки и обновления">
         <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
         <span class="tab-label" id="tabLabelApps">Приложения</span>
       </button>
@@ -2678,25 +2740,21 @@
         <span class="tab-label" id="tabLabelDownloads">Загрузки</span>
         <span class="tab-badge" id="tabDownloadsBadge" style="display:none; margin-left: 6px; padding: 1px 7px; border-radius: 10px; font-size: 11px; background: var(--accent); color: #fff; font-weight: 700;">0</span>
       </button>
-      <button class="tab-btn" id="tabBtnTweaks" onclick="switchMainTab('tweaks')">
+      <button class="tab-btn" id="tabBtnTweaks" onclick="switchMainTab('tweaks')" title="Твики и оптимизация Windows">
         <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
         <span class="tab-label" id="tabLabelTweaks">Твики</span>
       </button>
-      <button class="tab-btn" id="tabBtnMetro" onclick="switchMainTab('metro')">
+      <button class="tab-btn" id="tabBtnMetro" onclick="switchMainTab('metro')" title="Управление встроенными Metro / UWP приложениями">
         <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
         <span class="tab-label" id="tabLabelMetro">Metro</span>
       </button>
-      <button class="tab-btn" id="tabBtnStartup" onclick="switchMainTab('startup')">
+      <button class="tab-btn" id="tabBtnStartup" onclick="switchMainTab('startup')" title="Управление автозагрузкой программ и служб Windows">
         <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.77.04"/></svg>
         <span class="tab-label" id="tabLabelStartup">Автозапуск</span>
       </button>
       <button class="tab-btn" id="tabBtnVirusTotal" onclick="switchMainTab('virustotal')" title="Проверка файлов на вирусы через VirusTotal">
         <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
         <span class="tab-label" id="tabLabelVirusTotal">VirusTotal</span>
-      </button>
-      <button class="tab-btn" id="tabBtnSettings" onclick="openSettingsModal()" title="Настройки">
-        <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        <span class="tab-label" id="tabLabelSettings">Настройки</span>
       </button>
     </div>
 
@@ -2746,6 +2804,9 @@
           <span class="flag-code">EN</span>
         </div>
       </div>
+      <button class="header-icon-btn" id="btnHeaderSettings" onclick="openSettingsModal()" title="Настройки">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
     </div>
   </header>
 
@@ -3003,7 +3064,7 @@
             <span>↕️ Сортировка:</span> <strong id="lblStartupSort" style="color: var(--accent);">По влиянию</strong>
           </button>
         </div>
-        <div class="search-box" style="width: 260px;">
+        <div class="search-box" style="flex: 1 1 360px; max-width: 520px; min-width: 200px;">
           <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
           <input type="text" id="startupSearchInput" placeholder="Поиск по имени или пути..." oninput="onStartupSearch()">
         </div>
@@ -3243,6 +3304,11 @@
       </div>
     </div>
 
+    <div id="logResizer" class="log-resizer" style="display: none;" title="Потяните для изменения высоты журнала событий">
+      <span class="log-resizer-line"></span>
+      <span class="log-resizer-handle"></span>
+      <span class="log-resizer-line"></span>
+    </div>
     <div id="logBox"></div>
   </footer>
 
@@ -4038,8 +4104,10 @@
     function toggleLog() {
       const box = document.getElementById('logBox');
       const arrow = document.getElementById('logArrow');
+      const resizer = document.getElementById('logResizer');
       const isOpen = box.classList.toggle('open');
       arrow.textContent = isOpen ? '▼' : '▶';
+      if (resizer) resizer.style.display = isOpen ? 'flex' : 'none';
       if (isOpen) {
         try {
           const savedLogHeight = localStorage.getItem('logBoxHeight');
@@ -4050,6 +4118,72 @@
         box.scrollTop = box.scrollHeight;
       }
     }
+
+    function initLogResizer() {
+      const resizer = document.getElementById('logResizer');
+      const footer = document.getElementById('mainFooter');
+      const box = document.getElementById('logBox');
+      if (!box) return;
+
+      try {
+        const savedH = localStorage.getItem('logBoxHeight');
+        if (savedH) box.style.height = savedH + 'px';
+      } catch (_) {}
+
+      let isDragging = false;
+      let startY = 0;
+      let startHeight = 0;
+
+      function onMouseDown(e) {
+        if (!box.classList.contains('open')) return;
+        isDragging = true;
+        startY = e.clientY;
+        startHeight = box.offsetHeight;
+        if (resizer) resizer.classList.add('active');
+        document.body.style.cursor = 'ns-resize';
+        document.body.style.userSelect = 'none';
+        e.preventDefault();
+      }
+
+      function onMouseMove(e) {
+        if (!isDragging) return;
+        const delta = startY - e.clientY; // dragging upwards expands the log box
+        let newHeight = startHeight + delta;
+        if (newHeight < 55) newHeight = 55;
+        const maxHeight = Math.max(300, window.innerHeight - 240);
+        if (newHeight > maxHeight) newHeight = maxHeight;
+        box.style.height = newHeight + 'px';
+      }
+
+      function onMouseUp() {
+        if (!isDragging) return;
+        isDragging = false;
+        if (resizer) resizer.classList.remove('active');
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+        try {
+          localStorage.setItem('logBoxHeight', parseInt(box.style.height, 10));
+        } catch (_) {}
+      }
+
+      if (resizer) {
+        resizer.addEventListener('mousedown', onMouseDown);
+      }
+      if (footer) {
+        footer.addEventListener('mousedown', (e) => {
+          if (box.classList.contains('open')) {
+            const rect = footer.getBoundingClientRect();
+            if (e.clientY >= rect.top && e.clientY <= rect.top + 7) {
+              onMouseDown(e);
+            }
+          }
+        });
+      }
+
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('mouseup', onMouseUp);
+    }
+    window.initLogResizer = initLogResizer;
 
     function addLog(msg) {
       const box = document.getElementById('logBox');
@@ -4175,6 +4309,7 @@
       try { renderCards(); } catch (e) { console.error('renderCards error:', e); }
       try { updateScanningState(isInitialScanning); } catch (e) { console.error('updateScanningState error:', e); }
       try { updateFooter(); } catch (e) { console.error('updateFooter error:', e); }
+      try { initLogResizer(); } catch (e) { console.error('initLogResizer error:', e); }
       try {
         const appCardsEl = document.getElementById('appCardsContainer');
         if (appCardsEl && !appCardsEl._hasStickyScrollListener) {
@@ -4715,36 +4850,48 @@
 
         try { updateExclusionsBadge(); } catch (e) { console.error('updateExclusionsBadge error:', e); }
 
-        // Tabs compact labels (strictly 1 line, no overflow!)
+        // Tabs compact labels and hover tooltips
         const tabApps = document.getElementById('tabBtnApps');
         if (tabApps) {
+          tabApps.title = isEn ? 'Catalog of applications to install and update' : 'Каталог программ для установки и обновления';
           const lbl = tabApps.querySelector('.tab-label');
           if (lbl) lbl.textContent = isEn ? 'Apps' : 'Приложения';
           else tabApps.textContent = isEn ? 'Apps' : 'Приложения';
         }
+        const tabDl = document.getElementById('tabBtnDownloads');
+        if (tabDl) {
+          tabDl.title = isEn ? 'Download manager and app queue' : 'Менеджер загрузок и очередь приложений';
+          const lbl = tabDl.querySelector('.tab-label');
+          if (lbl) lbl.textContent = isEn ? 'Downloads' : 'Загрузки';
+        }
         const tabTweaks = document.getElementById('tabBtnTweaks');
         if (tabTweaks) {
+          tabTweaks.title = isEn ? 'Windows tweaks and system optimization' : 'Твики и оптимизация Windows';
           const lbl = tabTweaks.querySelector('.tab-label');
           if (lbl) lbl.textContent = isEn ? 'Tweaks' : 'Твики';
           else tabTweaks.textContent = isEn ? 'Tweaks' : 'Твики';
         }
         const tabMetro = document.getElementById('tabBtnMetro');
         if (tabMetro) {
+          tabMetro.title = isEn ? 'Manage built-in Metro / UWP apps' : 'Управление встроенными Metro / UWP приложениями';
           const lbl = tabMetro.querySelector('.tab-label');
           if (lbl) lbl.textContent = 'Metro';
           else tabMetro.textContent = 'Metro';
         }
         const tabStartup = document.getElementById('tabBtnStartup');
         if (tabStartup) {
+          tabStartup.title = isEn ? 'Manage Windows startup items, services, and tasks' : 'Управление автозагрузкой программ и служб Windows';
           const lbl = tabStartup.querySelector('.tab-label');
           if (lbl) lbl.textContent = isEn ? 'Startup' : 'Автозапуск';
           else tabStartup.textContent = isEn ? 'Startup' : 'Автозапуск';
         }
-        const tabSettings = document.getElementById('tabBtnSettings');
-        if (tabSettings) {
-          const lbl = tabSettings.querySelector('.tab-label');
-          if (lbl) lbl.textContent = isEn ? 'Settings' : 'Настройки';
-          else tabSettings.textContent = isEn ? 'Settings' : 'Настройки';
+        const btnVT = document.getElementById('tabBtnVirusTotal');
+        if (btnVT) {
+          btnVT.title = isEn ? 'Scan files for viruses via VirusTotal' : 'Проверка файлов на вирусы через VirusTotal';
+        }
+        const btnHeadSet = document.getElementById('btnHeaderSettings');
+        if (btnHeadSet) {
+          btnHeadSet.title = isEn ? 'Settings' : 'Настройки';
         }
 
         // Header update buttons (strictly 1 line, no overflow!)
@@ -6735,7 +6882,22 @@
         return;
       }
       currentMainTab = tab;
-      // Contextual search: only display the global header search box on the Apps tab
+
+      const viewApps = document.getElementById('viewApps');
+      const viewDl = document.getElementById('viewDownloads');
+      const viewTweaks = document.getElementById('viewTweaks');
+      const viewMetro = document.getElementById('viewMetro');
+      const viewStartup = document.getElementById('viewStartup');
+      const viewVT = document.getElementById('viewVirusTotal');
+      const footer = document.getElementById('mainFooter');
+
+      // 1. Hide all views instantly first to prevent any multiple-view flex collision or visual glitch
+      const allViews = [viewApps, viewDl, viewTweaks, viewMetro, viewStartup, viewVT];
+      allViews.forEach(v => {
+        if (v) v.style.display = 'none';
+      });
+
+      // 2. Contextual search: only display the global header search box on the Apps tab
       const headerSearchBox = document.querySelector('.search-box');
       if (headerSearchBox) {
         headerSearchBox.style.display = (tab === 'apps') ? 'flex' : 'none';
@@ -6751,77 +6913,44 @@
           }
         }
       }
-      document.getElementById('tabBtnApps').classList.toggle('active', tab === 'apps');
-      const tabDl = document.getElementById('tabBtnDownloads');
-      if (tabDl) tabDl.classList.toggle('active', tab === 'downloads');
-      document.getElementById('tabBtnTweaks').classList.toggle('active', tab === 'tweaks');
-      const tabMetro = document.getElementById('tabBtnMetro');
-      if (tabMetro) tabMetro.classList.toggle('active', tab === 'metro');
-      const tabStartup = document.getElementById('tabBtnStartup');
-      if (tabStartup) tabStartup.classList.toggle('active', tab === 'startup');
-      const tabVT = document.getElementById('tabBtnVirusTotal');
-      if (tabVT) tabVT.classList.toggle('active', tab === 'virustotal');
 
-      const viewApps = document.getElementById('viewApps');
-      const viewDl = document.getElementById('viewDownloads');
-      const viewTweaks = document.getElementById('viewTweaks');
-      const viewMetro = document.getElementById('viewMetro');
-      const viewStartup = document.getElementById('viewStartup');
-      const viewVT = document.getElementById('viewVirusTotal');
-      const footer = document.getElementById('mainFooter');
+      // 3. Tab buttons active state
+      const tabAppsBtn = document.getElementById('tabBtnApps');
+      if (tabAppsBtn) tabAppsBtn.classList.toggle('active', tab === 'apps');
+      const tabDlBtn = document.getElementById('tabBtnDownloads');
+      if (tabDlBtn) tabDlBtn.classList.toggle('active', tab === 'downloads');
+      const tabTweaksBtn = document.getElementById('tabBtnTweaks');
+      if (tabTweaksBtn) tabTweaksBtn.classList.toggle('active', tab === 'tweaks');
+      const tabMetroBtn = document.getElementById('tabBtnMetro');
+      if (tabMetroBtn) tabMetroBtn.classList.toggle('active', tab === 'metro');
+      const tabStartupBtn = document.getElementById('tabBtnStartup');
+      if (tabStartupBtn) tabStartupBtn.classList.toggle('active', tab === 'startup');
+      const tabVTBtn = document.getElementById('tabBtnVirusTotal');
+      if (tabVTBtn) tabVTBtn.classList.toggle('active', tab === 'virustotal');
 
+      // 4. Activate target view and call its specific renderer
       if (tab === 'apps') {
-        viewApps.style.display = 'flex';
-        if (viewDl) viewDl.style.display = 'none';
-        viewTweaks.style.display = 'none';
-        if (viewMetro) viewMetro.style.display = 'none';
-        if (viewStartup) viewStartup.style.display = 'none';
-        if (viewVT) viewVT.style.display = 'none';
-        footer.style.display = 'flex';
+        if (viewApps) viewApps.style.display = 'flex';
+        if (footer) footer.style.display = 'flex';
       } else if (tab === 'downloads') {
-        viewApps.style.display = 'none';
         if (viewDl) viewDl.style.display = 'flex';
-        viewTweaks.style.display = 'none';
-        if (viewMetro) viewMetro.style.display = 'none';
-        if (viewStartup) viewStartup.style.display = 'none';
-        if (viewVT) viewVT.style.display = 'none';
-        footer.style.display = 'none';
+        if (footer) footer.style.display = 'none';
         renderDownloadsList();
       } else if (tab === 'tweaks') {
-        viewApps.style.display = 'none';
-        if (viewDl) viewDl.style.display = 'none';
-        viewTweaks.style.display = 'flex';
-        if (viewMetro) viewMetro.style.display = 'none';
-        if (viewStartup) viewStartup.style.display = 'none';
-        if (viewVT) viewVT.style.display = 'none';
-        footer.style.display = 'none';
         renderTweaks();
+        if (viewTweaks) viewTweaks.style.display = 'flex';
+        if (footer) footer.style.display = 'none';
       } else if (tab === 'metro') {
-        viewApps.style.display = 'none';
-        if (viewDl) viewDl.style.display = 'none';
-        viewTweaks.style.display = 'none';
-        if (viewMetro) viewMetro.style.display = 'flex';
-        if (viewStartup) viewStartup.style.display = 'none';
-        if (viewVT) viewVT.style.display = 'none';
-        footer.style.display = 'none';
         renderMetro();
+        if (viewMetro) viewMetro.style.display = 'flex';
+        if (footer) footer.style.display = 'none';
       } else if (tab === 'startup') {
-        viewApps.style.display = 'none';
-        if (viewDl) viewDl.style.display = 'none';
-        viewTweaks.style.display = 'none';
-        if (viewMetro) viewMetro.style.display = 'none';
-        if (viewStartup) viewStartup.style.display = 'flex';
-        if (viewVT) viewVT.style.display = 'none';
-        footer.style.display = 'none';
         renderStartup();
+        if (viewStartup) viewStartup.style.display = 'flex';
+        if (footer) footer.style.display = 'none';
       } else if (tab === 'virustotal') {
-        viewApps.style.display = 'none';
-        if (viewDl) viewDl.style.display = 'none';
-        viewTweaks.style.display = 'none';
-        if (viewMetro) viewMetro.style.display = 'none';
-        if (viewStartup) viewStartup.style.display = 'none';
         if (viewVT) viewVT.style.display = 'flex';
-        footer.style.display = 'none';
+        if (footer) footer.style.display = 'none';
         initVirusTotalView();
       }
     }
