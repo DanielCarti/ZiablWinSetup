@@ -15,6 +15,7 @@
   <script src="init_data.js"></script>
   <style>
     :root {
+      color-scheme: dark;
       --bg-app: #181818;
       --bg-header: #1f1f1f;
       --bg-sidebar: #1d1d1d;
@@ -37,6 +38,12 @@
       --radius-sm: 4px;
       --radius-md: 8px;
       --radius-lg: 12px;
+    }
+
+    select, option {
+      color-scheme: dark;
+      background-color: #222222;
+      color: #f5f5f5;
     }
 
     body[data-accent="purple"], html[data-accent="purple"] {
@@ -199,6 +206,7 @@
       flex-shrink: 0;
       gap: 10px;
       white-space: nowrap;
+      min-width: 0;
     }
 
     .brand {
@@ -245,12 +253,15 @@
     .header-actions {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 8px;
+      min-width: 0;
     }
 
     .search-box {
       position: relative;
-      width: 260px;
+      width: 200px;
+      flex: 0 1 200px;
+      min-width: 105px;
     }
 
     .search-box input {
@@ -711,7 +722,7 @@
     .app-title-text {
       overflow: hidden;
       text-overflow: ellipsis;
-      white-space: normal;
+      white-space: nowrap;
       line-height: 1.3;
     }
 
@@ -5711,18 +5722,22 @@
         info.className = 'card-info';
         info.innerHTML = `
           <div class="card-title">
-            <span class="app-title-text">${app.name}</span>
-            <span class="app-help-icon" data-desc="${escapeHtml(helpText || '')}" onclick="event.stopPropagation();">
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                <line x1="12" y1="17" x2="12.01" y2="17"></line>
-              </svg>
-            </span>
-            ${isInstalled ? `<span class="badge-installed" title="${instInfo.name || ''}">✓ ${s.status_installed || 'Установлено'}${verStr}</span>` : ''}
-            ${(availableUpdates[app.id] && !(appData.ignored_updates || []).includes(app.id)) ? `<span class="badge-update" title="Доступно обновление">⬆️ ${availableUpdates[app.id].available_version}</span>` : ''}
-            ${(availableUpdates[app.id] && (appData.ignored_updates || []).includes(app.id)) ? `<span class="badge-ignored" title="Исключено из автообновлений (доступна ${availableUpdates[app.id].available_version})" style="display: inline-flex; align-items: center; gap: 3px; background: rgba(234, 179, 8, 0.14); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.32); padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: 500;">🛡️ Исключено</span>` : ''}
-            ${app.web_url ? `<a href="javascript:void(0)" onclick="openExternalUrl('${app.web_url}')" class="link-1progs-badge" title="Открыть страницу на 1progs.ru" style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #38bdf8; text-decoration: none; padding: 2px 7px; border-radius: 4px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.28); margin-left: 6px; cursor: pointer; font-weight: 500;">🌐 1progs.ru ↗</a>` : ''}
+            <div style="display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: 100%;">
+              <span class="app-title-text">${app.name}</span>
+              <span class="app-help-icon" data-desc="${escapeHtml(helpText || '')}" onclick="event.stopPropagation();">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+              </span>
+            </div>
+            <div style="display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+              ${isInstalled ? `<span class="badge-installed" title="${instInfo.name || ''}">✓ ${s.status_installed || 'Установлено'}${verStr}</span>` : ''}
+              ${(availableUpdates[app.id] && !(appData.ignored_updates || []).includes(app.id)) ? `<span class="badge-update" title="Доступно обновление">⬆️ ${availableUpdates[app.id].available_version}</span>` : ''}
+              ${(availableUpdates[app.id] && (appData.ignored_updates || []).includes(app.id)) ? `<span class="badge-ignored" title="Исключено из автообновлений (доступна ${availableUpdates[app.id].available_version})" style="display: inline-flex; align-items: center; gap: 3px; background: rgba(234, 179, 8, 0.14); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.32); padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: 500;">🛡️ Исключено</span>` : ''}
+              ${app.web_url ? `<a href="javascript:void(0)" onclick="openExternalUrl('${app.web_url}')" class="link-1progs-badge" title="Открыть страницу на 1progs.ru" style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #38bdf8; text-decoration: none; padding: 2px 7px; border-radius: 4px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.28); margin-left: 6px; cursor: pointer; font-weight: 500;">🌐 1progs.ru ↗</a>` : ''}
+            </div>
           </div>
           <div class="card-desc">${desc}</div>
         `;
@@ -5868,10 +5883,10 @@
             `;
           }
           return `
-            <div style="display: flex; gap: 8px; align-items: center;">
+            <div style="display: flex; gap: 6px; align-items: center; flex-wrap: nowrap;">
               ${hasUpdate && !isIgnored ? `<button class="btn-action btn-upgrade" onclick="upgradeSingle('${app.id}')" title="Обновить до ${hasUpdate.available_version}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> <span>${s.btn_upgrade || 'Обновить'}</span></button>` : (hasUpdate && isIgnored ? `<button class="btn-action btn-outline" onclick="upgradeSingle('${app.id}')" title="Обновить вручную (исключено из автообновлений)" style="padding: 0 10px; height: 32px; font-size: 11.5px; color: #facc15; border-color: rgba(234,179,8,0.35);"><span>🛡️ Вручную</span></button>` : '')}
-              <button class="btn-action btn-outline" onclick="reinstallSingle('${app.id}')" title="${s.btn_reinstall || 'Переустановить'}">${s.btn_reinstall || '🔄 Переустановить'}</button>
-              <button class="btn-action btn-danger-outline" onclick="uninstallSingle('${app.id}')" title="${s.btn_uninstall || 'Удалить'}">${s.btn_uninstall || '🗑️ Удалить'}</button>
+              ${hasUpdate ? '' : `<button class="btn-action btn-outline" onclick="reinstallSingle('${app.id}')" title="${s.btn_reinstall || 'Переустановить'}">${s.btn_reinstall || '🔄 Переустановить'}</button>`}
+              <button class="btn-action btn-danger-outline" onclick="uninstallSingle('${app.id}')" title="${s.btn_uninstall || 'Удалить'}" style="padding: 0 10px; height: 32px; font-size: 12px;">${s.btn_uninstall || '🗑️ Удалить'}</button>
             </div>
           `;
         }
@@ -6928,9 +6943,9 @@
       let tweaks = appData.tweaks || [];
 
       if (currentTweaksCategory !== 'all') {
-        const systemIds = new Set(['ultimate_perf', 'show_file_ext', 'classic_context_menu', 'hide_taskbar_search', 'taskbar_align_left', 'disable_ssd_indexing', 'disable_start_ads']);
-        const cleanIds = new Set(['clean_steam_cache', 'clean_tg_cache', 'clean_installers', 'clean_registry']);
-        const maintainIds = new Set(['sfc_scannow', 'dism_restore', 'torrent_ad_block']);
+        const systemIds = new Set(['ultimate_perf', 'show_file_ext', 'win11_classic_menu', 'taskbar_align_left', 'hide_taskbar_search', 'disable_indexing_ssd', 'disable_start_ads']);
+        const cleanIds = new Set(['clean_steam_cache', 'clean_telegram_cache', 'clean_winsetup_installers', 'clean_registry']);
+        const maintainIds = new Set(['repair_system_files', 'restore_health_dism', 'torrent_ads']);
         if (currentTweaksCategory === 'system') {
           tweaks = tweaks.filter(tw => systemIds.has(tw.id));
         } else if (currentTweaksCategory === 'clean') {
@@ -7153,6 +7168,16 @@
       if (badge) {
         const countTpl = s.metro_count_installed || 'Установлено: {installed} из {total}';
         badge.textContent = countTpl.replace('{installed}', installedCount).replace('{total}', totalCount);
+      }
+
+      // Visibility based on active Metro filter
+      const btnMRemSel = document.getElementById('btnMetroRemoveSelected');
+      const btnMResSel = document.getElementById('btnMetroRestoreSelected');
+      if (btnMRemSel) {
+        btnMRemSel.style.display = (currentMetroFilter === 'removed') ? 'none' : 'inline-flex';
+      }
+      if (btnMResSel) {
+        btnMResSel.style.display = (currentMetroFilter === 'installed') ? 'none' : 'inline-flex';
       }
 
       if (totalCount === 0) {
