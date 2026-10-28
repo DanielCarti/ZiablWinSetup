@@ -3,9 +3,12 @@ ZiablWinSetup — Web API Bridge.
 Связывает Python-бэкенд (загрузка, установка, UAC, твики, обновления) с аппаратным WebView2 GUI.
 """
 
+import ctypes
 import json
 import logging
 import os
+import urllib.parse
+import urllib.request
 import re
 import subprocess
 import sys
@@ -29,6 +32,10 @@ from app.detector import detect_installed_apps, uninstall_app, find_leftovers, d
 from app.downloader import Downloader, DownloadResult
 from app.i18n import STRINGS, CATEGORY_NAMES, i18n
 from app.installer import Installer, InstallResult, get_desktop_path, get_exe_dir
+from app.history import action_history
+from app.ai_assistant import ai_assistant
+import socket
+from ctypes import wintypes
 from app.metro import (
     get_all_metro_apps,
     remove_metro_app_by_id,
@@ -1328,13 +1335,21 @@ class AppBridge:
     def get_tweaks(self) -> list[dict]:
         return get_all_tweaks(i18n.lang)
 
-    def apply_tweak(self, tweak_id: str) -> dict[str, Any]:
+    def apply_tweak(self, tweak_id: str, record_history: bool = True) -> dict[str, Any]:
         res = apply_tweak_by_id(tweak_id, lang=i18n.lang)
         if tweak_id == "clean_winsetup_installers":
             self._downloaded_results.clear()
             self.call_js("onLog", f"🗑️ {res.get('message', '')}")
         elif tweak_id in ("repair_system_files", "restore_health_dism") and res.get("success"):
             self._start_tweak_status_monitor(tweak_id)
+        if record_history and res.get("success"):
+            action_history.record_action(
+                action_type="tweak_apply",
+                title=f"Применен твик: {tweak_id}",
+                title_en=f"Applied tweak: {tweak_id}",
+                revert_data={"tweak_id": tweak_id, "action": "revert"},
+                can_undo=True,
+            )
         return res
 
     def get_tweak_running_status(self, tweak_id: str) -> dict[str, Any]:
@@ -1450,8 +1465,17 @@ class AppBridge:
 
         threading.Thread(target=monitor, daemon=True).start()
 
-    def revert_tweak(self, tweak_id: str) -> dict[str, Any]:
-        return revert_tweak_by_id(tweak_id, lang=i18n.lang)
+    def revert_tweak(self, tweak_id: str, record_history: bool = True) -> dict[str, Any]:
+        res = revert_tweak_by_id(tweak_id, lang=i18n.lang)
+        if record_history and res.get("success"):
+            action_history.record_action(
+                action_type="tweak_revert",
+                title=f"Откатан твик: {tweak_id}",
+                title_en=f"Reverted tweak: {tweak_id}",
+                revert_data={"tweak_id": tweak_id, "action": "apply"},
+                can_undo=True,
+            )
+        return res
 
     # ==========================================
     # Metro / UWP приложения Windows
@@ -1463,11 +1487,29 @@ class AppBridge:
 
     def remove_metro_app(self, app_id: str) -> dict[str, Any]:
         """Удаляет одно Metro приложение."""
-        return remove_metro_app_by_id(app_id)
+        res = remove_metro_app_by_id(app_id)
+        if record_history and res.get("success"):
+            action_history.record_action(
+                action_type="metro_remove",
+                title=f"Удалено Metro: {app_id}",
+                title_en=f"Removed Metro: {app_id}",
+                revert_data={"metro_id": app_id, "action": "restore"},
+                can_undo=True,
+            )
+        return res
 
     def restore_metro_app(self, app_id: str) -> dict[str, Any]:
         """Восстанавливает одно Metro приложение."""
-        return restore_metro_app_by_id(app_id)
+        res = restore_metro_app_by_id(app_id)
+        if record_history and res.get("success"):
+            action_history.record_action(
+                action_type="metro_restore",
+                title=f"Восстановлено Metro: {app_id}",
+                title_en=f"Restored Metro: {app_id}",
+                revert_data={"metro_id": app_id, "action": "remove"},
+                can_undo=True,
+            )
+        return res
 
     def remove_selected_metro(self, app_ids: list[str]) -> list[dict[str, Any]]:
         """Пакетное удаление выбранных Metro приложений."""
@@ -1832,12 +1874,22 @@ class AppBridge:
         self.call_js("onStartupItemsUpdated", items)
         return items
 
-    def toggle_startup_item(self, item_id: str, enable: bool) -> dict[str, Any]:
+    def toggle_startup_item(self, item_id: str, enable: bool, record_history: bool = True) -> dict[str, Any]:
         """Включает или отключает элемент автозагрузки Windows."""
         try:
             success, msg = StartupManager.toggle_item(item_id, enable)
             if success:
                 self.call_js("onLog", f"⚙️ Автозагрузка: {msg}")
+                if record_history:
+                    act_title = f"{'Включен' if enable else 'Отключен'} автозапуск: {item_id}"
+                    act_title_en = f"{'Enabled' if enable else 'Disabled'} startup: {item_id}"
+                    action_history.record_action(
+                        action_type="startup_toggle",
+                        title=act_title,
+                        title_en=act_title_en,
+                        revert_data={"item_id": item_id, "enable": not enable},
+                        can_undo=True,
+                    )
             else:
                 self.call_js("onLog", f"⚠️ Ошибка изменения автозагрузки: {msg}")
             return {"success": success, "message": msg}
@@ -2060,4 +2112,422 @@ class AppBridge:
         except Exception as e:
             return {"success": False, "error": str(e)}
 
+    # ==========================================
+    # UI/UX #2: Мониторинг «Здоровье системы»
+    # ==========================================
+
+    def _get_cpu_usage(self) -> float:
+        class FILETIME(ctypes.Structure):
+            _fields_ = [("dwLowDateTime", wintypes.DWORD), ("dwHighDateTime", wintypes.DWORD)]
+        def ft_to_int(ft):
+            return (ft.dwHighDateTime << 32) + ft.dwLowDateTime
+
+        idle = FILETIME()
+        kernel = FILETIME()
+        user = FILETIME()
+        if ctypes.windll.kernel32.GetSystemTimes(ctypes.byref(idle), ctypes.byref(kernel), ctypes.byref(user)):
+            i = ft_to_int(idle)
+            k = ft_to_int(kernel)
+            u = ft_to_int(user)
+            if not hasattr(self, "_last_sys_times") or not self._last_sys_times:
+                self._last_sys_times = (i, k, u, time.time())
+                return 15.0
+            last_i, last_k, last_u, last_t = self._last_sys_times
+            self._last_sys_times = (i, k, u, time.time())
+            diff_idle = i - last_i
+            diff_kernel = k - last_k
+            diff_user = u - last_u
+            total = diff_kernel + diff_user
+            if total <= 0:
+                return 0.0
+            cpu = (total - diff_idle) * 100.0 / total
+            return max(0.0, min(100.0, round(cpu, 1)))
+        return 0.0
+
+    def _get_ram_usage(self) -> dict[str, Any]:
+        class MEMORYSTATUSEX(ctypes.Structure):
+            _fields_ = [
+                ("dwLength", wintypes.DWORD),
+                ("dwMemoryLoad", wintypes.DWORD),
+                ("ullTotalPhys", ctypes.c_uint64),
+                ("ullAvailPhys", ctypes.c_uint64),
+                ("ullTotalPageFile", ctypes.c_uint64),
+                ("ullAvailPageFile", ctypes.c_uint64),
+                ("ullTotalVirtual", ctypes.c_uint64),
+                ("ullAvailVirtual", ctypes.c_uint64),
+                ("sullAvailExtendedVirtual", ctypes.c_uint64),
+            ]
+        mem = MEMORYSTATUSEX()
+        mem.dwLength = ctypes.sizeof(MEMORYSTATUSEX)
+        if ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(mem)):
+            total_gb = round(mem.ullTotalPhys / (1024**3), 1)
+            avail_gb = round(mem.ullAvailPhys / (1024**3), 1)
+            used_gb = round(max(0, total_gb - avail_gb), 1)
+            return {
+                "percent": int(mem.dwMemoryLoad),
+                "total_gb": total_gb,
+                "used_gb": used_gb,
+                "avail_gb": avail_gb,
+            }
+        return {"percent": 0, "total_gb": 0, "used_gb": 0, "avail_gb": 0}
+
+    def _get_disk_c_usage(self) -> dict[str, Any]:
+        import shutil
+        u = shutil.disk_usage("C:\\")
+        total_gb = round(u.total / (1024**3), 1)
+        free_gb = round(u.free / (1024**3), 1)
+        used_gb = round(u.used / (1024**3), 1)
+        percent = int(round((u.used / u.total) * 100)) if u.total > 0 else 0
+        return {
+            "percent": percent,
+            "total_gb": total_gb,
+            "free_gb": free_gb,
+            "used_gb": used_gb,
+        }
+
+    def get_system_health(self) -> dict[str, Any]:
+        """Возвращает метрики загрузки CPU, RAM, диска C: и индекс здоровья системы."""
+        try:
+            cpu_pct = self._get_cpu_usage()
+            ram_info = self._get_ram_usage()
+            disk_info = self._get_disk_c_usage()
+
+            score = 100
+            issues = []
+            if cpu_pct > 80:
+                score -= 15
+                issues.append("Высокая нагрузка CPU (>80%)")
+            if ram_info["percent"] > 85:
+                score -= 15
+                issues.append("Оперативная память почти заполнена (>85%)")
+            if disk_info["free_gb"] < 15:
+                score -= 20
+                issues.append("Мало места на диске C: (<15 GB)")
+
+            status = "great" if score >= 85 else ("warning" if score >= 60 else "critical")
+
+            return {
+                "success": True,
+                "cpu_percent": cpu_pct,
+                "ram": ram_info,
+                "disk": disk_info,
+                "disk_c": disk_info,
+                "ram_percent": ram_info.get("percent", 0),
+                "ram_used_gb": ram_info.get("used_gb", 0),
+                "ram_total_gb": ram_info.get("total_gb", 0),
+                "score": max(0, score),
+                "status": status,
+                "issues": issues,
+            }
+        except Exception as e:
+            logger.error(f"Error getting system health: {e}")
+            return {"success": False, "error": str(e)}
+
+    # ==========================================
+    # UI/UX #4: Журнал изменений (Changelog Popover)
+    # ==========================================
+
+    def get_app_changelog(self, app_id: str) -> dict[str, Any]:
+        """Возвращает журнал изменений (Release Notes) для приложения из каталога."""
+        app = self._catalog_map.get(app_id)
+        if not app:
+            return {"success": False, "error": "Приложение не найдено в каталоге"}
+
+        # 1. Если есть github_repo — запрашиваем релиз из GitHub
+        if app.github_repo:
+            try:
+                url = f"https://api.github.com/repos/{app.github_repo}/releases/latest"
+                req = urllib.request.Request(url, headers={"User-Agent": "ZiablWinSetup"})
+                with urllib.request.urlopen(req, timeout=5) as res:
+                    data = json.loads(res.read().decode("utf-8"))
+                tag = data.get("tag_name") or data.get("name") or ""
+                body = data.get("body") or "Нет описания релиза."
+                html_url = data.get("html_url") or f"https://github.com/{app.github_repo}/releases"
+                return {
+                    "success": True,
+                    "app_name": app.name,
+                    "version": tag,
+                    "source": "github",
+                    "notes": body,
+                    "url": html_url,
+                }
+            except Exception as e:
+                logger.debug(f"GitHub release check failed for {app.name}: {e}")
+
+        # 2. Если есть winget_id — получаем описание из winget show
+        if app.winget_id:
+            try:
+                cmd = ["winget", "show", "--id", app.winget_id, "--accept-source-agreements"]
+                proc = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    encoding="utf-8",
+                    errors="replace",
+                    creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000),
+                    timeout=6,
+                )
+                output = proc.stdout
+                ver_match = re.search(r'(?:Версия|Version):\s*([^\r\n]+)', output)
+                ver = ver_match.group(1).strip() if ver_match else ""
+                url_match = re.search(r'(?:URL-адрес заметок о выпуске|Release Notes URL):\s*([^\r\n]+)', output)
+                notes_url = url_match.group(1).strip() if url_match else ""
+
+                desc_match = re.search(r'(?:Описание|Description):\s*\r?\n([\s\S]*?)(?:\r?\n\S|$)', output)
+                desc = desc_match.group(1).strip() if desc_match else ""
+
+                notes_text = ""
+                if notes_url:
+                    notes_text += f"🔗 **Официальные заметки о выпуске:** [{notes_url}]({notes_url})\n\n"
+                if desc:
+                    notes_text += f"**Описание пакета:**\n{desc}"
+                if not notes_text:
+                    notes_text = app.get_notes(i18n.lang) or "Подробный список изменений доступен на официальном сайте программы."
+
+                return {
+                    "success": True,
+                    "app_name": app.name,
+                    "version": ver,
+                    "source": "winget",
+                    "notes": notes_text,
+                    "url": notes_url or app.web_url or "",
+                }
+            except Exception as e:
+                logger.debug(f"Winget show failed for {app.name}: {e}")
+
+        # Fallback
+        notes = app.get_notes(i18n.lang) or "Информация об обновлении отсутствует."
+        return {
+            "success": True,
+            "app_name": app.name,
+            "version": "",
+            "source": "catalog",
+            "notes": notes,
+            "url": app.web_url or "",
+        }
+
+    # ==========================================
+    # UI/UX #5: История действий и откат (Undo)
+    # ==========================================
+
+    def get_action_history(self) -> list[dict[str, Any]]:
+        """Возвращает список недавних действий для UI."""
+        return action_history.get_history(40)
+
+    def undo_action(self, action_id: str) -> dict[str, Any]:
+        """Откатывает действие из истории."""
+        for item in action_history.get_history(100):
+            if item.get("id") == action_id:
+                if item.get("undone"):
+                    return {"success": False, "error": "Действие уже было отменено"}
+                revert_data = item.get("revert_data", {})
+                act_type = item.get("action_type")
+
+                if act_type == "tweak_apply":
+                    res = self.revert_tweak(revert_data.get("tweak_id"), record_history=False)
+                elif act_type == "tweak_revert":
+                    res = self.apply_tweak(revert_data.get("tweak_id"), record_history=False)
+                elif act_type == "metro_remove":
+                    res = self.restore_metro_app(revert_data.get("metro_id"), record_history=False)
+                elif act_type == "metro_restore":
+                    res = self.remove_metro_app(revert_data.get("metro_id"), record_history=False)
+                elif act_type == "startup_toggle":
+                    res = self.toggle_startup_item(revert_data.get("item_id"), revert_data.get("enable"), record_history=False)
+                else:
+                    return {"success": False, "error": "Неизвестный тип отката"}
+
+                if res.get("success"):
+                    action_history.mark_undone(action_id)
+                    self.call_js("onLog", f"↩️ Успешно отменено действие: {item.get('title')}")
+                return res
+        return {"success": False, "error": "Действие не найдено в истории"}
+
+    def undo_last_action(self) -> dict[str, Any]:
+        """Откатывает последнее выполненное действие."""
+        for item in action_history.get_history(100):
+            if item.get("can_undo") and not item.get("undone"):
+                return self.undo_action(item.get("id"))
+        return {"success": False, "error": "Нет доступных действий для отмены"}
+
+    def clear_action_history(self) -> dict[str, Any]:
+        """Очищает историю действий."""
+        success = action_history.clear()
+        return {"success": success}
+
+    # ==========================================
+    # API #3: IP, Геолокация и Пинг Сети
+    # ==========================================
+
+    def get_network_ip_info(self) -> dict[str, Any]:
+        """Возвращает внешний IP адрес, геолокацию, провайдера и флаг страны."""
+        try:
+            geo_data = {}
+            for u in ["http://ip-api.com/json/?lang=ru", "https://ipwho.is/"]:
+                try:
+                    req = urllib.request.Request(u, headers={"User-Agent": "Mozilla/5.0"})
+                    with urllib.request.urlopen(req, timeout=3.5) as res:
+                        geo_data = json.loads(res.read().decode("utf-8"))
+                        if geo_data.get("status") == "success" or geo_data.get("success") is True or geo_data.get("ip") or geo_data.get("query"):
+                            break
+                except Exception:
+                    continue
+
+            ip = geo_data.get("query") or geo_data.get("ip") or ""
+            if not ip:
+                return {"success": False, "error": "Не удалось определить внешний IP (проверьте интернет)"}
+
+            country = geo_data.get("country") or "Неизвестно"
+            country_code = (geo_data.get("countryCode") or geo_data.get("country_code") or "").upper()
+            city = geo_data.get("city") or ""
+            isp = geo_data.get("isp") or geo_data.get("org") or ""
+
+            flag = "🌐"
+            if len(country_code) == 2:
+                flag = "".join(chr(127397 + ord(c)) for c in country_code)
+
+            latency_ms = None
+            try:
+                t0 = time.time()
+                s = socket.create_connection(("ya.ru", 80), timeout=1.5)
+                s.close()
+                latency_ms = round((time.time() - t0) * 1000, 1)
+            except Exception:
+                pass
+
+            return {
+                "success": True,
+                "ip": ip,
+                "country": country,
+                "country_code": country_code,
+                "city": city,
+                "isp": isp,
+                "flag": flag,
+                "latency_ms": latency_ms,
+            }
+        except Exception as e:
+            logger.error(f"Network info check failed: {e}")
+            return {"success": False, "error": str(e)}
+
+    # ==========================================
+    # API #4: Глобальный поиск пакетов Winget
+    # ==========================================
+
+    def search_winget_packages(self, query: str) -> dict[str, Any]:
+        """Выполняет глобальный поиск пакетов в Winget репозитории."""
+        q = (query or "").strip()
+        if not q or len(q) < 2:
+            return {"success": False, "error": "Введите минимум 2 символа для поиска"}
+        try:
+            cmd = ["winget", "search", q, "--accept-source-agreements", "-n", "25"]
+            proc = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000),
+                timeout=12,
+            )
+            output = proc.stdout
+            lines = output.strip().splitlines()
+            if len(lines) < 2:
+                return {"success": True, "results": [], "count": 0}
+
+            header = lines[0]
+            matches = list(re.finditer(r'\S+', header))
+            col_starts = [m.start() for m in matches]
+
+            results = []
+            for l in lines[2:]:
+                if not l.strip() or l.startswith("<"):
+                    continue
+                name = l[col_starts[0]:col_starts[1]].strip() if len(col_starts) > 1 else l.strip()
+                pkg_id = l[col_starts[1]:col_starts[2]].strip() if len(col_starts) > 2 else l[col_starts[1]:].strip()
+                version = l[col_starts[2]:col_starts[3]].strip() if len(col_starts) > 3 else l[col_starts[2]:].strip()
+                source = l[col_starts[4]:].strip() if len(col_starts) > 4 else "winget"
+                if not source:
+                    source = "winget"
+                if pkg_id:
+                    results.append({
+                        "name": name,
+                        "id": pkg_id,
+                        "version": version,
+                        "source": source,
+                    })
+
+            return {"success": True, "results": results, "count": len(results)}
+        except subprocess.TimeoutExpired:
+            return {"success": False, "error": "Превышено время ожидания поиска Winget (таймаут)"}
+        except Exception as e:
+            logger.error(f"Winget search error: {e}")
+            return {"success": False, "error": str(e)}
+
+    def install_custom_winget_package(self, pkg_id: str, source: str = "winget") -> dict[str, Any]:
+        """Запускает установку любого пакета Winget в фоновом режиме."""
+        pkg = (pkg_id or "").strip()
+        if not pkg:
+            return {"success": False, "error": "ID пакета не указан"}
+
+        def worker():
+            self.call_js("onLog", f"🚀 Запуск установки через Winget: {pkg}...")
+            cmd = [
+                "winget", "install", "--id", pkg, "--exact",
+                "--accept-package-agreements", "--accept-source-agreements",
+                "--disable-interactivity"
+            ]
+            if source and source in ("msstore", "winget"):
+                cmd.extend(["-s", source])
+            try:
+                proc = subprocess.Popen(
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    encoding="utf-8",
+                    errors="replace",
+                    creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000),
+                )
+                for line in iter(proc.stdout.readline, ""):
+                    clean = line.strip()
+                    if clean:
+                        self.call_js("onLog", f"[{pkg}] {clean}")
+                rc = proc.wait()
+                if rc == 0:
+                    self.call_js("onLog", f"✅ Пакет {pkg} успешно установлен!")
+                    self.call_js("showNotification", f"Пакет {pkg} успешно установлен", "success")
+                else:
+                    self.call_js("onLog", f"❌ Ошибка установки {pkg} (код {rc})")
+                    self.call_js("showNotification", f"Ошибка установки {pkg}", "error")
+            except Exception as ex:
+                self.call_js("onLog", f"❌ Ошибка: {ex}")
+
+        threading.Thread(target=worker, daemon=True).start()
+        return {"success": True, "message": f"Установка {pkg} запущена"}
+
+    # ==========================================
+    # API #5: ИИ-Ассистент (Ziabl AI)
+    # ==========================================
+
+    def get_ai_config(self) -> dict[str, Any]:
+        """Возвращает текущие настройки ИИ-ассистента."""
+        return ai_assistant.get_config()
+
+    def save_ai_config(self, provider: str, api_key: str, model: str = "") -> dict[str, Any]:
+        """Сохраняет настройки провайдера и ключ ИИ-ассистента."""
+        success = ai_assistant.save_config(provider, api_key, model)
+        return {"success": success}
+
+    def ask_ai_assistant(self, prompt: str) -> dict[str, Any]:
+        """Отправляет вопрос ИИ-ассистенту с системным контекстом."""
+        try:
+            ram = self._get_ram_usage()
+            disk = self._get_disk_c_usage()
+            context = {
+                "os": "Windows 11" if sys.getwindowsversion().build >= 22000 else "Windows 10",
+                "ram": f"{ram.get('used_gb')}/{ram.get('total_gb')} GB",
+                "disk": f"{disk.get('free_gb')} GB свободно",
+            }
+            return ai_assistant.ask(prompt, system_context=context)
+        except Exception as e:
+            return {"success": False, "error": str(e)}
 

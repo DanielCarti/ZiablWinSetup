@@ -8,6 +8,7 @@
         if (a) document.documentElement.setAttribute('data-accent', a);
       } catch (e) {}
     })();
+
   </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -2729,6 +2730,184 @@
       background: #ffffff;
     }
 
+  
+    /* --- System Health Widget --- */
+    .header-health-widget {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 3px 10px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 11.5px;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+    .header-health-widget:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateY(-1px);
+    }
+    .health-chip {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .chip-label {
+      color: var(--text-muted);
+      font-size: 10px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .chip-val {
+      color: #f1f5f9;
+      font-family: monospace;
+      font-size: 11.5px;
+      font-weight: 600;
+    }
+    .health-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      display: inline-block;
+      transition: all 0.3s;
+    }
+    .health-dot.status-great {
+      background: #10b981;
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+    }
+    .health-dot.status-warning {
+      background: #f59e0b;
+      box-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
+    }
+    .health-dot.status-critical {
+      background: #ef4444;
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+    }
+
+    /* --- Network Status Card --- */
+    .network-status-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.85));
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 12px;
+      margin-bottom: 16px;
+      backdrop-filter: blur(8px);
+      box-sizing: border-box;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    /* --- AI Assistant View --- */
+    .ai-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      max-width: 960px;
+      width: 100%;
+      margin: 0 auto;
+      gap: 14px;
+      box-sizing: border-box;
+    }
+    .ai-chat-box {
+      flex: 1;
+      min-height: 400px;
+      max-height: 580px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-sizing: border-box;
+    }
+    .ai-msg {
+      display: flex;
+      gap: 12px;
+      max-width: 85%;
+      line-height: 1.5;
+    }
+    .ai-msg.user {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+    .ai-msg.bot {
+      align-self: flex-start;
+    }
+    .ai-bubble {
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 13.5px;
+      word-break: break-word;
+    }
+    .ai-msg.user .ai-bubble {
+      background: var(--accent);
+      color: #ffffff;
+      border-bottom-right-radius: 2px;
+    }
+    .ai-msg.bot .ai-bubble {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+      border-bottom-left-radius: 2px;
+    }
+    .ai-bubble pre {
+      background: rgba(0,0,0,0.4);
+      padding: 8px 12px;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-family: monospace;
+      font-size: 12px;
+    }
+    .ai-chips-bar {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 2px 0;
+    }
+    .ai-chip {
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      font-size: 12px;
+      color: #38bdf8;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .ai-chip:hover {
+      background: rgba(56, 189, 248, 0.15);
+      border-color: #38bdf8;
+    }
+    .ai-input-bar {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .ai-input-bar input {
+      flex: 1;
+      height: 42px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 0 16px;
+      color: #fff;
+      font-size: 13.5px;
+    }
+    .ai-input-bar input:focus {
+      border-color: var(--accent);
+      outline: none;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
   </style>
 </head>
 <body>
@@ -2761,9 +2940,25 @@
         <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
         <span class="tab-label" id="tabLabelVirusTotal">VirusTotal</span>
       </button>
+      <button class="tab-btn" id="tabBtnAi" onclick="switchMainTab('ai')" title="ИИ-Ассистент по настройке Windows, безопасности и твикам">
+        <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2 2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><rect x="4" y="8" width="16" height="12" rx="4"/><circle cx="9" cy="13" r="1.5" fill="currentColor"/><circle cx="15" cy="13" r="1.5" fill="currentColor"/><path d="M9 17h6"/></svg>
+        <span class="tab-label" id="tabLabelAi">AI Ассистент</span>
+      </button>
     </div>
 
     <div class="header-actions">
+      <!-- UI/UX #2: Здоровье системы -->
+      <div id="headerHealthWidget" class="header-health-widget" onclick="openHealthModal()" title="Здоровье системы (кликните для подробностей)">
+        <div class="health-chip"><span class="chip-label">CPU</span> <span id="healthCpuVal" class="chip-val">--%</span></div>
+        <div class="health-chip"><span class="chip-label">RAM</span> <span id="healthRamVal" class="chip-val">--%</span></div>
+        <div class="health-chip"><span class="chip-label">C:</span> <span id="healthDiskVal" class="chip-val">-- GB</span></div>
+        <span id="healthDot" class="health-dot status-great"></span>
+      </div>
+
+      <!-- UI/UX #5: Кнопка Истории и Отката (Undo) -->
+      <button class="header-icon-btn" id="btnHeaderHistory" onclick="openHistoryModal()" title="История действий и откат (Undo)">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </button>
       <button class="btn-check-updates" id="btnCheckUpdates" onclick="triggerCheckUpdates()" title="Проверить обновления установленных программ">
         <svg class="tab-svg" id="updateIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
         <span id="updateBtnText">Обновления</span>
@@ -2932,6 +3127,38 @@
         <div style="font-size: 11.5px; color: #38bdf8; font-weight: 500; opacity: 0.9;">⏳ Проверка...</div>
       </div>
 
+      <!-- API #3: Network IP & Geo / Leak Inspector Card -->
+      <div id="networkStatusCard" class="network-status-card" style="margin: 12px 18px 0 18px;">
+        <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 14px;">🌐</span>
+            <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">IP:</span>
+            <span id="netIpVal" style="font-size: 13px; font-weight: 700; color: #38bdf8; font-family: monospace;">Проверка...</span>
+            <button onclick="copyNetworkIp()" title="Скопировать IP" style="background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 2px 4px; font-size: 12px;">📋</button>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span id="netFlagVal" style="font-size: 15px;">🌐</span>
+            <span id="netGeoVal" style="font-size: 12.5px; color: #f1f5f9; font-weight: 500;">--</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Провайдер:</span>
+            <span id="netIspVal" style="font-size: 12.5px; color: #cbd5e1;">--</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Пинг:</span>
+            <span id="netPingVal" style="font-size: 12.5px; font-weight: 600; color: #10b981;">-- ms</span>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button class="preset-chip" onclick="openWingetSearchModal()" style="border-color: rgba(56, 189, 248, 0.4); color: #38bdf8; background: rgba(56, 189, 248, 0.08); padding: 4px 10px; font-size: 11.5px;" title="Поиск среди десятков тысяч программ в каталоге Winget">
+            <span>📦</span> <span id="lblWingetSearchBtn">Каталог Winget</span>
+          </button>
+          <button onclick="refreshNetworkInfo()" title="Обновить сетевые данные" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #cbd5e1; border-radius: 6px; padding: 4px 8px; cursor: pointer; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+            <span>🔄</span>
+          </button>
+        </div>
+      </div>
+
       <!-- App Presets Bar («В 1 клик») -->
       <div id="presetsBar" class="presets-bar">
         <span style="font-size: 11px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px;" id="lblPresetsTitle">Пресеты:</span>
@@ -3077,6 +3304,52 @@
 
       <!-- Startup Items List -->
       <div id="startupListContainer" class="startup-list"></div>
+    </div>
+
+
+    <!-- View 6: AI Assistant View (API #5) -->
+    <div id="viewAi" style="display: none; flex: 1; min-height: 0; width: 100%; flex-direction: column; overflow-y: auto; padding: 24px 32px 100px 32px; box-sizing: border-box; background: var(--bg-app);">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; max-width: 960px; width: 100%; margin-left: auto; margin-right: auto;">
+        <div>
+          <h2 style="font-size: 20px; font-weight: 600; margin-bottom: 4px;" id="aiMainTitle">🤖 Ziabl AI Ассистент</h2>
+          <p style="font-size: 13px; color: var(--text-muted);" id="aiMainSubtitle">Интеллектуальный помощник по настройке Windows, анализу служб, твикам и безопасности.</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button class="btn-action btn-outline" onclick="openAiSettingsModal()" style="height: 32px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
+            ⚙️ <span id="lblAiSettingsBtn">Настройки API</span>
+          </button>
+          <button class="btn-action btn-danger-outline" onclick="clearAiChat()" style="height: 32px; font-size: 12px;">
+            🗑️ <span id="lblAiClearBtn">Очистить чат</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="ai-container">
+        <div class="ai-chat-box" id="aiChatBox">
+          <div class="ai-msg bot">
+            <div style="font-size: 24px;">🤖</div>
+            <div class="ai-bubble">
+              <b>Привет! Я ваш умный помощник по настройке Windows.</b><br><br>
+              Спросите меня о чем угодно: как безопасно ускорить ПК, отключить шпионские службы, оптимизировать автозапуск или освободить место на диске C:.
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick prompt chips -->
+        <div class="ai-chips-bar">
+          <div class="ai-chip" onclick="askAiPrompt('Как ускорить игры и уменьшить пинг?')">🎮 Оптимизация для игр и пинга</div>
+          <div class="ai-chip" onclick="askAiPrompt('Что безопасно отключить в автозагрузке?')">⚡ Очистка автозагрузки</div>
+          <div class="ai-chip" onclick="askAiPrompt('Безопасно ли отключить телеметрию Windows?')">🛡️ Безопасность телеметрии</div>
+          <div class="ai-chip" onclick="askAiPrompt('Как быстро освободить место на диске C?')">🧹 Очистка диска C:</div>
+        </div>
+
+        <div class="ai-input-bar">
+          <input type="text" id="aiInputPrompt" placeholder="Задайте вопрос об оптимизации Windows..." onkeydown="if(event.key==='Enter') sendAiMessage()">
+          <button class="btn-action btn-primary" onclick="sendAiMessage()" style="height: 42px; padding: 0 20px; font-weight: 600;">
+            🚀 <span id="lblAiSendBtn">Отправить</span>
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- View 5: VirusTotal Scanner view -->
@@ -3468,6 +3741,165 @@
   </div>
 
   <!-- Settings Modal (Windows 11 Fluent) -->
+  
+  <!-- UI/UX #2: Модальное окно здоровья системы -->
+  <div id="systemHealthModal" class="modal-overlay" style="display: none; z-index: 10000;" onclick="if(event.target === this) closeHealthModal()">
+    <div class="modal-card" style="width: 580px; max-width: 92%; padding: 24px; background: #1a1b1f; border: 1px solid var(--border-subtle); border-radius: 14px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px;">
+        <h3 style="margin: 0; font-size: 17px; font-weight: 600; display: flex; align-items: center; gap: 8px; color: #f1f5f9;">
+          🩺 <span id="healthModalTitle">Здоровье и производительность системы</span>
+        </h3>
+        <button class="modal-close" onclick="closeHealthModal()">&times;</button>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px;">
+        <div style="padding: 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; text-align: center;">
+          <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">ЦП (CPU)</div>
+          <div id="mHealthCpu" style="font-size: 24px; font-weight: 700; color: #38bdf8; margin: 6px 0;">--%</div>
+          <div style="font-size: 11px; color: var(--text-muted);">Загрузка ядер</div>
+        </div>
+        <div style="padding: 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; text-align: center;">
+          <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Память (RAM)</div>
+          <div id="mHealthRam" style="font-size: 24px; font-weight: 700; color: #a855f7; margin: 6px 0;">--%</div>
+          <div id="mHealthRamSub" style="font-size: 11px; color: var(--text-muted);">-- / -- GB</div>
+        </div>
+        <div style="padding: 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; text-align: center;">
+          <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Диск C:</div>
+          <div id="mHealthDisk" style="font-size: 24px; font-weight: 700; color: #10b981; margin: 6px 0;">-- GB</div>
+          <div id="mHealthDiskSub" style="font-size: 11px; color: var(--text-muted);">Свободно</div>
+        </div>
+      </div>
+
+      <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 10px; padding: 12px 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 24px;">✨</span>
+        <div style="flex: 1;">
+          <div style="font-size: 13.5px; font-weight: 600; color: #34d399;" id="mHealthStatusText">Система стабильна</div>
+          <div style="font-size: 11.5px; color: var(--text-muted);" id="mHealthAdviceText">Ресурсы памяти и процессора в норме.</div>
+        </div>
+      </div>
+
+      <div style="font-size: 12.5px; font-weight: 600; color: #f1f5f9; margin-bottom: 10px;">⚡ Быстрые действия по оптимизации:</div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button class="btn-action btn-outline" onclick="closeHealthModal(); cleanInstallerCache();" style="flex: 1; min-width: 150px; height: 36px;">🧹 Очистить кэш инсталляторов</button>
+        <button class="btn-action btn-outline" onclick="closeHealthModal(); switchMainTab('startup');" style="flex: 1; min-width: 150px; height: 36px;">⚡ Оптимизировать автозапуск</button>
+        <button class="btn-action btn-outline" onclick="closeHealthModal(); switchMainTab('tweaks');" style="flex: 1; min-width: 150px; height: 36px;">🔧 Настроить твики системы</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- UI/UX #4: Модальное окно журнала изменений (Changelog Popover) -->
+  <div id="appChangelogModal" class="modal-overlay" style="display: none; z-index: 10000;" onclick="if(event.target === this) closeAppChangelog()">
+    <div class="modal-card" style="width: 620px; max-width: 92%; max-height: 85%; display: flex; flex-direction: column; padding: 24px; background: #1a1b1f; border: 1px solid var(--border-subtle); border-radius: 14px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px;">
+        <div>
+          <h3 style="margin: 0; font-size: 17px; font-weight: 600; display: flex; align-items: center; gap: 8px; color: #f1f5f9;">
+            📋 <span id="clAppName">Журнал изменений</span>
+          </h3>
+          <span id="clVersionBadge" style="display: inline-block; margin-top: 4px; font-size: 11.5px; padding: 2px 8px; border-radius: 4px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-weight: 600;">v1.0.0</span>
+        </div>
+        <button class="modal-close" onclick="closeAppChangelog()">&times;</button>
+      </div>
+
+      <div id="clBody" style="flex: 1; overflow-y: auto; font-size: 13px; line-height: 1.6; color: var(--text-main); white-space: pre-wrap; padding-right: 8px; margin-bottom: 16px; background: rgba(0,0,0,0.2); padding: 14px; border-radius: 8px;">Загрузка заметок о выпуске...</div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <a id="clSourceLink" href="#" target="_blank" onclick="openExternalUrl(this.href); return false;" style="font-size: 12px; color: #38bdf8; text-decoration: none;">🌐 Открыть страницу релиза</a>
+        <button class="modal-btn modal-btn-primary" onclick="closeAppChangelog()" style="padding: 6px 20px;">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- UI/UX #5: Модальное окно Истории и Отката (Undo) -->
+  <div id="actionHistoryModal" class="modal-overlay" style="display: none; z-index: 10000;" onclick="if(event.target === this) closeHistoryModal()">
+    <div class="modal-card" style="width: 650px; max-width: 92%; max-height: 85%; display: flex; flex-direction: column; padding: 24px; background: #1a1b1f; border: 1px solid var(--border-subtle); border-radius: 14px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px;">
+        <h3 style="margin: 0; font-size: 17px; font-weight: 600; display: flex; align-items: center; gap: 8px; color: #f1f5f9;">
+          🕒 <span id="historyModalTitle">История действий и откат (Undo)</span>
+        </h3>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button class="btn-action btn-danger-outline" onclick="clearActionHistoryUI()" style="height: 28px; font-size: 11.5px; padding: 0 10px;">🗑️ Очистить</button>
+          <button class="modal-close" onclick="closeHistoryModal()">&times;</button>
+        </div>
+      </div>
+
+      <div id="historyListContainer" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; padding-right: 6px;">
+        <!-- Filled dynamically -->
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 14px;">
+        <button class="btn-action btn-primary" onclick="undoLastActionUI()" style="padding: 7px 18px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+          ↩️ <span id="lblUndoLastBtn">Отменить последнее действие</span>
+        </button>
+        <button class="modal-btn modal-btn-secondary" onclick="closeHistoryModal()" style="padding: 7px 20px;">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- API #4: Модальное окно глобального поиска Winget -->
+  <div id="wingetSearchModal" class="modal-overlay" style="display: none; z-index: 10000;" onclick="if(event.target === this) closeWingetSearchModal()">
+    <div class="modal-card" style="width: 720px; max-width: 94%; max-height: 88%; display: flex; flex-direction: column; padding: 24px; background: #1a1b1f; border: 1px solid var(--border-subtle); border-radius: 14px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px;">
+        <div>
+          <h3 style="margin: 0; font-size: 17px; font-weight: 600; display: flex; align-items: center; gap: 8px; color: #f1f5f9;">
+            🌐 <span>Глобальный репозиторий Winget</span>
+          </h3>
+          <span style="font-size: 12px; color: var(--text-muted);">Поиск и установка десятков тысяч программ из официальной базы Microsoft Package Manager</span>
+        </div>
+        <button class="modal-close" onclick="closeWingetSearchModal()">&times;</button>
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+        <input type="text" id="inpWingetQuery" placeholder="Введите название программы или ID (например, blender, steam, vlc)..." style="flex: 1; height: 38px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 0 14px; color: #fff; font-size: 13.5px;" onkeydown="if(event.key==='Enter') executeWingetSearch()">
+        <button class="btn-action btn-primary" onclick="executeWingetSearch()" style="height: 38px; padding: 0 20px; font-weight: 600;">🔍 Искать</button>
+      </div>
+
+      <div id="wingetSearchResults" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; min-height: 250px; max-height: 420px; padding-right: 6px;">
+        <div style="text-align: center; color: var(--text-muted); padding: 50px 0; font-size: 13px;">
+          Введите название любой программы в строку поиска выше и нажмите Enter.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- API #5: Модальное окно настроек ИИ-Ассистента -->
+  <div id="aiSettingsModal" class="modal-overlay" style="display: none; z-index: 10000;" onclick="if(event.target === this) closeAiSettingsModal()">
+    <div class="modal-card" style="width: 520px; max-width: 92%; padding: 24px; background: #1a1b1f; border: 1px solid var(--border-subtle); border-radius: 14px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px;">
+        <h3 style="margin: 0; font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px; color: #f1f5f9;">
+          ⚙️ <span>Настройки ИИ-Ассистента</span>
+        </h3>
+        <button class="modal-close" onclick="closeAiSettingsModal()">&times;</button>
+      </div>
+
+      <div style="margin-bottom: 14px;">
+        <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 6px;">Провайдер ИИ:</label>
+        <select id="selAiProvider" style="width: 100%; height: 36px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 6px; color: #fff; padding: 0 10px; font-size: 13px;" onchange="onAiProviderChange()">
+          <option value="gemini">Google Gemini API (Быстрый и бесплатный)</option>
+          <option value="openrouter">OpenRouter (DeepSeek / Llama / Claude)</option>
+          <option value="openai">OpenAI (ChatGPT gpt-4o-mini)</option>
+        </select>
+      </div>
+
+      <div style="margin-bottom: 14px;">
+        <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 6px;">API Ключ:</label>
+        <input type="password" id="inpAiApiKey" placeholder="Вставьте ваш API ключ..." style="width: 100%; height: 36px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 6px; color: #fff; padding: 0 12px; font-size: 13px; box-sizing: border-box;">
+        <div style="font-size: 11.5px; color: #38bdf8; margin-top: 6px;" id="aiKeyHelpText">
+          💡 Бесплатный ключ Gemini можно получить за 30 секунд в <a href="https://aistudio.google.com/app/apikey" target="_blank" onclick="openExternalUrl(this.href); return false;" style="color: #38bdf8; text-decoration: underline;">Google AI Studio</a>.
+        </div>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 6px;">Модель:</label>
+        <input type="text" id="inpAiModel" value="gemini-1.5-flash" style="width: 100%; height: 36px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 6px; color: #fff; padding: 0 12px; font-size: 13px; box-sizing: border-box;">
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 8px;">
+        <button class="modal-btn modal-btn-secondary" onclick="closeAiSettingsModal()" style="padding: 6px 16px;">Отмена</button>
+        <button class="modal-btn modal-btn-primary" onclick="saveAiSettingsUI()" style="padding: 6px 20px;">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
   <div id="settingsModal" class="modal-overlay" style="display: none; z-index: 10000;" onclick="if(event.target === this) closeSettingsModal()">
     <div class="settings-modal-card" style="width: 640px; max-width: 92%; max-height: 88%; display: flex; flex-direction: column; background: #1a1b1f; border: 1px solid var(--border-subtle); border-radius: 12px; box-shadow: 0 24px 50px rgba(0,0,0,0.85); overflow: hidden;">
       <div class="settings-modal-header" style="padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between;">
@@ -4439,6 +4871,12 @@
             }
           }, 2500);
         }
+
+        // Запуск мониторинга здоровья системы и проверка сети
+        setTimeout(() => {
+          if (typeof initSystemHealthMonitor === 'function') initSystemHealthMonitor();
+          if (typeof refreshNetworkInfo === 'function') refreshNetworkInfo();
+        }, 800);
       } catch (e) {
         console.error('Bridge init error:', e);
       }
@@ -5887,6 +6325,7 @@
             <div style="display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap;">
               ${isInstalled ? `<span class="badge-installed" title="${instInfo.name || ''}">✓ ${s.status_installed || 'Установлено'}${verStr}</span>` : ''}
               ${(availableUpdates[app.id] && !(appData.ignored_updates || []).includes(app.id)) ? `<span class="badge-update" title="Доступно обновление">⬆️ ${availableUpdates[app.id].available_version}</span>` : ''}
+              ${(app.github_repo || app.winget_id || availableUpdates[app.id]) ? `<button class="btn-cl-badge" onclick="event.stopPropagation(); openAppChangelog('${app.id}')" title="${(appData && appData.lang === 'en') ? 'View changelog / release notes' : 'История изменений и обновлений'}" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #cbd5e1; border-radius: 4px; padding: 2px 7px; font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;">📋 ${(appData && appData.lang === 'en') ? 'Changelog' : 'Что нового'}</button>` : ''}
               ${(availableUpdates[app.id] && (appData.ignored_updates || []).includes(app.id)) ? `<span class="badge-ignored" title="Исключено из автообновлений (доступна ${availableUpdates[app.id].available_version})" style="display: inline-flex; align-items: center; gap: 3px; background: rgba(234, 179, 8, 0.14); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.32); padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: 500;">🛡️ Исключено</span>` : ''}
               ${app.web_url ? `<a href="javascript:void(0)" onclick="openExternalUrl('${app.web_url}')" class="link-1progs-badge" title="Открыть страницу на 1progs.ru" style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #38bdf8; text-decoration: none; padding: 2px 7px; border-radius: 4px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.28); margin-left: 6px; cursor: pointer; font-weight: 500;">🌐 1progs.ru ↗</a>` : ''}
             </div>
@@ -6897,7 +7336,8 @@
       const footer = document.getElementById('mainFooter');
 
       // 1. Hide all views instantly first to prevent any multiple-view flex collision or visual glitch
-      const allViews = [viewApps, viewDl, viewTweaks, viewMetro, viewStartup, viewVT];
+      const viewAi = document.getElementById('viewAi');
+      const allViews = [viewApps, viewDl, viewTweaks, viewMetro, viewStartup, viewVT, viewAi];
       allViews.forEach(v => {
         if (v) v.style.display = 'none';
       });
@@ -6932,6 +7372,8 @@
       if (tabStartupBtn) tabStartupBtn.classList.toggle('active', tab === 'startup');
       const tabVTBtn = document.getElementById('tabBtnVirusTotal');
       if (tabVTBtn) tabVTBtn.classList.toggle('active', tab === 'virustotal');
+      const tabAiBtn = document.getElementById('tabBtnAi');
+      if (tabAiBtn) tabAiBtn.classList.toggle('active', tab === 'ai');
 
       // 4. Activate target view and call its specific renderer
       if (tab === 'apps') {
@@ -6957,6 +7399,10 @@
         if (viewVT) viewVT.style.display = 'flex';
         if (footer) footer.style.display = 'none';
         initVirusTotalView();
+      } else if (tab === 'ai') {
+        if (viewAi) viewAi.style.display = 'flex';
+        if (footer) footer.style.display = 'none';
+        initAiView();
       }
     }
     window.switchMainTab = switchMainTab;
@@ -9865,6 +10311,579 @@
     window.deleteSavedVtKey = deleteSavedVtKey;
 
     window.checkVtConfig = checkVirusTotalApiKey;
+
+
+    // ==========================================
+    // UI/UX #2: Мониторинг «Здоровье системы»
+    // ==========================================
+    let healthMonitorInterval = null;
+    function initSystemHealthMonitor() {
+      if (healthMonitorInterval) return;
+      fetchHealthStats();
+      healthMonitorInterval = setInterval(fetchHealthStats, 4000);
+    }
+    window.initSystemHealthMonitor = initSystemHealthMonitor;
+
+    async function fetchHealthStats() {
+      try {
+        if (!window.pywebview || !window.pywebview.api || !window.pywebview.api.get_system_health) return;
+        const res = await window.pywebview.api.get_system_health();
+        if (!res || !res.success) return;
+        updateHealthUI(res);
+      } catch (e) {
+        console.warn('fetchHealthStats error:', e);
+      }
+    }
+
+    function updateHealthUI(h) {
+      const cpuEl = document.getElementById('healthCpuVal');
+      const ramEl = document.getElementById('healthRamVal');
+      const diskEl = document.getElementById('healthDiskVal');
+      const dotEl = document.getElementById('healthDot');
+      if (cpuEl) cpuEl.textContent = `${h.cpu_percent}%`;
+      if (ramEl) ramEl.textContent = `${h.ram_percent}%`;
+      if (diskEl && h.disk_c) diskEl.textContent = `${h.disk_c.free_gb} GB`;
+
+      if (dotEl) {
+        dotEl.className = 'health-dot ' + (h.status === 'great' ? 'status-great' : (h.status === 'warning' ? 'status-warning' : 'status-critical'));
+      }
+
+      // Modal elements
+      const mCpu = document.getElementById('mHealthCpu');
+      const mRam = document.getElementById('mHealthRam');
+      const mRamSub = document.getElementById('mHealthRamSub');
+      const mDisk = document.getElementById('mHealthDisk');
+      const mDiskSub = document.getElementById('mHealthDiskSub');
+      const mStatus = document.getElementById('mHealthStatusText');
+      const mAdvice = document.getElementById('mHealthAdviceText');
+
+      if (mCpu) mCpu.textContent = `${h.cpu_percent}%`;
+      if (mRam) mRam.textContent = `${h.ram_percent}%`;
+      if (mRamSub) mRamSub.textContent = `${h.ram_used_gb} / ${h.ram_total_gb} GB`;
+      if (mDisk && h.disk_c) mDisk.textContent = `${h.disk_c.free_gb} GB`;
+      if (mDiskSub && h.disk_c) mDiskSub.textContent = `Занято ${h.disk_c.used_gb} из ${h.disk_c.total_gb} GB (${h.disk_c.percent}%)`;
+
+      const isEn = appData && appData.lang === 'en';
+      if (mStatus && mAdvice) {
+        if (h.status === 'great') {
+          mStatus.textContent = isEn ? 'System is running optimal' : 'Система работает оптимально';
+          mStatus.style.color = '#34d399';
+          mAdvice.textContent = isEn ? 'CPU and RAM loads are normal.' : 'Ресурсы памяти и процессора в норме.';
+        } else if (h.status === 'warning') {
+          mStatus.textContent = isEn ? 'Moderate System Load' : 'Умеренная нагрузка на систему';
+          mStatus.style.color = '#f59e0b';
+          mAdvice.textContent = isEn ? 'Noticeable resource usage by background tasks.' : 'Повышенное использование ресурсов фоновыми процессами.';
+        } else {
+          mStatus.textContent = isEn ? 'High Resource Load' : 'Высокая нагрузка на ресурсы';
+          mStatus.style.color = '#ef4444';
+          mAdvice.textContent = isEn ? 'RAM or CPU is heavily loaded. Optimization recommended.' : 'Память или процессор сильно загружены. Рекомендуется оптимизация.';
+        }
+      }
+    }
+
+    function openHealthModal() {
+      fetchHealthStats();
+      const m = document.getElementById('systemHealthModal');
+      if (m) m.style.display = 'flex';
+    }
+    window.openHealthModal = openHealthModal;
+
+    function closeHealthModal() {
+      const m = document.getElementById('systemHealthModal');
+      if (m) m.style.display = 'none';
+    }
+    window.closeHealthModal = closeHealthModal;
+
+    // ==========================================
+    // UI/UX #4: Журнал изменений (Changelog Popover)
+    // ==========================================
+    async function openAppChangelog(appId) {
+      const modal = document.getElementById('appChangelogModal');
+      const clName = document.getElementById('clAppName');
+      const clBadge = document.getElementById('clVersionBadge');
+      const clBody = document.getElementById('clBody');
+      const clLink = document.getElementById('clSourceLink');
+      if (!modal) return;
+
+      const isEn = appData && appData.lang === 'en';
+      const app = (appData.apps || []).find(a => a.id === appId);
+      const displayName = app ? app.name : appId;
+
+      if (clName) clName.textContent = displayName;
+      if (clBadge) clBadge.textContent = '...';
+      if (clBody) clBody.textContent = isEn ? 'Loading release notes...' : 'Загрузка заметок о выпуске...';
+      if (clLink) clLink.style.display = 'none';
+      modal.style.display = 'flex';
+
+      try {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.get_app_changelog) {
+          const res = await window.pywebview.api.get_app_changelog(appId);
+          if (res && res.success) {
+            if (clBadge) clBadge.textContent = res.version ? (res.version.startsWith('v') ? res.version : 'v' + res.version) : 'Release Notes';
+            if (clBody) {
+              let text = res.notes || (isEn ? 'No notes provided.' : 'Нет описания релиза.');
+              clBody.textContent = text;
+            }
+            if (clLink && res.url) {
+              clLink.href = res.url;
+              clLink.style.display = 'inline-flex';
+            }
+          } else {
+            if (clBody) clBody.textContent = res ? res.error : (isEn ? 'Changelog not found' : 'Журнал изменений не найден');
+          }
+        }
+      } catch (err) {
+        if (clBody) clBody.textContent = String(err);
+      }
+    }
+    window.openAppChangelog = openAppChangelog;
+
+    function closeAppChangelog() {
+      const m = document.getElementById('appChangelogModal');
+      if (m) m.style.display = 'none';
+    }
+    window.closeAppChangelog = closeAppChangelog;
+
+    // ==========================================
+    // UI/UX #5: История действий и откат (Timeline Undo)
+    // ==========================================
+    async function openHistoryModal() {
+      const m = document.getElementById('actionHistoryModal');
+      if (m) m.style.display = 'flex';
+      refreshActionHistory();
+    }
+    window.openHistoryModal = openHistoryModal;
+
+    function closeHistoryModal() {
+      const m = document.getElementById('actionHistoryModal');
+      if (m) m.style.display = 'none';
+    }
+    window.closeHistoryModal = closeHistoryModal;
+
+    async function refreshActionHistory() {
+      const container = document.getElementById('historyListContainer');
+      if (!container) return;
+      const isEn = appData && appData.lang === 'en';
+      container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 40px 0;">${isEn ? 'Loading history...' : 'Загрузка истории...'}</div>`;
+
+      try {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.get_action_history) {
+          const items = await window.pywebview.api.get_action_history();
+          renderActionHistoryList(items || []);
+        }
+      } catch (err) {
+        container.innerHTML = `<div style="color: #ef4444; padding: 20px;">${err}</div>`;
+      }
+    }
+    window.refreshActionHistory = refreshActionHistory;
+
+    function renderActionHistoryList(items) {
+      const container = document.getElementById('historyListContainer');
+      if (!container) return;
+      const isEn = appData && appData.lang === 'en';
+
+      if (!items || items.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; color: var(--text-muted); padding: 50px 0; font-size: 13px;">
+            ${isEn ? 'No actions recorded yet. Applied tweaks, startup changes, and Metro removals will appear here.' : 'История пока пуста. Здесь будут отображаться примененные твики, переключения автозагрузки и удаление Metro.'}
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = '';
+      items.forEach(item => {
+        const timeStr = item.timestamp ? new Date(item.timestamp * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '';
+        const title = isEn ? (item.title_en || item.title) : item.title;
+        const row = document.createElement('div');
+        row.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; gap: 10px;';
+
+        let badge = '';
+        if (item.undone) {
+          badge = `<span style="font-size: 11px; padding: 2px 7px; border-radius: 4px; background: rgba(148, 163, 184, 0.15); color: #94a3b8;">${isEn ? 'Reverted' : 'Отменено'}</span>`;
+        }
+
+        let undoBtn = '';
+        if (item.can_undo && !item.undone) {
+          undoBtn = `<button class="btn-action btn-outline" onclick="undoHistoryAction('${item.id}')" style="height: 28px; padding: 0 12px; font-size: 11.5px; white-space: nowrap;">↩️ ${isEn ? 'Undo' : 'Откатить'}</button>`;
+        }
+
+        row.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;">
+            <span style="font-family: monospace; font-size: 11.5px; color: var(--text-muted);">${timeStr}</span>
+            <div style="display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+              <span style="font-size: 13px; color: #f1f5f9; font-weight: 500;">${title}</span>
+              ${badge}
+            </div>
+          </div>
+          ${undoBtn}
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    async function undoHistoryAction(actionId) {
+      const isEn = appData && appData.lang === 'en';
+      try {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.undo_action) {
+          const res = await window.pywebview.api.undo_action(actionId);
+          if (res && res.success) {
+            showToast(res.message || (isEn ? 'Action reverted successfully' : 'Действие успешно отменено'), 'success');
+            refreshActionHistory();
+            if (currentMainTab === 'tweaks' && typeof renderTweaks === 'function') renderTweaks();
+            if (currentMainTab === 'metro' && typeof renderMetro === 'function') renderMetro();
+            if (currentMainTab === 'startup' && typeof renderStartup === 'function') renderStartup();
+          } else {
+            showToast(res ? res.error || res.message : 'Error', 'error');
+          }
+        }
+      } catch (err) {
+        showToast(String(err), 'error');
+      }
+    }
+    window.undoHistoryAction = undoHistoryAction;
+
+    async function undoLastActionUI() {
+      const isEn = appData && appData.lang === 'en';
+      try {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.undo_last_action) {
+          const res = await window.pywebview.api.undo_last_action();
+          if (res && res.success) {
+            showToast(res.message || (isEn ? 'Last action undone' : 'Последнее действие отменено'), 'success');
+            refreshActionHistory();
+            if (currentMainTab === 'tweaks' && typeof renderTweaks === 'function') renderTweaks();
+            if (currentMainTab === 'metro' && typeof renderMetro === 'function') renderMetro();
+            if (currentMainTab === 'startup' && typeof renderStartup === 'function') renderStartup();
+          } else {
+            showToast(res ? res.error || res.message : 'No action to undo', 'warning');
+          }
+        }
+      } catch (err) {
+        showToast(String(err), 'error');
+      }
+    }
+    window.undoLastActionUI = undoLastActionUI;
+
+    async function clearActionHistoryUI() {
+      const isEn = appData && appData.lang === 'en';
+      try {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.clear_action_history) {
+          await window.pywebview.api.clear_action_history();
+          showToast(isEn ? 'History cleared' : 'История очищена', 'info');
+          refreshActionHistory();
+        }
+      } catch (err) {
+        showToast(String(err), 'error');
+      }
+    }
+    window.clearActionHistoryUI = clearActionHistoryUI;
+
+    // ==========================================
+    // API #3: IP, Геолокация и Сеть
+    // ==========================================
+    let cachedNetIp = '';
+    async function refreshNetworkInfo() {
+      const ipEl = document.getElementById('netIpVal');
+      const flagEl = document.getElementById('netFlagVal');
+      const geoEl = document.getElementById('netGeoVal');
+      const ispEl = document.getElementById('netIspVal');
+      const pingEl = document.getElementById('netPingVal');
+      const isEn = appData && appData.lang === 'en';
+
+      if (ipEl) ipEl.textContent = isEn ? 'Checking...' : 'Проверка...';
+
+      try {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.get_network_ip_info) {
+          const res = await window.pywebview.api.get_network_ip_info();
+          if (res && res.success) {
+            cachedNetIp = res.ip || '';
+            if (ipEl) ipEl.textContent = res.ip;
+            if (flagEl) flagEl.textContent = res.flag || '🌐';
+            if (geoEl) geoEl.textContent = `${res.city ? res.city + ', ' : ''}${res.country || ''}`;
+            if (ispEl) ispEl.textContent = res.isp || '--';
+            if (pingEl) pingEl.textContent = res.latency_ms !== null ? `${res.latency_ms} ms` : '--';
+          } else {
+            if (ipEl) ipEl.textContent = isEn ? 'Offline / Error' : 'Оффлайн / Сбой';
+            if (geoEl) geoEl.textContent = '--';
+          }
+        }
+      } catch (err) {
+        if (ipEl) ipEl.textContent = 'Error';
+      }
+    }
+    window.refreshNetworkInfo = refreshNetworkInfo;
+
+    function copyNetworkIp() {
+      if (!cachedNetIp) return;
+      const isEn = appData && appData.lang === 'en';
+      navigator.clipboard.writeText(cachedNetIp).then(() => {
+        showToast(isEn ? `IP ${cachedNetIp} copied!` : `IP ${cachedNetIp} скопирован!`, 'success');
+      }).catch(() => {
+        showToast(cachedNetIp, 'info');
+      });
+    }
+    window.copyNetworkIp = copyNetworkIp;
+
+    // ==========================================
+    // API #4: Глобальный репозиторий Winget
+    // ==========================================
+    function openWingetSearchModal() {
+      const m = document.getElementById('wingetSearchModal');
+      if (m) m.style.display = 'flex';
+      const inp = document.getElementById('inpWingetQuery');
+      if (inp) inp.focus();
+    }
+    window.openWingetSearchModal = openWingetSearchModal;
+
+    function closeWingetSearchModal() {
+      const m = document.getElementById('wingetSearchModal');
+      if (m) m.style.display = 'none';
+    }
+    window.closeWingetSearchModal = closeWingetSearchModal;
+
+    async function executeWingetSearch() {
+      const inp = document.getElementById('inpWingetQuery');
+      const container = document.getElementById('wingetSearchResults');
+      if (!inp || !container) return;
+      const q = inp.value.trim();
+      const isEn = appData && appData.lang === 'en';
+      if (!q) {
+        showToast(isEn ? 'Enter search query' : 'Введите запрос для поиска', 'warning');
+        return;
+      }
+
+      container.innerHTML = `
+        <div style="text-align: center; color: var(--text-muted); padding: 50px 0;">
+          <div style="font-size: 20px; margin-bottom: 8px;">🔍</div>
+          <div>${isEn ? 'Searching Winget repository for "' + q + '"...' : 'Поиск в репозитории Winget по запросу "' + q + '"...'}</div>
+        </div>
+      `;
+
+      try {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.search_winget_packages) {
+          const res = await window.pywebview.api.search_winget_packages(q);
+          if (res && res.success) {
+            renderWingetResults(res.results || []);
+          } else {
+            container.innerHTML = `<div style="color: #ef4444; padding: 30px; text-align: center;">${res ? res.error : 'Search error'}</div>`;
+          }
+        }
+      } catch (err) {
+        container.innerHTML = `<div style="color: #ef4444; padding: 30px; text-align: center;">${err}</div>`;
+      }
+    }
+    window.executeWingetSearch = executeWingetSearch;
+
+    function renderWingetResults(results) {
+      const container = document.getElementById('wingetSearchResults');
+      if (!container) return;
+      const isEn = appData && appData.lang === 'en';
+
+      if (!results || results.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; color: var(--text-muted); padding: 50px 0;">
+            ${isEn ? 'Nothing found in Winget.' : 'В базе Winget ничего не найдено.'}
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = '';
+      results.forEach(pkg => {
+        const row = document.createElement('div');
+        row.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; gap: 12px;';
+        row.innerHTML = `
+          <div style="min-width: 0; flex: 1;">
+            <div style="font-size: 13.5px; font-weight: 600; color: #f1f5f9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${pkg.name}</div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px; font-size: 11.5px; color: var(--text-muted);">
+              <span style="font-family: monospace; color: #38bdf8;">${pkg.id}</span>
+              ${pkg.version ? `<span>• v${pkg.version}</span>` : ''}
+              ${pkg.source ? `<span style="text-transform: uppercase; font-size: 10px; background: rgba(255,255,255,0.06); padding: 1px 6px; border-radius: 3px;">${pkg.source}</span>` : ''}
+            </div>
+          </div>
+          <button class="btn-action btn-primary" onclick="installWingetPkg('${pkg.id}', '${pkg.source || 'winget'}')" style="height: 32px; padding: 0 16px; font-size: 12px; white-space: nowrap;">
+            ⚡ ${isEn ? 'Install' : 'Установить'}
+          </button>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    async function installWingetPkg(pkgId, source) {
+      const isEn = appData && appData.lang === 'en';
+      closeWingetSearchModal();
+      showToast(isEn ? `Installing ${pkgId} in background...` : `Установка ${pkgId} запущена в фоне...`, 'info', 4000);
+      try {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.install_custom_winget_package) {
+          await window.pywebview.api.install_custom_winget_package(pkgId, source);
+        }
+      } catch (err) {
+        showToast(String(err), 'error');
+      }
+    }
+    window.installWingetPkg = installWingetPkg;
+
+    // ==========================================
+    // API #5: ИИ-Ассистент (Ziabl AI)
+    // ==========================================
+    async function initAiView() {
+      try {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.get_ai_config) {
+          const cfg = await window.pywebview.api.get_ai_config();
+          const pSelect = document.getElementById('selAiProvider');
+          const mInput = document.getElementById('inpAiModel');
+          if (pSelect && cfg.provider) pSelect.value = cfg.provider;
+          if (mInput && cfg.model) mInput.value = cfg.model;
+        }
+      } catch (e) {
+        console.warn('initAiView config error:', e);
+      }
+    }
+    window.initAiView = initAiView;
+
+    function openAiSettingsModal() {
+      initAiView();
+      const m = document.getElementById('aiSettingsModal');
+      if (m) m.style.display = 'flex';
+    }
+    window.openAiSettingsModal = openAiSettingsModal;
+
+    function closeAiSettingsModal() {
+      const m = document.getElementById('aiSettingsModal');
+      if (m) m.style.display = 'none';
+    }
+    window.closeAiSettingsModal = closeAiSettingsModal;
+
+    function onAiProviderChange() {
+      const sel = document.getElementById('selAiProvider');
+      const mInp = document.getElementById('inpAiModel');
+      const help = document.getElementById('aiKeyHelpText');
+      if (!sel) return;
+      const val = sel.value;
+      if (val === 'gemini') {
+        if (mInp) mInp.value = 'gemini-1.5-flash';
+        if (help) help.innerHTML = '💡 Бесплатный ключ Gemini можно получить за 30 секунд в <a href="https://aistudio.google.com/app/apikey" target="_blank" onclick="openExternalUrl(this.href); return false;" style="color: #38bdf8; text-decoration: underline;">Google AI Studio</a>.';
+      } else if (val === 'openrouter') {
+        if (mInp) mInp.value = 'deepseek/deepseek-chat';
+        if (help) help.innerHTML = '💡 Ключ OpenRouter можно получить на сайте <a href="https://openrouter.ai/keys" target="_blank" onclick="openExternalUrl(this.href); return false;" style="color: #38bdf8; text-decoration: underline;">OpenRouter.ai</a>.';
+      } else if (val === 'openai') {
+        if (mInp) mInp.value = 'gpt-4o-mini';
+        if (help) help.innerHTML = '💡 Ключ OpenAI можно получить в <a href="https://platform.openai.com/api-keys" target="_blank" onclick="openExternalUrl(this.href); return false;" style="color: #38bdf8; text-decoration: underline;">OpenAI Dashboard</a>.';
+      }
+    }
+    window.onAiProviderChange = onAiProviderChange;
+
+    async function saveAiSettingsUI() {
+      const sel = document.getElementById('selAiProvider');
+      const keyInp = document.getElementById('inpAiApiKey');
+      const mInp = document.getElementById('inpAiModel');
+      const isEn = appData && appData.lang === 'en';
+      if (!sel || !keyInp) return;
+
+      const provider = sel.value;
+      const apiKey = keyInp.value.trim();
+      const model = mInp ? mInp.value.trim() : '';
+
+      try {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.save_ai_config) {
+          const res = await window.pywebview.api.save_ai_config(provider, apiKey, model);
+          if (res && res.success) {
+            showToast(isEn ? 'AI settings saved!' : 'Настройки ИИ сохранены!', 'success');
+            closeAiSettingsModal();
+          } else {
+            showToast('Save failed', 'error');
+          }
+        }
+      } catch (err) {
+        showToast(String(err), 'error');
+      }
+    }
+    window.saveAiSettingsUI = saveAiSettingsUI;
+
+    function clearAiChat() {
+      const box = document.getElementById('aiChatBox');
+      if (!box) return;
+      const isEn = appData && appData.lang === 'en';
+      box.innerHTML = `
+        <div class="ai-msg bot">
+          <div style="font-size: 24px;">🤖</div>
+          <div class="ai-bubble">
+            <b>${isEn ? 'Chat cleared.' : 'Чат очищен.'}</b><br><br>
+            ${isEn ? 'Ask any question regarding Windows optimization, startup, or security tweaks.' : 'Задайте любой вопрос по настройке Windows, автозагрузке или безопасности.'}
+          </div>
+        </div>
+      `;
+    }
+    window.clearAiChat = clearAiChat;
+
+    function askAiPrompt(promptText) {
+      const inp = document.getElementById('aiInputPrompt');
+      if (inp) {
+        inp.value = promptText;
+        sendAiMessage();
+      }
+    }
+    window.askAiPrompt = askAiPrompt;
+
+    async function sendAiMessage() {
+      const inp = document.getElementById('aiInputPrompt');
+      const box = document.getElementById('aiChatBox');
+      if (!inp || !box) return;
+      const text = inp.value.trim();
+      if (!text) return;
+      inp.value = '';
+
+      // User bubble
+      const userMsg = document.createElement('div');
+      userMsg.className = 'ai-msg user';
+      userMsg.innerHTML = `<div class="ai-bubble">${escapeHtml(text)}</div>`;
+      box.appendChild(userMsg);
+
+      // Bot thinking bubble
+      const botMsg = document.createElement('div');
+      botMsg.className = 'ai-msg bot';
+      const botMsgId = 'ai_ans_' + Date.now();
+      botMsg.innerHTML = `
+        <div style="font-size: 24px;">🤖</div>
+        <div class="ai-bubble" id="${botMsgId}">
+          <span style="display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted);">
+            <div style="width: 10px; height: 10px; border-radius: 50%; border: 2px solid #38bdf8; border-top-color: transparent; animation: spin 0.8s linear infinite;"></div>
+            Анализирую систему и готовлю ответ...
+          </span>
+        </div>
+      `;
+      box.appendChild(botMsg);
+      box.scrollTop = box.scrollHeight;
+
+      try {
+        if (window.pywebview && window.pywebview.api && window.pywebview.api.ask_ai_assistant) {
+          const res = await window.pywebview.api.ask_ai_assistant(text);
+          const bubble = document.getElementById(botMsgId);
+          if (bubble) {
+            if (res && res.success) {
+              let answer = res.answer || '';
+              let formatted = escapeHtml(answer)
+                .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+                .replace(/\*(.*?)\*/g, '<i>$1</i>')
+                .replace(/`([^`]+)`/g, '<code style="background: rgba(0,0,0,0.3); padding: 2px 5px; border-radius: 4px; font-family: monospace; color: #38bdf8;">$1</code>')
+                .replace(/\n/g, '<br>');
+              bubble.innerHTML = formatted;
+              if (res.note) {
+                bubble.innerHTML += `<div style="font-size: 11px; color: #f59e0b; margin-top: 8px;">ℹ️ ${escapeHtml(res.note)}</div>`;
+              }
+            } else {
+              bubble.innerHTML = `<span style="color: #ef4444;">Ошибка: ${escapeHtml(res ? res.error : 'Не удалось получить ответ')}</span>`;
+            }
+          }
+        }
+      } catch (err) {
+        const bubble = document.getElementById(botMsgId);
+        if (bubble) bubble.innerHTML = `<span style="color: #ef4444;">Сбой: ${escapeHtml(String(err))}</span>`;
+      }
+      box.scrollTop = box.scrollHeight;
+    }
+    window.sendAiMessage = sendAiMessage;
+
 
   </script>
 
