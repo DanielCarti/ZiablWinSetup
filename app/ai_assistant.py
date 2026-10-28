@@ -199,12 +199,19 @@ class AIAssistant:
         return default_config
 
     def save_config(self, provider: str, api_key: str, model: str = "") -> bool:
-        self.config["provider"] = provider.strip()
+        p_clean = provider.strip().lower()
+        self.config["provider"] = p_clean
         self.config["api_key"] = api_key.strip()
-        if model:
-            self.config["model"] = model.strip()
-        elif provider.strip().lower() == "ollama":
+        m_clean = model.strip()
+        if m_clean:
+            # Auto-upgrade deprecated gemini 1.5 to 3.5
+            if p_clean == "gemini" and (m_clean.startswith("gemini-1.5") or m_clean.startswith("gemini-2.0")):
+                m_clean = "gemini-3.5-flash"
+            self.config["model"] = m_clean
+        elif p_clean == "ollama":
             self.config["model"] = "llama3.2"
+        elif p_clean == "gemini":
+            self.config["model"] = "gemini-3.5-flash"
         try:
             with open(self.config_path, "w", encoding="utf-8") as f:
                 json.dump(self.config, f, indent=2, ensure_ascii=False)
@@ -214,7 +221,7 @@ class AIAssistant:
             return False
 
     def get_config(self) -> dict[str, Any]:
-        provider = self.config.get("provider", "gemini")
+        provider = self.config.get("provider", "gemini").lower()
         key = self.config.get("api_key", "")
         masked_key = ""
         if key:
@@ -222,12 +229,17 @@ class AIAssistant:
         elif provider == "ollama":
             masked_key = "Не требуется (Локальный сервер Ollama)"
 
-        default_model = "llama3.2" if provider == "ollama" else "gemini-1.5-flash"
+        default_model = "llama3.2" if provider == "ollama" else "gemini-3.5-flash"
+        cur_model = self.config.get("model", default_model)
+        if provider == "gemini" and (cur_model.startswith("gemini-1.5") or cur_model.startswith("gemini-2.0")):
+            cur_model = "gemini-3.5-flash"
+            self.config["model"] = cur_model
+
         return {
             "provider": provider,
             "has_key": bool(key) or provider == "ollama",
             "masked_key": masked_key,
-            "model": self.config.get("model", default_model),
+            "model": cur_model,
         }
 
     def ask(self, prompt: str, system_context: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -317,7 +329,11 @@ class AIAssistant:
         )
 
     def _call_gemini(self, prompt: str, api_key: str, context: dict[str, Any] | None) -> dict[str, Any]:
-        model = self.config.get("model") or "gemini-1.5-flash"
+        model = self.config.get("model") or "gemini-3.5-flash"
+        if model.startswith("gemini-1.5") or model.startswith("gemini-2.0") or model == "gemini-flash":
+            model = "gemini-3.5-flash"
+            self.config["model"] = "gemini-3.5-flash"
+
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
         sys_inst = self._build_system_instruction(context)
 
@@ -341,8 +357,15 @@ class AIAssistant:
             method="POST",
         )
 
-        with urllib.request.urlopen(req, timeout=15) as res:
-            res_data = json.loads(res.read().decode("utf-8"))
+        try:
+            with urllib.request.urlopen(req, timeout=15) as res:
+                res_data = json.loads(res.read().decode("utf-8"))
+        except urllib.error.HTTPError as err:
+            if err.code == 404 and model != "gemini-3.5-flash":
+                logger.info(f"Gemini model {model} returned 404. Auto-retrying with gemini-3.5-flash...")
+                self.config["model"] = "gemini-3.5-flash"
+                return self._call_gemini(prompt, api_key, context)
+            raise
 
         candidates = res_data.get("candidates", [])
         if candidates:

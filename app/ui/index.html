@@ -3916,8 +3916,10 @@
       </div>
 
       <div style="margin-bottom: 20px;">
-        <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 6px;">Модель:</label>
-        <input type="text" id="inpAiModel" value="gemini-1.5-flash" style="width: 100%; height: 36px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 6px; color: #fff; padding: 0 12px; font-size: 13px; box-sizing: border-box;">
+        <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 6px;">Модель ИИ:</label>
+        <select id="selAiModel" style="width: 100%; height: 36px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 6px; color: #fff; padding: 0 10px; font-size: 13px;" onchange="onAiModelChange()">
+        </select>
+        <input type="text" id="inpAiCustomModel" placeholder="Введите имя модели вручную..." style="display: none; margin-top: 8px; width: 100%; height: 36px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 6px; color: #fff; padding: 0 12px; font-size: 13px; box-sizing: border-box;">
       </div>
 
       <div style="display: flex; justify-content: flex-end; gap: 8px;">
@@ -10778,17 +10780,95 @@
     // ==========================================
     // API #5: ИИ-Ассистент (Ziabl AI)
     // ==========================================
+    const AI_PROVIDER_MODELS = {
+      gemini: [
+        { id: 'gemini-3.5-flash', name: 'Gemini 3.5 Flash (Рекомендуется — Быстрый)', nameEn: 'Gemini 3.5 Flash (Recommended — Fast)' },
+        { id: 'gemini-3.5-flash-lite', name: 'Gemini 3.5 Flash Lite (Супер-быстрый)', nameEn: 'Gemini 3.5 Flash Lite (Ultra-fast)' },
+        { id: 'gemini-3.6-flash', name: 'Gemini 3.6 Flash (Продвинутый)', nameEn: 'Gemini 3.6 Flash (Advanced)' },
+        { id: 'custom', name: '✏️ Своя модель (ввести вручную)...', nameEn: '✏️ Custom model (enter manually)...' }
+      ],
+      ollama: [
+        { id: 'llama3.2', name: 'Llama 3.2 (Рекомендуется для ПК)', nameEn: 'Llama 3.2 (Recommended for PC)' },
+        { id: 'qwen2.5:3b', name: 'Qwen 2.5 3B (Отличный русский язык)', nameEn: 'Qwen 2.5 3B (Great multilingual)' },
+        { id: 'qwen2.5:7b', name: 'Qwen 2.5 7B (Продвинутая)', nameEn: 'Qwen 2.5 7B (Advanced)' },
+        { id: 'mistral', name: 'Mistral 7B (Универсальная)', nameEn: 'Mistral 7B (General)' },
+        { id: 'custom', name: '✏️ Своя модель (ввести вручную)...', nameEn: '✏️ Custom model (enter manually)...' }
+      ],
+      openrouter: [
+        { id: 'deepseek/deepseek-chat', name: 'DeepSeek-V3 (Мощный и экономичный)', nameEn: 'DeepSeek-V3 (Powerful & cheap)' },
+        { id: 'meta-llama/llama-3.1-8b-instruct:free', name: 'Llama 3.1 8B (100% Бесплатно)', nameEn: 'Llama 3.1 8B (100% Free)' },
+        { id: 'mistralai/mistral-7b-instruct:free', name: 'Mistral 7B (Бесплатно)', nameEn: 'Mistral 7B (Free)' },
+        { id: 'custom', name: '✏️ Своя модель (ввести вручную)...', nameEn: '✏️ Custom model (enter manually)...' }
+      ],
+      openai: [
+        { id: 'gpt-4o-mini', name: 'GPT-4o Mini (Рекомендуется — Быстрый)', nameEn: 'GPT-4o Mini (Recommended — Fast)' },
+        { id: 'gpt-4o', name: 'GPT-4o (Максимальный интеллект)', nameEn: 'GPT-4o (High Intelligence)' },
+        { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo (Классический)', nameEn: 'GPT-3.5 Turbo (Legacy)' },
+        { id: 'custom', name: '✏️ Своя модель (ввести вручную)...', nameEn: '✏️ Custom model (enter manually)...' }
+      ]
+    };
+
+    function updateAiModelDropdown(desiredModel) {
+      const pSel = document.getElementById('selAiProvider');
+      const mSel = document.getElementById('selAiModel');
+      const customInp = document.getElementById('inpAiCustomModel');
+      if (!pSel || !mSel) return;
+      const provider = pSel.value;
+      const list = AI_PROVIDER_MODELS[provider] || AI_PROVIDER_MODELS.gemini;
+      const isEn = appData && appData.lang === 'en';
+
+      mSel.innerHTML = '';
+      let matched = false;
+      list.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.id;
+        opt.textContent = isEn ? item.nameEn : item.name;
+        mSel.appendChild(opt);
+        if (desiredModel && desiredModel === item.id) matched = true;
+      });
+
+      if (desiredModel && !matched) {
+        mSel.value = 'custom';
+        if (customInp) {
+          customInp.style.display = 'block';
+          customInp.value = desiredModel;
+        }
+      } else {
+        mSel.value = desiredModel && matched ? desiredModel : list[0].id;
+        if (customInp) {
+          customInp.style.display = 'none';
+          customInp.value = '';
+        }
+      }
+    }
+    window.updateAiModelDropdown = updateAiModelDropdown;
+
+    function onAiModelChange() {
+      const mSel = document.getElementById('selAiModel');
+      const customInp = document.getElementById('inpAiCustomModel');
+      if (!mSel || !customInp) return;
+      if (mSel.value === 'custom') {
+        customInp.style.display = 'block';
+        customInp.focus();
+      } else {
+        customInp.style.display = 'none';
+      }
+    }
+    window.onAiModelChange = onAiModelChange;
+
     async function initAiView() {
       try {
         if (window.pywebview && window.pywebview.api && window.pywebview.api.get_ai_config) {
           const cfg = await window.pywebview.api.get_ai_config();
           const pSelect = document.getElementById('selAiProvider');
-          const mInput = document.getElementById('inpAiModel');
           if (pSelect && cfg.provider) {
             pSelect.value = cfg.provider;
-            onAiProviderChange();
           }
-          if (mInput && cfg.model) mInput.value = cfg.model;
+          onAiProviderChange();
+          if (cfg.model) {
+            const modelToUse = (cfg.provider === 'gemini' && (cfg.model === 'gemini-1.5-flash' || cfg.model.startsWith('gemini-1.5') || cfg.model.startsWith('gemini-2.0'))) ? 'gemini-3.5-flash' : cfg.model;
+            updateAiModelDropdown(modelToUse);
+          }
           const kInput = document.getElementById('inpAiApiKey');
           if (kInput && cfg.masked_key && cfg.provider !== 'ollama') kInput.placeholder = cfg.masked_key;
         }
@@ -10813,25 +10893,21 @@
 
     function onAiProviderChange() {
       const sel = document.getElementById('selAiProvider');
-      const mInp = document.getElementById('inpAiModel');
       const keyInp = document.getElementById('inpAiApiKey');
       const help = document.getElementById('aiKeyHelpText');
       if (!sel) return;
       const val = sel.value;
+      updateAiModelDropdown();
       if (val === 'gemini') {
-        if (mInp) mInp.value = 'gemini-1.5-flash';
         if (keyInp) { keyInp.disabled = false; keyInp.placeholder = 'Вставьте ваш API ключ...'; }
         if (help) help.innerHTML = '💡 Бесплатный ключ Gemini можно получить за 30 секунд в <a href="https://aistudio.google.com/app/apikey" target="_blank" onclick="openExternalUrl(this.href); return false;" style="color: #38bdf8; text-decoration: underline;">Google AI Studio</a>.';
       } else if (val === 'ollama') {
-        if (mInp) mInp.value = 'llama3.2';
         if (keyInp) { keyInp.disabled = true; keyInp.placeholder = 'Ключ не требуется (Ollama работает локально)'; keyInp.value = ''; }
         if (help) help.innerHTML = '💡 Ollama работает локально на вашем ПК <b>без ключей, авторизации и интернета</b>. Скачать: <a href="https://ollama.com" target="_blank" onclick="openExternalUrl(this.href); return false;" style="color: #38bdf8; text-decoration: underline;">ollama.com</a>. Запуск модели: <code>ollama run llama3.2</code>.';
       } else if (val === 'openrouter') {
-        if (mInp) mInp.value = 'deepseek/deepseek-chat';
         if (keyInp) { keyInp.disabled = false; keyInp.placeholder = 'Вставьте ваш API ключ...'; }
         if (help) help.innerHTML = '💡 Ключ OpenRouter можно получить на сайте <a href="https://openrouter.ai/keys" target="_blank" onclick="openExternalUrl(this.href); return false;" style="color: #38bdf8; text-decoration: underline;">OpenRouter.ai</a>.';
       } else if (val === 'openai') {
-        if (mInp) mInp.value = 'gpt-4o-mini';
         if (keyInp) { keyInp.disabled = false; keyInp.placeholder = 'Вставьте ваш API ключ...'; }
         if (help) help.innerHTML = '💡 Ключ OpenAI можно получить в <a href="https://platform.openai.com/api-keys" target="_blank" onclick="openExternalUrl(this.href); return false;" style="color: #38bdf8; text-decoration: underline;">OpenAI Dashboard</a>.';
       }
@@ -10841,13 +10917,17 @@
     async function saveAiSettingsUI() {
       const sel = document.getElementById('selAiProvider');
       const keyInp = document.getElementById('inpAiApiKey');
-      const mInp = document.getElementById('inpAiModel');
+      const mSel = document.getElementById('selAiModel');
+      const customInp = document.getElementById('inpAiCustomModel');
       const isEn = appData && appData.lang === 'en';
       if (!sel || !keyInp) return;
 
       const provider = sel.value;
       const apiKey = keyInp.value.trim();
-      const model = mInp ? mInp.value.trim() : '';
+      let model = mSel ? mSel.value : '';
+      if (model === 'custom' && customInp) {
+        model = customInp.value.trim();
+      }
 
       try {
         if (window.pywebview && window.pywebview.api && window.pywebview.api.save_ai_config) {
