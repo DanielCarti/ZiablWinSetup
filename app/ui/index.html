@@ -1268,14 +1268,19 @@
 
     .progress-fill.indeterminate {
       width: 100% !important;
-      background: linear-gradient(90deg, var(--accent) 0%, #38bdf8 50%, var(--accent) 100%);
-      background-size: 200% 100%;
-      animation: indeterminateProgress 1.4s infinite linear;
+      background: linear-gradient(90deg, rgba(139, 92, 246, 0.25) 0%, #a855f7 30%, #38bdf8 50%, #a855f7 70%, rgba(139, 92, 246, 0.25) 100%) !important;
+      background-size: 200% 100% !important;
+      animation: indeterminateProgress 1.2s infinite linear !important;
     }
 
     @keyframes indeterminateProgress {
       0% { background-position: 200% 0; }
       100% { background-position: -200% 0; }
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
 
     .progress-text {
@@ -6812,7 +6817,7 @@
             <div style="display: flex; align-items: center; gap: 14px; min-width: 200px; flex: 1; justify-content: flex-end;">
               <div style="flex: 1; max-width: 260px;">
                 <div class="progress-bar" style="height: 6px; border-radius: 3px; background: rgba(255,255,255,0.08); overflow: hidden;">
-                  <div class="progress-fill ${isIndet ? 'indeterminate' : ''}" style="height: 100%; width: ${isIndet ? 100 : pct}%; background: var(--accent); transition: width 0.25s;"></div>
+                  <div class="progress-fill ${isIndet ? 'indeterminate' : ''}" style="height: 100%; width: ${isIndet ? 100 : pct}%; ${isIndet ? '' : 'background: var(--accent);'} transition: width 0.25s;"></div>
                 </div>
               </div>
               <div style="min-width: 38px; text-align: right; font-size: 12px; font-weight: 600; color: var(--text-muted);">${!isIndet && pct > 0 ? pct + '%' : ''}</div>

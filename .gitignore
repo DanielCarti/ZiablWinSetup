@@ -20,3 +20,5 @@ scratch/
 qa_check.txt
 render_check.txt
 *.old
+
+downloads/

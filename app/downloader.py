@@ -341,7 +341,8 @@ class Downloader:
                         if curr_size > 0:
                             cb(app.id, -1, f"Скачивание... {format_size(curr_size)}{speed_str}")
                         else:
-                            cb(app.id, -1, "Скачивание через winget...")
+                            dots = "." * ((int((now - start_time) * 2) % 3) + 1)
+                            cb(app.id, -1, f"Скачивание через winget{dots}")
 
                     time.sleep(0.1)
 

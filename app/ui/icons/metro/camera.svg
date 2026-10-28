@@ -1,17 +1,28 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
   <defs>
-    <linearGradient id="cam1" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#3B82F6"/>
-      <stop offset="100%" stop-color="#1D4ED8"/>
+    <linearGradient id="camBody" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0078D4"/>
+      <stop offset="100%" stop-color="#004E8C"/>
     </linearGradient>
-    <linearGradient id="camLens" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="camLensRim" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E293B"/>
+      <stop offset="100%" stop-color="#0F172A"/>
+    </linearGradient>
+    <linearGradient id="camGlass" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#38BDF8"/>
       <stop offset="100%" stop-color="#0284C7"/>
     </linearGradient>
+    <filter id="camShadow" x="-10%" y="-10%" width="125%" height="125%">
+      <feDropShadow dx="0" dy="2.5" stdDeviation="2.5" flood-color="#000000" flood-opacity="0.3"/>
+    </filter>
   </defs>
-  <rect x="8" y="16" width="48" height="36" rx="10" fill="url(#cam1)"/>
-  <path d="M24 16 L27 11 C28 10 30 10 31 10 L37 10 C38 10 40 10 41 11 L44 16 Z" fill="#1D4ED8"/>
-  <circle cx="32" cy="34" r="12" fill="#0F172A"/>
-  <circle cx="32" cy="34" r="8" fill="url(#camLens)"/>
-  <circle cx="48" cy="22" r="2.5" fill="#FDE047"/>
+  <rect x="22" y="10" width="20" height="7" rx="3.5" fill="#004E8C"/>
+  <rect x="8" y="14" width="48" height="38" rx="11" fill="url(#camBody)" filter="url(#camShadow)"/>
+  <circle cx="46" cy="22" r="3" fill="#FBBF24"/>
+  <circle cx="46" cy="22" r="1.5" fill="#FFFFFF"/>
+  <circle cx="32" cy="33" r="14" fill="url(#camLensRim)"/>
+  <circle cx="32" cy="33" r="10" fill="url(#camGlass)"/>
+  <path d="M 27 26 A 8 8 0 0 1 37 26 A 8 8 0 0 0 29 34 Z" fill="#FFFFFF" opacity="0.45"/>
+  <circle cx="32" cy="33" r="4.5" fill="#0F172A"/>
+  <circle cx="33.5" cy="31.5" r="1.5" fill="#FFFFFF" opacity="0.85"/>
 </svg>

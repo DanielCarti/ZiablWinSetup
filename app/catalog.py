@@ -404,6 +404,19 @@ def _build_catalog() -> list[AppEntry]:
             notes="Зачем нужен: Самая быстрая и надёжная программа для создания установочных флешек Windows и Linux. Умеет обходить требования Windows 11 к TPM, Secure Boot и учетной записи Microsoft.",
             notes_en="Why you need it: Fastest tool to create bootable USB flash drives. Can automatically bypass Windows 11 TPM, Secure Boot, and Microsoft Account requirements.",
         ),
+        AppEntry(
+            id="wisediskcleaner",
+            name="Wise Disk Cleaner",
+            description="Быстрая и безопасная очистка диска от мусора, временных файлов и кэша браузеров",
+            description_en="Fast and safe disk cleaner for junk files, temp files, and browser cache",
+            category="utilities",
+            winget_id="WiseCleaner.WiseDiskCleaner",
+            direct_url="https://downloads.wisecleaner.com/soft/WDCFree_11.2.7.847.exe",
+            silent_args=["/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/SP-"],
+            recommended=True,
+            notes="Зачем нужен: Бесплатный инструмент глубокой очистки системы. Освобождает гигабайты дискового пространства, удаляет мусорные файлы Windows, временные файлы и кэш всех популярных браузеров без риска повредить систему.",
+            notes_en="Why you need it: Free deep system cleaner. Frees up gigabytes of disk space, removes Windows junk files, temp files, and caches of all popular browsers safely.",
+        ),
 
         # ========================
         # 4. СВЯЗЬ И МЕССЕНДЖЕРЫ (5)
@@ -450,7 +463,9 @@ def _build_catalog() -> list[AppEntry]:
             description="Официальный клиент ChatGPT для Windows с горячими клавишами и голосовым вводом",
             description_en="Official OpenAI ChatGPT Windows client with global hotkey support",
             category="communication",
-            winget_id="9PLM9XGG6VKS",
+            winget_id="OpenAI.ChatGPT",
+            direct_url="https://persistent.oaistatic.com/codex-app-prod/releases/26.1023.6123.0/ChatGPT-x64.msix",
+            installer_type="msix",
             recommended=True,
             notes="Зачем нужен: Официальное приложение ChatGPT от OpenAI для Windows. Обеспечивает быстрый вызов по горячей клавише, голосовой ввод, работу с документами и решение любых интеллектуальных и учебных задач.",
             notes_en="Why you need it: Official desktop app for ChatGPT by OpenAI. Fast hotkey access, voice chat, web search, and file analysis.",

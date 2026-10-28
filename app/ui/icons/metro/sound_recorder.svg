@@ -1,12 +1,25 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
   <defs>
-    <linearGradient id="rec1" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#E11D48"/>
+    <linearGradient id="sndBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F43F5E"/>
       <stop offset="100%" stop-color="#BE123C"/>
     </linearGradient>
+    <linearGradient id="sndPill" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#F1F5F9"/>
+    </linearGradient>
+    <filter id="sndShadow" x="-10%" y="-10%" width="125%" height="125%">
+      <feDropShadow dx="0" dy="2.5" stdDeviation="2.5" flood-color="#000000" flood-opacity="0.3"/>
+    </filter>
   </defs>
-  <rect x="8" y="8" width="48" height="48" rx="14" fill="url(#rec1)"/>
-  <rect x="26" y="16" width="12" height="20" rx="6" fill="#FFFFFF"/>
-  <path d="M20 28 C20 35 24 40 32 40 C40 40 44 35 44 28" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
-  <line x1="32" y1="40" x2="32" y2="47" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
+  <rect x="6" y="6" width="52" height="52" rx="14" fill="url(#sndBg)" filter="url(#sndShadow)"/>
+  <line x1="16" y1="32" x2="16" y2="32" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" opacity="0.4"/>
+  <line x1="21" y1="26" x2="21" y2="38" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
+  <line x1="26" y1="20" x2="26" y2="44" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round"/>
+  <circle cx="32" cy="27" r="7.5" fill="url(#sndPill)"/>
+  <rect x="29" y="34.5" width="6" height="7" rx="1" fill="#FFFFFF"/>
+  <line x1="25" y1="42" x2="39" y2="42" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="38" y1="20" x2="38" y2="44" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round"/>
+  <line x1="43" y1="26" x2="43" y2="38" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
+  <line x1="48" y1="32" x2="48" y2="32" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" opacity="0.4"/>
 </svg>

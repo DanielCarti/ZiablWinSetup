@@ -119,6 +119,14 @@ DETECTION_RULES: dict[str, dict[str, list[str]]] = {
         "patterns": [r"Unchecker"],
         "paths": [r"Unchecker\unchecker.exe"],
     },
+    "wisediskcleaner": {
+        "patterns": [r"Wise Disk Cleaner"],
+        "paths": [
+            r"Wise\Wise Disk Cleaner\WiseDiskCleaner.exe",
+            r"WiseCleaner\Wise Disk Cleaner\WiseDiskCleaner.exe",
+            r"Wise Cleaner\Wise Disk Cleaner\WiseDiskCleaner.exe",
+        ],
+    },
     "yogadns": {
         "patterns": [r"YogaDNS"],
         "paths": [r"YogaDNS\YogaDNS.exe"],

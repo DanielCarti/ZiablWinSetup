@@ -1,14 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
   <defs>
-    <linearGradient id="phn1" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0284C7"/>
-      <stop offset="100%" stop-color="#0369A1"/>
+    <linearGradient id="pcGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#334155"/>
+      <stop offset="100%" stop-color="#1E293B"/>
     </linearGradient>
+    <linearGradient id="phnGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0EA5E9"/>
+      <stop offset="100%" stop-color="#0284C7"/>
+    </linearGradient>
+    <filter id="phnShadow" x="-10%" y="-10%" width="125%" height="125%">
+      <feDropShadow dx="0" dy="2.5" stdDeviation="2.5" flood-color="#000000" flood-opacity="0.35"/>
+    </filter>
   </defs>
-  <rect x="18" y="20" width="38" height="26" rx="4" fill="#E2E8F0" stroke="#94A3B8" stroke-width="2"/>
-  <rect x="22" y="24" width="30" height="18" rx="2" fill="#38BDF8" opacity="0.5"/>
-  <rect x="12" y="46" width="50" height="4" rx="2" fill="#64748B"/>
-  <rect x="8" y="24" width="18" height="30" rx="4" fill="url(#phn1)" stroke="#FFFFFF" stroke-width="1.5"/>
-  <rect x="11" y="28" width="12" height="20" rx="2" fill="#FFFFFF" opacity="0.9"/>
-  <circle cx="17" cy="50" r="1.5" fill="#FFFFFF"/>
+  <rect x="18" y="14" width="38" height="26" rx="4" fill="url(#pcGrad)"/>
+  <rect x="21" y="17" width="32" height="20" rx="2" fill="#0284C7" opacity="0.4"/>
+  <path d="M 14 40 L 60 40 L 58 44 L 16 44 Z" fill="#64748B"/>
+  <g filter="url(#phnShadow)">
+    <rect x="8" y="20" width="18" height="34" rx="5" fill="url(#phnGrad)" stroke="#FFFFFF" stroke-width="1.5"/>
+    <rect x="11" y="24" width="12" height="24" rx="2" fill="#FFFFFF" opacity="0.9"/>
+    <line x1="15" y1="22" x2="19" y2="22" stroke="#FFFFFF" stroke-width="1" stroke-linecap="round"/>
+    <circle cx="17" cy="51" r="1.2" fill="#FFFFFF"/>
+  </g>
 </svg>

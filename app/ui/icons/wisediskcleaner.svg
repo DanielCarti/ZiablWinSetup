@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="wdcDiskGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="50%" stop-color="#0284C7"/>
+      <stop offset="100%" stop-color="#0369A1"/>
+    </linearGradient>
+    <linearGradient id="wdcPlatterGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F1F5F9"/>
+      <stop offset="50%" stop-color="#CBD5E1"/>
+      <stop offset="100%" stop-color="#94A3B8"/>
+    </linearGradient>
+    <linearGradient id="wdcBroomHandle" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#B45309"/>
+    </linearGradient>
+    <linearGradient id="wdcBristles" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE047"/>
+      <stop offset="50%" stop-color="#FACC15"/>
+      <stop offset="100%" stop-color="#EAB308"/>
+    </linearGradient>
+    <filter id="wdcShadow" x="-10%" y="-10%" width="125%" height="125%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="#0F172A" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Hard Drive Base Enclosure -->
+  <rect x="8" y="10" width="48" height="48" rx="10" fill="url(#wdcDiskGrad)" filter="url(#wdcShadow)"/>
+  <rect x="10" y="12" width="44" height="44" rx="8" fill="none" stroke="#FFFFFF" stroke-width="1" opacity="0.25"/>
+
+  <!-- Metallic Disc Platter -->
+  <circle cx="32" cy="34" r="18" fill="url(#wdcPlatterGrad)"/>
+  <circle cx="32" cy="34" r="14" fill="none" stroke="#FFFFFF" stroke-width="1.5" opacity="0.6"/>
+  <circle cx="32" cy="34" r="9" fill="none" stroke="#64748B" stroke-width="1" opacity="0.4"/>
+  <circle cx="32" cy="34" r="5" fill="#475569"/>
+  <circle cx="32" cy="34" r="2.5" fill="#F8FAFC"/>
+
+  <!-- Drive Spindle Screws -->
+  <circle cx="14" cy="16" r="1.5" fill="#94A3B8"/>
+  <circle cx="50" cy="16" r="1.5" fill="#94A3B8"/>
+  <circle cx="14" cy="52" r="1.5" fill="#94A3B8"/>
+  <circle cx="50" cy="52" r="1.5" fill="#94A3B8"/>
+
+  <!-- Cleaning Whisk Broom / Brush -->
+  <g filter="url(#wdcShadow)">
+    <!-- Broom Handle -->
+    <rect x="42" y="6" width="5" height="22" rx="2.5" fill="url(#wdcBroomHandle)" transform="rotate(35 44.5 17)"/>
+    <rect x="43" y="18" width="6" height="4" rx="1" fill="#E2E8F0" transform="rotate(35 44.5 17)"/>
+
+    <!-- Bristles / Brush Fan -->
+    <path d="M 27 26 C 26 24 23 23 20 25 C 18 27 18 31 21 34 C 23 36 27 38 30 38 C 32 38 34 35 34 33 C 34 30 30 28 27 26 Z" 
+          fill="url(#wdcBristles)" transform="rotate(-15 25 31)"/>
+    <!-- Bristle detail lines -->
+    <path d="M 22 28 Q 26 31 29 33 M 20 31 Q 24 34 27 36" stroke="#CA8A04" stroke-width="1.2" stroke-linecap="round" fill="none" transform="rotate(-15 25 31)"/>
+  </g>
+
+  <!-- Sparkles / Clean stars -->
+  <path d="M 46 36 L 47.5 40 L 51.5 41.5 L 47.5 43 L 46 47 L 44.5 43 L 40.5 41.5 L 44.5 40 Z" fill="#FFFFFF" opacity="0.95"/>
+  <path d="M 17 18 L 18 20.5 L 20.5 21.5 L 18 22.5 L 17 25 L 16 22.5 L 13.5 21.5 L 16 20.5 Z" fill="#FDE047" opacity="0.9"/>
+</svg>
