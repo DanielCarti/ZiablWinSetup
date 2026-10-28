@@ -2302,19 +2302,34 @@
       margin-top: 4px;
       line-height: 1.4;
     }
-    .modal-close-btn {
-      background: none;
-      border: none;
-      color: var(--text-muted, #888);
-      font-size: 18px;
+    .modal-close-btn, .modal-close {
+      width: 32px;
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      color: #94a3b8;
       cursor: pointer;
-      padding: 4px;
-      border-radius: 4px;
-      transition: color 0.15s, background 0.15s;
+      padding: 0;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      flex-shrink: 0;
+      line-height: 1;
+      box-sizing: border-box;
     }
-    .modal-close-btn:hover {
-      color: #fff;
-      background: rgba(255, 255, 255, 0.1);
+    .modal-close-btn:hover, .modal-close:hover {
+      background: rgba(239, 68, 68, 0.18);
+      border-color: rgba(239, 68, 68, 0.4);
+      color: #f87171;
+      transform: scale(1.08);
+    }
+    .modal-close-btn svg, .modal-close svg {
+      width: 14px;
+      height: 14px;
+      stroke-width: 2.4;
+      pointer-events: none;
     }
     .self-update-ver-banner {
       display: flex;
@@ -2792,15 +2807,23 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 14px 20px;
-      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.85));
-      border: 1px solid rgba(56, 189, 248, 0.25);
+      padding: 10px 18px;
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.65), rgba(15, 23, 42, 0.88));
+      border: 1px solid rgba(56, 189, 248, 0.22);
       border-radius: 12px;
-      margin-bottom: 16px;
+      margin: 10px 18px 12px 18px;
       backdrop-filter: blur(8px);
       box-sizing: border-box;
-      flex-wrap: wrap;
-      gap: 12px;
+      flex-wrap: nowrap;
+      gap: 14px;
+      overflow-x: auto;
+    }
+    .network-status-card::-webkit-scrollbar {
+      height: 4px;
+    }
+    .network-status-card::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 4px;
     }
 
     /* --- AI Assistant View --- */
@@ -3128,33 +3151,36 @@
       </div>
 
       <!-- API #3: Network IP & Geo / Leak Inspector Card -->
-      <div id="networkStatusCard" class="network-status-card" style="margin: 12px 18px 0 18px;">
-        <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+      <div id="networkStatusCard" class="network-status-card">
+        <div style="display: flex; align-items: center; gap: 16px; flex-shrink: 0; min-width: 0;">
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="font-size: 14px;">🌐</span>
-            <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">IP:</span>
+            <span style="font-size: 13.5px;">🌐</span>
+            <span style="font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">IP:</span>
             <span id="netIpVal" style="font-size: 13px; font-weight: 700; color: #38bdf8; font-family: monospace;">Проверка...</span>
-            <button onclick="copyNetworkIp()" title="Скопировать IP" style="background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 2px 4px; font-size: 12px;">📋</button>
+            <button onclick="copyNetworkIp()" title="Скопировать IP" style="background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 2px 4px; font-size: 12px; transition: transform 0.15s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">📋</button>
           </div>
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span id="netFlagVal" style="font-size: 15px;">🌐</span>
-            <span id="netGeoVal" style="font-size: 12.5px; color: #f1f5f9; font-weight: 500;">--</span>
+            <span id="netFlagVal" style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 16px; border-radius: 3px; overflow: hidden; background: rgba(255,255,255,0.06); box-shadow: 0 0 4px rgba(0,0,0,0.4); flex-shrink: 0;">
+              <img id="netFlagImg" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;" alt="Flag" onerror="this.style.display='none'; document.getElementById('netFlagFallback').style.display='inline';">
+              <span id="netFlagFallback" style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-align: center; width: 100%; display: none;">🌐</span>
+            </span>
+            <span id="netGeoVal" style="font-size: 12.5px; color: #f1f5f9; font-weight: 600; white-space: nowrap;">--</span>
           </div>
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Провайдер:</span>
-            <span id="netIspVal" style="font-size: 12.5px; color: #cbd5e1;">--</span>
+            <span style="font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">🏢 Провайдер:</span>
+            <span id="netIspVal" style="font-size: 12px; color: #cbd5e1; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">--</span>
           </div>
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Пинг:</span>
-            <span id="netPingVal" style="font-size: 12.5px; font-weight: 600; color: #10b981;">-- ms</span>
+            <span style="font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">⚡ Пинг:</span>
+            <span id="netPingVal" style="font-size: 12.5px; font-weight: 700; color: #10b981; font-family: monospace;">-- ms</span>
           </div>
         </div>
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <button class="preset-chip" onclick="openWingetSearchModal()" style="border-color: rgba(56, 189, 248, 0.4); color: #38bdf8; background: rgba(56, 189, 248, 0.08); padding: 4px 10px; font-size: 11.5px;" title="Поиск среди десятков тысяч программ в каталоге Winget">
+        <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+          <button class="preset-chip" onclick="openWingetSearchModal()" style="border-color: rgba(56, 189, 248, 0.4); color: #38bdf8; background: rgba(56, 189, 248, 0.08); padding: 4px 12px; font-size: 11.5px; white-space: nowrap;" title="Поиск среди десятков тысяч программ в каталоге Winget">
             <span>📦</span> <span id="lblWingetSearchBtn">Каталог Winget</span>
           </button>
-          <button onclick="refreshNetworkInfo()" title="Обновить сетевые данные" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #cbd5e1; border-radius: 6px; padding: 4px 8px; cursor: pointer; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
-            <span>🔄</span>
+          <button onclick="refreshNetworkInfo()" title="Обновить сетевые данные" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #cbd5e1; border-radius: 6px; padding: 4px 8px; cursor: pointer; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.12)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">
+            <span id="netRefreshIcon">🔄</span>
           </button>
         </div>
       </div>
@@ -3386,7 +3412,7 @@
               <button class="btn-action btn-primary" id="btnVtSaveKey" onclick="saveVirusTotalKey()" style="height: 34px; padding: 0 16px; font-size: 12px; white-space: nowrap;">Сохранить ключ</button>
             </div>
           </div>
-          <button onclick="toggleVtKeyInput(false)" style="background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 16px;">✕</button>
+          <button class="modal-close-btn" onclick="toggleVtKeyInput(false)" title="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
         </div>
       </div>
 
@@ -3682,7 +3708,7 @@
           <div class="self-update-title" id="selfUpdateModalTitle">🎉 Доступно обновление ZiablWinSetup!</div>
           <div class="self-update-subtitle" id="selfUpdateModalDesc">Вышла новая версия приложения с новыми возможностями и улучшениями.</div>
         </div>
-        <button class="modal-close-btn" id="btnSelfUpdateClose" onclick="closeSelfUpdateModal()" title="Закрыть">✕</button>
+        <button class="modal-close-btn" id="btnSelfUpdateClose" onclick="closeSelfUpdateModal()" title="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
       </div>
 
       <div class="self-update-ver-banner">
@@ -3749,7 +3775,7 @@
         <h3 style="margin: 0; font-size: 17px; font-weight: 600; display: flex; align-items: center; gap: 8px; color: #f1f5f9;">
           🩺 <span id="healthModalTitle">Здоровье и производительность системы</span>
         </h3>
-        <button class="modal-close" onclick="closeHealthModal()">&times;</button>
+        <button class="modal-close-btn" onclick="closeHealthModal()" title="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px;">
@@ -3797,7 +3823,7 @@
           </h3>
           <span id="clVersionBadge" style="display: inline-block; margin-top: 4px; font-size: 11.5px; padding: 2px 8px; border-radius: 4px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-weight: 600;">v1.0.0</span>
         </div>
-        <button class="modal-close" onclick="closeAppChangelog()">&times;</button>
+        <button class="modal-close-btn" onclick="closeAppChangelog()" title="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
       </div>
 
       <div id="clBody" style="flex: 1; overflow-y: auto; font-size: 13px; line-height: 1.6; color: var(--text-main); white-space: pre-wrap; padding-right: 8px; margin-bottom: 16px; background: rgba(0,0,0,0.2); padding: 14px; border-radius: 8px;">Загрузка заметок о выпуске...</div>
@@ -3818,7 +3844,7 @@
         </h3>
         <div style="display: flex; gap: 8px; align-items: center;">
           <button class="btn-action btn-danger-outline" onclick="clearActionHistoryUI()" style="height: 28px; font-size: 11.5px; padding: 0 10px;">🗑️ Очистить</button>
-          <button class="modal-close" onclick="closeHistoryModal()">&times;</button>
+          <button class="modal-close-btn" onclick="closeHistoryModal()" title="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
         </div>
       </div>
 
@@ -3845,7 +3871,7 @@
           </h3>
           <span style="font-size: 12px; color: var(--text-muted);">Поиск и установка десятков тысяч программ из официальной базы Microsoft Package Manager</span>
         </div>
-        <button class="modal-close" onclick="closeWingetSearchModal()">&times;</button>
+        <button class="modal-close-btn" onclick="closeWingetSearchModal()" title="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
       </div>
 
       <div style="display: flex; gap: 10px; margin-bottom: 16px;">
@@ -3868,7 +3894,7 @@
         <h3 style="margin: 0; font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px; color: #f1f5f9;">
           ⚙️ <span>Настройки ИИ-Ассистента</span>
         </h3>
-        <button class="modal-close" onclick="closeAiSettingsModal()">&times;</button>
+        <button class="modal-close-btn" onclick="closeAiSettingsModal()" title="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
       </div>
 
       <div style="margin-bottom: 14px;">
@@ -3907,7 +3933,7 @@
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           <span id="settingsModalTitle">Настройки ZiablWinSetup</span>
         </h3>
-        <button onclick="closeSettingsModal()" style="background:none; border:none; color:#94a3b8; font-size:20px; cursor:pointer; line-height: 1; padding: 4px;" title="Закрыть">✕</button>
+        <button class="modal-close-btn" onclick="closeSettingsModal()" title="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
       </div>
 
       <div class="settings-modal-body" style="padding: 16px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; flex: 1;">
@@ -4176,7 +4202,7 @@
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           <span id="exclusionsModalTitle">Исключения из автообновлений</span>
         </h3>
-        <button onclick="closeExclusionsModal()" style="background:none; border:none; color:#94a3b8; font-size:20px; cursor:pointer; line-height: 1; padding: 4px;" title="Закрыть">✕</button>
+        <button class="modal-close-btn" onclick="closeExclusionsModal()" title="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
       </div>
       <div style="padding: 12px 20px 6px 20px; font-size: 12px; color: var(--text-muted); line-height: 1.4;" id="exclusionsModalDesc">
         Отмеченные программы пропускаются при массовом обновлении («Обновить все») и не отвлекают уведомлениями.
@@ -4221,7 +4247,7 @@
             <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;" id="lblVtKeysModalSubtitle">Быстрое переключение между аккаунтами без повторного ввода</div>
           </div>
         </div>
-        <button onclick="closeVtKeysModal()" style="background:none; border:none; color:#94a3b8; font-size:20px; cursor:pointer; line-height: 1; padding: 4px;" title="Закрыть">✕</button>
+        <button class="modal-close-btn" onclick="closeVtKeysModal()" title="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
       </div>
 
       <!-- Keys List -->
@@ -4259,7 +4285,7 @@
             <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;" id="backupRestoreMeta">Резервная копия не выбрана</div>
           </div>
         </div>
-        <button onclick="closeBackupRestoreModal()" style="background:none; border:none; color:#94a3b8; font-size:20px; cursor:pointer; line-height: 1; padding: 4px;" title="Закрыть">✕</button>
+        <button class="modal-close-btn" onclick="closeBackupRestoreModal()" title="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
       </div>
 
       <!-- Navigation Tabs -->
@@ -4330,7 +4356,7 @@
             <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;" id="lblRegCleanerSubtitle">Поиск недействительных путей, удалённых деинсталляторов и устаревшего кэша</div>
           </div>
         </div>
-        <button onclick="closeRegistryCleanerModal()" style="background:none; border:none; color:#94a3b8; font-size:20px; cursor:pointer; line-height: 1; padding: 4px;" title="Закрыть">✕</button>
+        <button class="modal-close-btn" onclick="closeRegistryCleanerModal()" title="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
       </div>
 
       <!-- Controls & Filter Toolbar -->
@@ -10584,13 +10610,18 @@
     let cachedNetIp = '';
     async function refreshNetworkInfo() {
       const ipEl = document.getElementById('netIpVal');
-      const flagEl = document.getElementById('netFlagVal');
+      const flagImg = document.getElementById('netFlagImg');
+      const flagFallback = document.getElementById('netFlagFallback');
       const geoEl = document.getElementById('netGeoVal');
       const ispEl = document.getElementById('netIspVal');
       const pingEl = document.getElementById('netPingVal');
+      const refreshIcon = document.getElementById('netRefreshIcon');
       const isEn = appData && appData.lang === 'en';
 
-      if (ipEl) ipEl.textContent = isEn ? 'Checking...' : 'Проверка...';
+      if (refreshIcon) refreshIcon.classList.add('spinning');
+      if (ipEl && (ipEl.textContent === '--' || ipEl.textContent === 'Проверка...')) {
+        ipEl.textContent = isEn ? 'Checking...' : 'Проверка...';
+      }
 
       try {
         if (window.pywebview && window.pywebview.api && window.pywebview.api.get_network_ip_info) {
@@ -10598,9 +10629,27 @@
           if (res && res.success) {
             cachedNetIp = res.ip || '';
             if (ipEl) ipEl.textContent = res.ip;
-            if (flagEl) flagEl.textContent = res.flag || '🌐';
+
+            const code = (res.country_code || '').toLowerCase();
+            if (flagImg) {
+              if (code && code.length === 2) {
+                flagImg.src = `https://flagcdn.com/w40/${code}.png`;
+                flagImg.style.display = 'block';
+                if (flagFallback) flagFallback.style.display = 'none';
+              } else {
+                flagImg.style.display = 'none';
+                if (flagFallback) {
+                  flagFallback.textContent = res.country_code || '🌐';
+                  flagFallback.style.display = 'inline';
+                }
+              }
+            }
+
             if (geoEl) geoEl.textContent = `${res.city ? res.city + ', ' : ''}${res.country || ''}`;
-            if (ispEl) ispEl.textContent = res.isp || '--';
+            if (ispEl) {
+              ispEl.textContent = res.isp || '--';
+              ispEl.title = res.isp || '';
+            }
             if (pingEl) pingEl.textContent = res.latency_ms !== null ? `${res.latency_ms} ms` : '--';
           } else {
             if (ipEl) ipEl.textContent = isEn ? 'Offline / Error' : 'Оффлайн / Сбой';
@@ -10609,6 +10658,8 @@
         }
       } catch (err) {
         if (ipEl) ipEl.textContent = 'Error';
+      } finally {
+        if (refreshIcon) refreshIcon.classList.remove('spinning');
       }
     }
     window.refreshNetworkInfo = refreshNetworkInfo;
